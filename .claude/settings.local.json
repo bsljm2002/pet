@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter run:*)",
+      "Bash(C:Usersdoq04AppDataLocalAndroidsdkplatform-toolsadb.exe devices -l)",
+      "Bash(C:Usersdoq04AppDataLocalAndroidsdkemulatoremulator.exe -list-avds)",
+      "Bash(adb devices:*)",
+      "Bash(adb kill-server:*)",
+      "Bash(adb start-server:*)",
+      "Bash(flutter emulators:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
