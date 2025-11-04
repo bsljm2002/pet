@@ -203,7 +203,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
             children: [
               _buildGenderButton('Man', Icons.male, Colors.blue),
               SizedBox(width: 40),
-              _buildGenderButton('Man', Icons.female, Colors.red),
+              _buildGenderButton('Woman', Icons.female, Colors.red),
             ],
           ),
           SizedBox(height: 100),

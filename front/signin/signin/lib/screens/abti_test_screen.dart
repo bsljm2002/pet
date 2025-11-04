@@ -263,19 +263,48 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
               height: 1.5,
             ),
           ),
-          SizedBox(height: 15),
-          // 5단계 선택 버튼
-          Column(
+          SizedBox(height: 20),
+          // 5단계 원형 라디오 버튼
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildAnswerButton(questionIndex, -2, '매우 그렇지 않다', answer),
-              SizedBox(height: 8),
-              _buildAnswerButton(questionIndex, -1, '그렇지 않다', answer),
-              SizedBox(height: 8),
-              _buildAnswerButton(questionIndex, 0, '보통이다', answer),
-              SizedBox(height: 8),
-              _buildAnswerButton(questionIndex, 1, '그렇다', answer),
-              SizedBox(height: 8),
-              _buildAnswerButton(questionIndex, 2, '매우 그렇다', answer),
+              // 왼쪽 라벨
+              Expanded(
+                flex: 2,
+                child: Text(
+                  '동의함',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color.fromARGB(255, 100, 100, 100),
+                  ),
+                ),
+              ),
+              // 5개의 원형 버튼 (가운데로 갈수록 작아짐)
+              Expanded(
+                flex: 5,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildCircleRadioButton(questionIndex, 2, answer, 36),
+                    _buildCircleRadioButton(questionIndex, 1, answer, 32),
+                    _buildCircleRadioButton(questionIndex, 0, answer, 28),
+                    _buildCircleRadioButton(questionIndex, -1, answer, 32),
+                    _buildCircleRadioButton(questionIndex, -2, answer, 36),
+                  ],
+                ),
+              ),
+              // 오른쪽 라벨
+              Expanded(
+                flex: 2,
+                child: Text(
+                  '동의하지 않음',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: const Color.fromARGB(255, 100, 100, 100),
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -283,8 +312,8 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
     );
   }
 
-  /// 선택지 버튼
-  Widget _buildAnswerButton(int questionIndex, int value, String label, int? currentAnswer) {
+  /// 원형 라디오 버튼
+  Widget _buildCircleRadioButton(int questionIndex, int value, int? currentAnswer, double size) {
     bool isSelected = currentAnswer == value;
 
     return GestureDetector(
@@ -294,29 +323,27 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
         });
       },
       child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.symmetric(vertical: 12),
+        width: size,
+        height: size,
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color.fromARGB(255, 0, 108, 82)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          shape: BoxShape.circle,
           border: Border.all(
-            color: const Color.fromARGB(255, 0, 108, 82),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
             color: isSelected
-                ? Colors.white
-                : const Color.fromARGB(255, 0, 108, 82),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
+                ? const Color.fromARGB(255, 0, 108, 82)
+                : const Color.fromARGB(255, 180, 180, 180),
+            width: 2,
           ),
+          color: isSelected
+              ? const Color.fromARGB(255, 0, 108, 82).withValues(alpha: 0.15)
+              : Colors.transparent,
         ),
+        child: isSelected
+            ? Icon(
+                Icons.check,
+                color: const Color.fromARGB(255, 0, 108, 82),
+                size: size * 0.6,
+              )
+            : null,
       ),
     );
   }
