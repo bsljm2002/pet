@@ -23,6 +23,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // 현재 선택된 탭 인덱스 (0: Home, 1: 펫 프로필)
   int _selectedTabIndex = 0;
 
+  // 센서 데이터 상태 관리
+  // null일 경우 "--"로 표시, 값이 있으면 해당 값 표시
+  double? temperature; // 온도 (°C)
+  double? humidity;    // 습도 (%)
+  int? airQuality;     // 공기질 (CAI)
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -271,8 +277,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           // 온도 값 표시 (예시: 23.5°C)
+                          // 데이터가 없으면 "--" 표시
                           Text(
-                            '23.5 °C',
+                            temperature != null ? '${temperature!.toStringAsFixed(1)} °C' : '--',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -327,8 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           // 습도 값 표시 (예시: 39.5%)
+                          // 데이터가 없으면 "--" 표시
                           Text(
-                            '39.5 %',
+                            humidity != null ? '${humidity!.toStringAsFixed(1)} %' : '--',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -383,8 +391,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           // 공기질 값 표시 (CAI 지수)
+                          // 데이터가 없으면 "--" 표시
                           Text(
-                            '52 CAI',
+                            airQuality != null ? '$airQuality CAI' : '--',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
