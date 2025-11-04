@@ -1,8 +1,8 @@
 package com.example.pet.demo.pets.domain;
 
-import jakarta.persistence.Entity;
+// import jakarta.persistence.Entity;
 
-@Entity
+// @Entity
 public class Pet {
 
 }
