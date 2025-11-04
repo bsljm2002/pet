@@ -74,21 +74,21 @@ public record UserSignupReq(
     String workingEndHours
 
 ) {
-    @AssertTrue(message = "HOSPITAL은 tin, ca_categorical, vet_specialty가 필수입니다.")
-    public boolean isHospitalValid() {
-        if (userType == UserType.HOSPITAL) {
-            return notBlank(tin) && caCategorical != null && vetSpecialty != null;
-        }
-        return true;
-    }
-    @AssertTrue(message = "SITTER는 tin, ca_categorical, petsitter_work가 필수입니다.")
-    public boolean isSitterValid() {
-        if (userType == UserType.SITTER) {
-            return notBlank(tin) && caCategorical != null && petsitterWork != null;
-        }
-        return true;
-    }
+//     @AssertTrue(message = "HOSPITAL은 tin, ca_categorical, vet_specialty가 필수입니다.")
+//     public boolean isHospitalValid() {
+//         if (userType == UserType.HOSPITAL) {
+//             return notBlank(tin) && caCategorical != null && vetSpecialty != null;
+//         }
+//         return true;
+//     }
+//     @AssertTrue(message = "SITTER는 tin, ca_categorical, petsitter_work가 필수입니다.")
+//     public boolean isSitterValid() {
+//         if (userType == UserType.SITTER) {
+//             return notBlank(tin) && caCategorical != null && petsitterWork != null;
+//         }
+//         return true;
+//     }
 
-    private boolean notBlank(String s) { return s != null && !s.isBlank(); }
+//     private boolean notBlank(String s) { return s != null && !s.isBlank(); }
 }
 
