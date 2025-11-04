@@ -11,6 +11,8 @@ class VetModel {
   final double distance; // 거리 (km)
   final bool isOpen; // 현재 영업 여부
   final String imageUrl;
+  final String description; // 수의사/병원 소개
+  final List<String> education; // 학력 사항
 
   VetModel({
     required this.id,
@@ -24,6 +26,11 @@ class VetModel {
     required this.distance,
     required this.isOpen,
     required this.imageUrl,
+    required this.description,
+    this.education = const [
+      '서울대학교 수의과대학 졸업',
+      '대한수의학회 인증 수의사',
+    ],
   });
 
   // JSON에서 객체로 변환
@@ -40,6 +47,13 @@ class VetModel {
       distance: (json['distance'] ?? 0.0).toDouble(),
       isOpen: json['isOpen'] ?? false,
       imageUrl: json['imageUrl'] ?? '',
+      description: json['description'] ?? '',
+      education: json['education'] != null
+          ? List<String>.from(json['education'])
+          : const [
+              '서울대학교 수의과대학 졸업',
+              '대한수의학회 인증 수의사',
+            ],
     );
   }
 
@@ -57,6 +71,8 @@ class VetModel {
       'distance': distance,
       'isOpen': isOpen,
       'imageUrl': imageUrl,
+      'description': description,
+      'education': education,
     };
   }
 }
