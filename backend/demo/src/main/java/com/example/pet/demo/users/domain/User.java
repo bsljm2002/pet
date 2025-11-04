@@ -31,7 +31,6 @@ import lombok.NoArgsConstructor;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long id;
 
     @Column(nullable = false, length = 20)
@@ -49,22 +48,21 @@ public class User {
     @Column(nullable = false)
     private LocalDate birthdate;
 
-    @Column(length = 255)
+    @Column(nullable = false, length = 255)
     private String address;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", nullable = false, length = 20)
-    private UserType userType;
+    @Builder.Default
+    private UserType userType = UserType.GENERAL;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private UserStatus status; 
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
 
     @Column(length = 50)
     private String tin; 
-
-    @Column(name = "business_address", length = 255)
-    private String businessAddress;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "ca_categorical", length = 10)
@@ -79,7 +77,7 @@ public class User {
     private PetsitterWork petsitterWork;
 
     @Column(name = "working_days")
-    private String workingDays; 
+    private String workingDays;
 
     @Column(name = "working_start_hours", length = 10)
     private String workingStartHours; 
