@@ -31,7 +31,9 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
   List<DateTime> _getWeekDates() {
     final today = DateTime.now();
     final firstDayOfWeek = today.subtract(Duration(days: today.weekday - 1));
-    final targetWeek = firstDayOfWeek.add(Duration(days: 7 * _calendarWeekOffset));
+    final targetWeek = firstDayOfWeek.add(
+      Duration(days: 7 * _calendarWeekOffset),
+    );
 
     return List.generate(7, (index) {
       return targetWeek.add(Duration(days: index));
@@ -74,18 +76,35 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
             ),
           ),
 
-          // 나의 반려동물 섹션
-          _buildMyPetsSection(profiles),
-
-          // 구분선
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            height: 1,
-            color: Colors.grey[300],
-          ),
-
-          // 펫 프로필 캐러셀
+          // 펫 프로필 캐러셀 (동그라미 아이콘)
           if (profiles.isNotEmpty) _buildPetCarousel(profiles),
+
+          // 반려동물과 달력 사이 간격
+          SizedBox(height: 24),
+
+          // 달력 섹션 제목
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              children: [
+                Text(
+                  '달력',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
+              ],
+            ),
+          ),
 
           // 달력 섹션
           _buildCalendarSection(),
@@ -157,7 +176,9 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                     profile.name,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isSelected ? Color(0xFF00B27A) : Colors.black87,
                     ),
                   ),
@@ -188,11 +209,14 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                 onPressed: () {
                   setState(() {
                     _calendarWeekOffset--;
+                    // 주간 오프셋에 따라 표시되는 주의 중간 날짜로 업데이트
+                    final weekDates = _getWeekDates();
+                    _selectedDate = weekDates[3]; // 수요일을 기준으로 설정
                   });
                 },
               ),
               Text(
-                '${_selectedDate.year}.${_selectedDate.month.toString().padLeft(2, '0')}',
+                '${weekDates[0].year}.${weekDates[0].month.toString().padLeft(2, '0')}',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -204,6 +228,9 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                 onPressed: () {
                   setState(() {
                     _calendarWeekOffset++;
+                    // 주간 오프셋에 따라 표시되는 주의 중간 날짜로 업데이트
+                    final weekDates = _getWeekDates();
+                    _selectedDate = weekDates[3]; // 수요일을 기준으로 설정
                   });
                 },
               ),
@@ -215,10 +242,12 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(7, (index) {
               final date = weekDates[index];
-              final isSelected = date.day == _selectedDate.day &&
+              final isSelected =
+                  date.day == _selectedDate.day &&
                   date.month == _selectedDate.month &&
                   date.year == _selectedDate.year;
-              final isToday = date.day == DateTime.now().day &&
+              final isToday =
+                  date.day == DateTime.now().day &&
                   date.month == DateTime.now().month &&
                   date.year == DateTime.now().year;
 
@@ -238,8 +267,8 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                         color: index == 0
                             ? Colors.red
                             : index == 6
-                                ? Colors.blue
-                                : Colors.grey[600],
+                            ? Colors.blue
+                            : Colors.grey[600],
                       ),
                     ),
                     SizedBox(height: 8),
@@ -252,8 +281,8 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                         color: isSelected
                             ? Color(0xFF00B27A)
                             : isToday
-                                ? Color(0xFF8ED4BD)
-                                : Colors.transparent,
+                            ? Color(0xFF8ED4BD)
+                            : Colors.transparent,
                       ),
                       alignment: Alignment.center,
                       child: Text(
@@ -263,9 +292,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                           fontWeight: isSelected || isToday
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.black87,
+                          color: isSelected ? Colors.white : Colors.black87,
                         ),
                       ),
                     ),
@@ -283,9 +310,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
   Widget _buildDiaryTabs() {
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
       ),
       child: Row(
         children: [
@@ -415,12 +440,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
   // 체중 차트
   Widget _buildWeightChart() {
     // 샘플 데이터
-    final data = {
-      '오늘': 5.2,
-      '이번주': 5.3,
-      '이번달': 5.5,
-      '전체': 5.0,
-    };
+    final data = {'오늘': 5.2, '이번주': 5.3, '이번달': 5.5, '전체': 5.0};
     final maxValue = 7.0;
 
     return Container(
@@ -498,12 +518,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
 
   // 심박수 차트
   Widget _buildHeartRateChart() {
-    final data = {
-      '오늘': 85,
-      '이번주': 88,
-      '이번달': 90,
-      '전체': 87,
-    };
+    final data = {'오늘': 85, '이번주': 88, '이번달': 90, '전체': 87};
     final maxValue = 120;
 
     return Container(
@@ -581,12 +596,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
 
   // 스트레스 차트
   Widget _buildStressChart() {
-    final data = {
-      '오늘': 3,
-      '이번주': 4,
-      '이번달': 5,
-      '전체': 4,
-    };
+    final data = {'오늘': 3, '이번주': 4, '이번달': 5, '전체': 4};
     final maxValue = 10;
 
     return Container(
@@ -708,10 +718,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           SizedBox(width: 12),
           Expanded(
@@ -729,10 +736,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                 SizedBox(height: 4),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -764,10 +768,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                 padding: EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected ? Color(0xFF00B27A) : Colors.white,
-                  border: Border.all(
-                    color: Color(0xFF00B27A),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Color(0xFF00B27A), width: 1.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -775,7 +776,9 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: isSelected ? Colors.white : Color(0xFF00B27A),
                   ),
                 ),
@@ -783,153 +786,6 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-
-  // 나의 반려동물 섹션
-  Widget _buildMyPetsSection(List<PetProfile> profiles) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 나의 반려동물 제목
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Text(
-                '나의 반려동물',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                height: 1,
-                color: Colors.grey[300],
-              ),
-            ],
-          ),
-        ),
-
-        // 반려동물 리스트
-        if (profiles.isEmpty)
-          Container(
-            padding: EdgeInsets.all(40),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.pets, size: 60, color: Colors.grey[400]),
-                  SizedBox(height: 16),
-                  Text(
-                    '등록된 반려동물이 없습니다',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: profiles.length,
-            itemBuilder: (context, index) {
-              final profile = profiles[index];
-              return _buildPetListItem(profile);
-            },
-          ),
-      ],
-    );
-  }
-
-  // 반려동물 리스트 아이템
-  Widget _buildPetListItem(PetProfile profile) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(12),
-        leading: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            image: profile.imageUrl != null
-                ? DecorationImage(
-                    image: NetworkImage(profile.imageUrl!),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-            color: Colors.grey[300],
-          ),
-          child: profile.imageUrl == null
-              ? Icon(Icons.pets, size: 30, color: Colors.grey[600])
-              : null,
-        ),
-        title: Text(
-          profile.name,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (profile.breed != null)
-              Text(
-                profile.breed!,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            if (profile.birthday != null)
-              Text(
-                '생일: ${profile.birthday}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-          ],
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Color(0xFF00B27A),
-        ),
-        onTap: () {
-          // 반려동물 상세 정보 또는 상태 보기로 이동
-          // TODO: 반려동물 상세 페이지로 네비게이션
-          setState(() {
-            _selectedPetIndex = PetProfileManager()
-                .getAllProfiles()
-                .indexWhere((p) => p.id == profile.id);
-          });
-
-          // 스크롤을 맨 위로 이동
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${profile.name}의 일기를 확인하세요'),
-              duration: Duration(seconds: 1),
-              backgroundColor: Color(0xFF00B27A),
-            ),
-          );
-        },
       ),
     );
   }

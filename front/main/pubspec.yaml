@@ -44,6 +44,9 @@ dependencies:
   # 상태 관리를 위한 Provider 패키지
   provider: ^6.1.1
 
+  # 이미지 선택 패키지 (카메라/갤러리)
+  image_picker: ^1.0.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

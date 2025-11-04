@@ -26,6 +26,7 @@ class AuthService {
     required String username,
     required String email,
     required String password,
+    String? nickname,
     String? gender,
     DateTime? birthdate,
     String? address,
@@ -57,6 +58,7 @@ class AuthService {
       username: username,
       email: email,
       password: password, // 실제로는 해시화 필요
+      nickname: nickname,
       gender: gender,
       birthdate: birthdate,
       address: address,
