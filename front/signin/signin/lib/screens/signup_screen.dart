@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kpostal/kpostal.dart';
 import 'login_screen.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -15,7 +16,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _postalCodeController = TextEditingController(); // 우편번호
+  final TextEditingController _addressController = TextEditingController(); // 전체 주소
   final TextEditingController _emailLocalController = TextEditingController();
   final TextEditingController _emailDomainController = TextEditingController();
   final TextEditingController _verificationCodeController =
@@ -24,7 +26,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _businessNumberController =
       TextEditingController();
   final TextEditingController _addressDetailController =
-      TextEditingController();
+      TextEditingController(); // 상세 주소
   final TextEditingController _addressNoteController = TextEditingController();
 
   final AuthService _authService = AuthService();
@@ -55,6 +57,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _idController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _postalCodeController.dispose();
     _addressController.dispose();
     _emailLocalController.dispose();
     _emailDomainController.dispose();
@@ -104,6 +107,25 @@ class _SignupScreenState extends State<SignupScreen> {
           isTaken ? '이미 사용 중인 아이디입니다.' : '사용 가능한 아이디입니다.',
         ),
         backgroundColor: isTaken ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  // 주소 검색 기능
+  Future<void> _searchAddress() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => KpostalView(
+          callback: (Kpostal result) {
+            setState(() {
+              // 우편번호 저장
+              _postalCodeController.text = result.postCode;
+              // 도로명 주소가 있으면 도로명 주소, 없으면 지번 주소 사용
+              _addressController.text = result.address;
+            });
+          },
+        ),
       ),
     );
   }
@@ -867,67 +889,84 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 24),
 
                 // 주소 섹션
+                const Text(
+                  '주소',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF5A6C6D),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 우편번호와 주소찾기 버튼
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '주소',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF5A6C6D),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _addressController,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 28),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: 주소찾기 로직
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3BA688),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
+                      child: TextField(
+                        controller: _postalCodeController,
+                        readOnly: true, // 읽기 전용으로 설정
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          hintText: '우편번호',
+                          hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+                          border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
                             vertical: 14,
                           ),
                         ),
-                        child: const Text(
-                          '주소찾기',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _searchAddress,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3BA688),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text(
+                        '주소찾기',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // 전체 주소
+                TextField(
+                  controller: _addressController,
+                  readOnly: true, // 읽기 전용으로 설정
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: '주소찾기 버튼을 눌러주세요',
+                    hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 12),
