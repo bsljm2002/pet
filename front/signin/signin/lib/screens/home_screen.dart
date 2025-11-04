@@ -125,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 3,
                     offset: Offset(0, 2),
                     spreadRadius: 2,
@@ -141,9 +141,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 240,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.3), // 반투명 흰색
+                        color: Colors.white.withValues(alpha: 0.3), // 반투명 흰색
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           width: 3,
                         ),
                       ),
@@ -167,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Colors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: Offset(0, 4),
                             ),
@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 4,
                           offset: Offset(0, 4),
                         ),
@@ -293,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 4,
                           offset: Offset(0, 4),
                         ),
@@ -349,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
+                          color: Colors.black.withValues(alpha: 0.15),
                           blurRadius: 4,
                           offset: Offset(0, 4),
                         ),
@@ -443,12 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.only(right: 20),
                             child: _buildPetProfile(
                               context,
-                              imageUrl:
-                                  profile.imageUrl ??
-                                  'https://picsum.photos/200',
-                              petName: profile.name,
-                              profileId: profile.id,
-                              abtiType: profile.abtiType,
+                              profile: profile,
                             ),
                           );
                         }),
@@ -472,14 +467,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 반려동물의 프로필 이미지와 이름을 원형 카드로 표시
   /// 클릭 시 해당 반려동물의 상세 정보 페이지로 이동
   ///
-  /// [imageUrl] - 반려동물 프로필 이미지 URL
-  /// [petName] - 반려동물 이름
+  /// 펫 프로필 위젯
+  /// [profile] - 펫 프로필 데이터
   Widget _buildPetProfile(
     BuildContext context, {
-    required String imageUrl,
-    required String petName,
-    String? profileId,
-    String? abtiType,
+    required PetProfile profile,
   }) {
     return GestureDetector(
       onTap: () async {
@@ -488,10 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => PetProfileDetailScreen(
-              petName: petName,
-              imageUrl: imageUrl,
-              abtiType: abtiType,
-              profileId: profileId,
+              profile: profile,
             ),
           ),
         );
@@ -508,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
@@ -517,13 +506,18 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CircleAvatar(
               radius: 40,
               backgroundColor: Color(0xFFE5E7EB),
-              backgroundImage: NetworkImage(imageUrl), // 네트워크에서 이미지 로드
+              backgroundImage: profile.imageUrl != null
+                ? NetworkImage(profile.imageUrl!)
+                : null,
+              child: profile.imageUrl == null
+                ? Icon(Icons.pets, size: 40, color: Colors.grey)
+                : null,
             ),
           ),
           SizedBox(height: 8),
           // 반려동물 이름 표시
           Text(
-            petName,
+            profile.name,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -564,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
               border: Border.all(color: Color(0xFFD1D5DB), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: Offset(0, 2),
                 ),
