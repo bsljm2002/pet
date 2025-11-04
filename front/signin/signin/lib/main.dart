@@ -1,6 +1,7 @@
 // Flutter 앱의 메인 진입점 파일
 // '숨숨루나' 반려동물 케어 애플리케이션의 루트 구성을 담당
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/pet_diary_screen.dart';
@@ -9,11 +10,19 @@ import 'screens/hospital_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/custom_app_bar.dart';
 import 'widgets/custom_bottom_nav.dart';
+import 'providers/hospital_provider.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => HospitalProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 // 앱의 최상위 위젯
@@ -29,9 +38,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Color.fromARGB(255, 0, 56, 41),
       ), // 앱 전체 테마 색상 (짙은 녹색)
       home: const SplashScreen(), // 앱의 시작 화면을 스플래시 화면으로 변경
-      routes: {
-        '/main': (context) => const MainScreen(),
-      },
+      routes: {'/main': (context) => const MainScreen()},
     );
   }
 }
