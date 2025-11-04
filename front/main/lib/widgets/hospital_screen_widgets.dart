@@ -4,6 +4,7 @@ import '../providers/hospital_provider.dart';
 import '../models/vet_model.dart';
 import '../pages/reservation_request_page.dart';
 import '../pages/consultation_request_page.dart';
+import '../pages/vet_profile_page.dart';
 
 /// 동물병원 화면에서 사용되는 위젯들을 모아둔 클래스
 ///
@@ -497,6 +498,14 @@ class _VetStackedListState extends State<_VetStackedList>
     }
   }
 
+  void _openVetProfile(BuildContext context, VetModel vet) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VetProfilePage(vet: vet),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -539,48 +548,56 @@ class _VetStackedListState extends State<_VetStackedList>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      CircleAvatar(
-                        radius: isExpanded ? 28 : 24,
-                        backgroundColor: const Color(0xFFE6F7F1),
-                        backgroundImage: (vet.imageUrl.isNotEmpty)
-                            ? NetworkImage(vet.imageUrl) as ImageProvider
-                            : null,
-                        onBackgroundImageError: (vet.imageUrl.isNotEmpty)
-                            ? (exception, stackTrace) {
-                                // 이미지 로드 실패 시 기본 아이콘 표시
-                              }
-                            : null,
-                        child: vet.imageUrl.isEmpty
-                            ? Icon(
-                                Icons.local_hospital_outlined,
-                                color: const Color(0xFF4FC59E),
-                                size: isExpanded ? 26 : 22,
-                              )
-                            : null,
+                      GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () => _openVetProfile(context, vet),
+                        child: CircleAvatar(
+                          radius: isExpanded ? 28 : 24,
+                          backgroundColor: const Color(0xFFE6F7F1),
+                          backgroundImage: (vet.imageUrl.isNotEmpty)
+                              ? NetworkImage(vet.imageUrl) as ImageProvider
+                              : null,
+                          onBackgroundImageError: (vet.imageUrl.isNotEmpty)
+                              ? (exception, stackTrace) {
+                                  // 이미지 로드 실패 시 기본 아이콘 표시
+                                }
+                              : null,
+                          child: vet.imageUrl.isEmpty
+                              ? Icon(
+                                  Icons.local_hospital_outlined,
+                                  color: const Color(0xFF4FC59E),
+                                  size: isExpanded ? 26 : 22,
+                                )
+                              : null,
+                        ),
                       ),
                       const SizedBox(width: 18),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              vet.name,
-                              style: TextStyle(
-                                fontSize: isExpanded ? 21 : 16,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF003829),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () => _openVetProfile(context, vet),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vet.name,
+                                style: TextStyle(
+                                  fontSize: isExpanded ? 21 : 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF003829),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              vet.doctorName ?? '담당 수의사 미정',
-                              style: TextStyle(
-                                fontSize: isExpanded ? 16 : 14,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF4FC59E),
+                              const SizedBox(height: 6),
+                              Text(
+                                vet.doctorName ?? '담당 수의사 미정',
+                                style: TextStyle(
+                                  fontSize: isExpanded ? 16 : 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF4FC59E),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       AnimatedOpacity(

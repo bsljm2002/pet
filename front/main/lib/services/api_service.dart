@@ -91,6 +91,7 @@ class ApiService {
         distance: 0.6,
         isOpen: true,
         imageUrl: '',
+        description: "응애 나 의사임ㅋㅋㅋ 꿀팁 주지ㅋㅋㅋ",
       ),
       VetModel(
         id: '2',
@@ -104,6 +105,7 @@ class ApiService {
         distance: 1.1,
         isOpen: true,
         imageUrl: 'https://example.com/vet2.jpg',
+        description: '야구선수 이도현입니다. 초강력 직구를 바탕으로 머리를 띵~ 리셋해주겠어!!',
       ),
       VetModel(
         id: '3',
@@ -117,6 +119,7 @@ class ApiService {
         distance: 2.3,
         isOpen: true,
         imageUrl: 'https://example.com/vet3.jpg',
+        description: '와가 코코리니 코타에로, 오레노 나미다가 코보레루',
       ),
       VetModel(
         id: '4',
@@ -130,6 +133,8 @@ class ApiService {
         distance: 3.1,
         isOpen: true,
         imageUrl: 'https://example.com/vet4.jpg',
+        description:
+            '24시간 응급진료 시스템으로 언제나 반려동물을 지킵니다. 응급의학과 중환자 치료 전문의가 상주하여 위급한 상황에서도 신속하고 정확한 치료를 제공합니다.',
       ),
       VetModel(
         id: '5',
@@ -143,6 +148,8 @@ class ApiService {
         distance: 2.9,
         isOpen: false,
         imageUrl: '',
+        description:
+            '반려동물의 구강 건강과 시력 보호에 특화된 진료를 제공합니다. 예방접종과 정기검진을 통해 질병 예방에 힘쓰며, 건강한 삶을 위한 맞춤 상담을 진행합니다.',
       ),
       VetModel(
         id: '6',
@@ -156,6 +163,8 @@ class ApiService {
         distance: 12.2,
         isOpen: true,
         imageUrl: 'https://example.com/vet6.jpg',
+        description:
+            '첨단 의료장비와 재활 시설을 갖춘 종합 동물병원입니다. 초음파 진단과 재활의학 분야의 전문가로서 정확한 진단과 체계적인 치료 계획을 제공합니다.',
       ),
       VetModel(
         id: '7',
@@ -169,6 +178,8 @@ class ApiService {
         distance: 27.6,
         isOpen: true,
         imageUrl: 'https://example.com/vet7.jpg',
+        description:
+            '피부 질환 전문 치료와 노령 반려동물 케어에 특화된 병원입니다. 10년 이상의 피부과 진료 경험을 바탕으로 알레르기부터 만성 피부염까지 체계적으로 관리합니다.',
       ),
       VetModel(
         id: '8',
@@ -182,6 +193,8 @@ class ApiService {
         distance: 25.8,
         isOpen: true,
         imageUrl: 'https://example.com/vet8.jpg',
+        description:
+            '외과 수술과 정형외과 치료의 전문가입니다. 무균 수술실과 최신 마취 시스템을 통해 안전하고 정밀한 수술을 제공하며, 수술 후 관리까지 책임집니다.',
       ),
       VetModel(
         id: '9',
@@ -195,6 +208,8 @@ class ApiService {
         distance: 20.9,
         isOpen: false,
         imageUrl: 'https://example.com/vet9.jpg',
+        description:
+            '예방의학과 노령 고양이 전문 케어에 집중하는 병원입니다. 정기 건강검진과 맞춤형 예방접종 스케줄을 통해 반려묘의 건강한 노년을 책임집니다.',
       ),
       VetModel(
         id: '10',
@@ -208,6 +223,8 @@ class ApiService {
         distance: 325.4,
         isOpen: true,
         imageUrl: 'https://example.com/vet10.jpg',
+        description:
+            '부산 지역 유일의 24시간 응급의료센터입니다. 중환자실과 첨단 영상의학 장비를 갖추고 있어 위급한 상황에서도 신속하고 전문적인 치료가 가능합니다.',
       ),
       VetModel(
         id: '11',
@@ -221,6 +238,8 @@ class ApiService {
         distance: 238.6,
         isOpen: true,
         imageUrl: 'https://example.com/vet11.jpg',
+        description:
+            '대구 지역 대표 동물의료기관으로 내과, 피부과, 안과 전문진료를 제공합니다. 풍부한 임상경험을 바탕으로 정확한 진단과 효과적인 치료를 약속드립니다.',
       ),
       VetModel(
         id: '12',
@@ -234,6 +253,8 @@ class ApiService {
         distance: 298.4,
         isOpen: true,
         imageUrl: 'https://example.com/vet12.jpg',
+        description:
+            '광주 지역의 신뢰받는 동물의료센터입니다. 외과 수술과 치과 치료에 특화되어 있으며, 반려동물의 구강 건강부터 복합 수술까지 전문적으로 진료합니다.',
       ),
       VetModel(
         id: '13',
@@ -247,6 +268,8 @@ class ApiService {
         distance: 163.8,
         isOpen: true,
         imageUrl: 'https://example.com/vet13.jpg',
+        description:
+            '안과 전문의로서 백내장, 녹내장 등 다양한 안질환 치료에 전문성을 갖추고 있습니다. 첨단 안과 장비를 통한 정밀 진단과 맞춤 치료를 제공합니다.',
       ),
       VetModel(
         id: '14',
@@ -260,6 +283,8 @@ class ApiService {
         distance: 304.9,
         isOpen: true,
         imageUrl: 'https://example.com/vet14.jpg',
+        description:
+            '정형외과와 스포츠의학 전문 동물병원입니다. 수술용 관절경과 재활 장비를 갖추어 운동성 부상부터 관절 질환까지 체계적으로 치료합니다.',
       ),
       VetModel(
         id: '15',
@@ -273,6 +298,8 @@ class ApiService {
         distance: 451.8,
         isOpen: true,
         imageUrl: 'https://example.com/vet15.jpg',
+        description:
+            '제주도의 대표 동물병원으로 청정 자연환경에서 반려동물의 건강을 지킵니다. 알레르기성 피부염과 아토피 치료에 특화되어 있으며, 자연친화적 치료법을 병행합니다.',
       ),
       VetModel(
         id: '16',
@@ -286,6 +313,8 @@ class ApiService {
         distance: 27.1,
         isOpen: false,
         imageUrl: 'https://example.com/vet16.jpg',
+        description:
+            '예방의학과 영양 관리에 특화된 동물병원입니다. 반려동물의 생애주기별 맞춤 건강 관리와 전문 영양사의 식단 상담을 통해 평생 건강을 책임집니다.',
       ),
       VetModel(
         id: '17',
@@ -299,6 +328,8 @@ class ApiService {
         distance: 32.5,
         isOpen: true,
         imageUrl: 'https://example.com/vet17.jpg',
+        description:
+            '노령 반려동물의 전문적인 케어와 관리에 집중하는 병원입니다. 관절염, 신장질환 등 노화 관련 질환의 조기 발견과 맞춤 치료로 건강한 노년을 돕습니다.',
       ),
       VetModel(
         id: '18',
@@ -312,6 +343,8 @@ class ApiService {
         distance: 61.8,
         isOpen: true,
         imageUrl: 'https://example.com/vet18.jpg',
+        description:
+            '정형외과 수술과 재활치료의 통합 의료센터입니다. CT, MRI 등 첨단 영상진단 장비를 보유하여 정확한 진단을 바탕으로 한 맞춤형 치료 계획을 제공합니다.',
       ),
       VetModel(
         id: '19',
@@ -325,6 +358,8 @@ class ApiService {
         distance: 88.7,
         isOpen: true,
         imageUrl: 'https://example.com/vet19.jpg',
+        description:
+            '치과 전문 진료와 안과 질환 치료에 특화된 병원입니다. 치석제거부터 발치수술까지, 그리고 각막염부터 백내장까지 전문적인 치료를 제공합니다.',
       ),
       VetModel(
         id: '20',
@@ -338,6 +373,8 @@ class ApiService {
         distance: 206.8,
         isOpen: true,
         imageUrl: 'https://example.com/vet20.jpg',
+        description:
+            '전라북도 대표 동물의료원으로 외과 수술과 초음파 진단에 뛰어난 전문성을 갖추고 있습니다. 복강경 수술 등 최소침습 수술법으로 빠른 회복을 돕습니다.',
       ),
       VetModel(
         id: '21',
@@ -351,6 +388,8 @@ class ApiService {
         distance: 285.9,
         isOpen: true,
         imageUrl: 'https://example.com/vet21.jpg',
+        description:
+            '고양이 전문 진료와 피부 질환 치료에 특화된 병원입니다. 특히 노령묘의 만성질환 관리와 생활환경 개선을 통한 홀리스틱 케어를 제공합니다.',
       ),
       VetModel(
         id: '22',
@@ -364,6 +403,8 @@ class ApiService {
         distance: 313.2,
         isOpen: false,
         imageUrl: 'https://example.com/vet22.jpg',
+        description:
+            '경남 지역 최대 규모의 동물의료센터입니다. 내과부터 정형외과까지 원스톱 진료 시스템을 갖추고 있으며, 수술 후 재활 프로그램까지 체계적으로 관리합니다.',
       ),
     ];
   }
