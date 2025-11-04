@@ -1,5 +1,7 @@
 package com.example.pet.demo.users.app;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,7 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.pet.demo.users.api.dto.UserSignupReq;
 import com.example.pet.demo.users.domain.User.UserStatus;
 import com.example.pet.demo.users.domain.User.UserType;
-import com.example.pet.demo.users.domain.UserRepository;
+import com.example.pet.demo.users.domain.port.UserPersistencePort;
+import com.example.pet.demo.users.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-    private final UserRepository users;
+    private final UserPersistencePort users;
     private final PasswordEncoder passwordEncoder;
 
     public Long signup(UserSignupReq req) {
@@ -28,7 +31,11 @@ public class UserService {
         String hashed = passwordEncoder.encode(req.password());
 
         // 3) 근무 요일 CSV 변환 (["월","화"] -> "월,화")
-        String workingDaysCsv = toCsv(req.workingDays());
+        // 근무 요일 CSV 변환은 병원/펫시터에만 적용
+        final String workingDaysCsv =
+                (req.userType() == UserType.HOSPITAL || req.userType() == UserType.SITTER)
+                ? toCsv(req.workingDays())
+                : null;
 
         // 4) userType별 필드 정리
         //    GENERAL은 파트너 전용 필드 무시(null), HOSPITAL/SITTER는 DTO에서 이미 유효성 검증했다고 가정
@@ -37,27 +44,38 @@ public class UserService {
         User.CaCategorical caCat = null;
         User.VetSpecialty vet = null;
         User.PetsitterWork sitterWork = null;
+        String start = null;
+        String end = null;
 
         switch (type) {
             case GENERAL -> {
-                // 파트너 전용 필드는 저장하지 않음
+                tin = null; caCat = null; vet = null; sitterWork = null;
+                start = null; end = null; // 근무시간 저장 금지
             }
             case HOSPITAL -> {
                 tin = req.tin();
                 caCat = req.caCategorical();
                 vet = req.vetSpecialty();
+                start = req.workingStartHours();
+                end = req.workingEndHours();
             }
             case SITTER -> {
                 tin = req.tin();
                 caCat = req.caCategorical();
                 sitterWork = req.petsitterWork();
+                start = req.workingStartHours();
+                end = req.workingEndHours();
             }
             // 필요 시 다른 타입(SELLER/GROOMING/CAFE)도 추가
+            case SELLER, GROOMING, CAFE -> {
+                // 파트너 전용 필드 저장 금지
+            }
         }
 
         // 5) 엔티티 생성
         User user = User.builder()
                 .username(req.username())
+                .nickname(req.nickname())
                 .email(req.email())
                 .password(hashed)
                 .gender(req.gender())
@@ -65,8 +83,7 @@ public class UserService {
                 .address(req.address())
                 .userType(type)                  // 기본값 GENERAL이지만 DTO에 맞춰 설정
                 .status(UserStatus.ACTIVE)       // 기본 활성
-                .tin(tin)
-                .businessAddress(null)           // 필요 시 DTO에 추가해 매핑
+                .tin(tin)        
                 .caCategorical(caCat)
                 .vetSpecialty(vet)
                 .petsitterWork(sitterWork)
@@ -79,6 +96,10 @@ public class UserService {
 
         // 6) 저장 및 ID 반환
         return users.save(user).getId();
+    }
+
+    private String toCsv(List<String> days) {
+        return (days == null || days.isEmpty()) ? null : String.join(",", days);
     }
 
 }
