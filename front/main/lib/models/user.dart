@@ -5,6 +5,7 @@ class User {
   final String username;
   final String email;
   final String password;
+  final String? nickname; // 닉네임
   final String? gender;
   final DateTime? birthdate;
   final String? address;
@@ -19,6 +20,7 @@ class User {
     required this.username,
     required this.email,
     required this.password,
+    this.nickname,
     this.gender,
     this.birthdate,
     this.address,
@@ -36,6 +38,7 @@ class User {
       'username': username,
       'email': email,
       'password': password,
+      'nickname': nickname,
       'gender': gender,
       'birthdate': birthdate?.toIso8601String(),
       'address': address,
@@ -54,6 +57,7 @@ class User {
       username: json['username'] as String,
       email: json['email'] as String,
       password: json['password'] as String,
+      nickname: json['nickname'] as String?,
       gender: json['gender'] as String?,
       birthdate: json['birthdate'] != null
           ? DateTime.parse(json['birthdate'] as String)
@@ -76,6 +80,7 @@ class User {
     String? username,
     String? email,
     String? password,
+    String? nickname,
     String? gender,
     DateTime? birthdate,
     String? address,
@@ -90,6 +95,7 @@ class User {
       username: username ?? this.username,
       email: email ?? this.email,
       password: password ?? this.password,
+      nickname: nickname ?? this.nickname,
       gender: gender ?? this.gender,
       birthdate: birthdate ?? this.birthdate,
       address: address ?? this.address,
