@@ -47,7 +47,9 @@ class MyApp extends StatelessWidget {
 // 하단 네비게이션 바와 여러 화면을 관리하는 컨테이너 역할
 // StatefulWidget으로 화면 전환 시 상태를 관리
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex; // 초기 탭 인덱스
+
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -57,7 +59,13 @@ class MainScreen extends StatefulWidget {
 // 현재 선택된 탭과 화면을 추적하고 전환을 처리
 class _MainScreenState extends State<MainScreen> {
   // 현재 선택된 하단 네비게이션 바 탭의 인덱스
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex; // 초기 인덱스 설정
+  }
 
   // 각 탭에 해당하는 화면들의 리스트
   // 0: 홈, 1: 펫 일기, 2: AI 진단, 3: 동물병원, 4: 설정
