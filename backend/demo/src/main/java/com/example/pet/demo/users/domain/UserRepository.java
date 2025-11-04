@@ -1,8 +1,7 @@
 package com.example.pet.demo.users.domain;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-@Repository
-public class UserRepository {
-
+public interface UserRepository extends JpaRepository<User, Long>{
+    boolean existsByEmail(String email);
 }
