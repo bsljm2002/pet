@@ -15,7 +15,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+
 import jakarta.persistence.Table;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,6 +31,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EntityListeners(AuditingEntityListener.class)
+
 @Table(name = "users")
 public class User {
     @Id
@@ -58,6 +61,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", nullable = false, length = 20)
+
     @Builder.Default
     private UserType userType = UserType.GENERAL;
 
