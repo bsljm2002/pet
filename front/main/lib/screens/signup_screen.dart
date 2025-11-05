@@ -13,7 +13,7 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen>
     with SingleTickerProviderStateMixin {
-  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController(); // 성명
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
@@ -22,8 +22,6 @@ class _SignupScreenState extends State<SignupScreen>
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _emailLocalController = TextEditingController();
   final TextEditingController _emailDomainController = TextEditingController();
-  final TextEditingController _verificationCodeController =
-      TextEditingController();
   final TextEditingController _companyNameController = TextEditingController();
   final TextEditingController _businessNumberController =
       TextEditingController();
@@ -36,22 +34,21 @@ class _SignupScreenState extends State<SignupScreen>
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isCustomDomain = false;
-  bool _isVerificationSent = false;
-  bool _isVerified = false;
   bool _isPartnerSignup = false;
-  bool _isIdChecked = false; // 중복확인 여부
+  bool _isEmailChecked = false; // 이메일 중복확인 여부
 
   String? _selectedYear;
   String? _selectedMonth;
   String? _selectedDay;
   String? _selectedEmailDomain;
+  String? _selectedGender;
 
   // 회원가입 단계 관리
   // 0: 회원 유형 선택
-  // 1: 아이디 입력
+  // 1: 이메일 입력 및 중복확인
   // 2: 비밀번호 입력
   // 3: 비밀번호 확인
-  // 4: 이메일 입력 및 인증
+  // 4: 성명 입력
   // 5: 추가 정보 입력 (생년월일/법인정보, 주소 등)
   int _signupStep = 0;
 
@@ -101,7 +98,7 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   void dispose() {
     _animationController.dispose();
-    _idController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _nicknameController.dispose();
@@ -109,7 +106,6 @@ class _SignupScreenState extends State<SignupScreen>
     _addressController.dispose();
     _emailLocalController.dispose();
     _emailDomainController.dispose();
-    _verificationCodeController.dispose();
     _companyNameController.dispose();
     _businessNumberController.dispose();
     _addressDetailController.dispose();
@@ -146,7 +142,7 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   void _checkIdDuplicate() {
-    final username = _idController.text.trim();
+    final username = _nameController.text.trim();
 
     if (username.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +155,7 @@ class _SignupScreenState extends State<SignupScreen>
 
     if (!isTaken) {
       setState(() {
-        _isIdChecked = true;
+        _isEmailChecked = true;
       });
     }
 
@@ -173,22 +169,87 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  void _sendVerificationCode() {
-    setState(() {
-      _isVerificationSent = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('인증 코드가 전송되었습니다.')),
-    );
-  }
+  Future<void> _checkEmailDuplicate() async {
+    // 이메일 입력값 검증
+    if (_emailLocalController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이메일을 입력해주세요.')),
+      );
+      return;
+    }
 
-  void _verifyCode() {
-    setState(() {
-      _isVerified = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이메일 인증이 완료되었습니다.')),
-    );
+    String domain;
+    if (_isCustomDomain) {
+      if (_emailDomainController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일 도메인을 입력해주세요.')),
+        );
+        return;
+      }
+      domain = _emailDomainController.text.trim();
+    } else {
+      if (_selectedEmailDomain == null || _selectedEmailDomain!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일 도메인을 선택해주세요.')),
+        );
+        return;
+      }
+      domain = _selectedEmailDomain!;
+    }
+
+    String fullEmail = '${_emailLocalController.text.trim()}@$domain';
+
+    // 이메일 형식 검증
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(fullEmail)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('올바른 이메일 형식이 아닙니다.')),
+      );
+      return;
+    }
+
+    // 백엔드 API를 호출하여 이메일 중복 확인
+    final result = await _authService.checkEmailDuplicate(fullEmail);
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      bool exists = result['exists'] ?? false;
+
+      if (exists) {
+        // 이메일이 이미 존재함 (중복)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? '이미 사용 중인 이메일입니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isEmailChecked = false;
+        });
+      } else {
+        // 이메일 사용 가능
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? '사용 가능한 이메일입니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() {
+          _isEmailChecked = true;
+        });
+      }
+    } else {
+      // API 호출 실패
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? '이메일 확인에 실패했습니다.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        _isEmailChecked = false;
+      });
+    }
   }
 
   Future<void> _searchAddress() async {
@@ -207,25 +268,6 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // 단계 1: 아이디 입력 완료 및 다음 단계로 진행
-  void _proceedFromId() {
-    if (_idController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아이디를 입력해주세요.')),
-      );
-      return;
-    }
-
-    if (!_isIdChecked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아이디 중복확인을 해주세요.')),
-      );
-      return;
-    }
-
-    _changeStep(2); // 비밀번호 입력 단계로
-  }
-
   // 단계 2: 비밀번호 입력 완료 및 다음 단계로 진행
   void _proceedFromPassword() {
     if (_passwordController.text.isEmpty) {
@@ -235,9 +277,9 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    if (_passwordController.text.length < 6) {
+    if (_passwordController.text.length < 8) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호는 6자 이상이어야 합니다.')),
+        const SnackBar(content: Text('비밀번호는 8자 이상이어야 합니다.')),
       );
       return;
     }
@@ -261,10 +303,10 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    _changeStep(4); // 이메일 입력 단계로
+    _changeStep(4); // 성명 입력 단계로
   }
 
-  // 단계 4: 이메일 입력 완료 및 다음 단계로 진행
+  // 단계 1: 이메일 입력 완료 및 다음 단계로 진행
   void _proceedFromEmail() {
     if (_emailLocalController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -288,26 +330,58 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    if (!_isVerified) {
+    // 이메일 중복확인 검증
+    if (!_isEmailChecked) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이메일 인증을 완료해주세요.')),
+        const SnackBar(content: Text('이메일 중복확인을 해주세요.')),
       );
       return;
     }
 
-    _changeStep(5); // 추가 정보 입력 단계로
+    _changeStep(2); // 비밀번호 입력 단계로
   }
 
   Future<void> _handleSignup() async {
+    print('=== 회원가입 시작 ===');
+
     // 이메일 도메인 확인
     String emailDomain;
     if (_isCustomDomain) {
       emailDomain = _emailDomainController.text.trim();
+      if (emailDomain.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일 도메인을 입력해주세요.')),
+        );
+        return;
+      }
     } else {
+      if (_selectedEmailDomain == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이메일 도메인을 선택해주세요.')),
+        );
+        return;
+      }
       emailDomain = _selectedEmailDomain!;
     }
 
     final fullEmail = '${_emailLocalController.text.trim()}@$emailDomain';
+    print('이메일: $fullEmail');
+
+    // 닉네임 확인 (필수)
+    if (_nicknameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('닉네임을 입력해주세요.')),
+      );
+      return;
+    }
+
+    // 성별 확인 (필수)
+    if (_selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('성별을 선택해주세요.')),
+      );
+      return;
+    }
 
     // 생년월일 또는 법인 정보 확인
     DateTime? birthdate;
@@ -347,14 +421,20 @@ class _SignupScreenState extends State<SignupScreen>
       businessNumber = _businessNumberController.text.trim();
     }
 
+    print('회원가입 요청 데이터:');
+    print('- username: ${_nameController.text.trim()}');
+    print('- nickname: ${_nicknameController.text.trim()}');
+    print('- gender: $_selectedGender');
+    print('- birthdate: $birthdate');
+
     // 회원가입 처리
     final result = await _authService.signUp(
-      username: _idController.text.trim(),
+      username: _nameController.text.trim(),
       email: fullEmail,
       password: _passwordController.text,
-      nickname: _nicknameController.text.trim().isNotEmpty
-          ? _nicknameController.text.trim()
-          : null,
+      userType: _isPartnerSignup ? UserType.seller : UserType.general,
+      nickname: _nicknameController.text.trim(),
+      gender: _selectedGender!,
       birthdate: birthdate,
       address: _addressController.text.trim().isNotEmpty
           ? _addressController.text.trim()
@@ -365,7 +445,6 @@ class _SignupScreenState extends State<SignupScreen>
       addressNote: _addressNoteController.text.trim().isNotEmpty
           ? _addressNoteController.text.trim()
           : null,
-      userType: _isPartnerSignup ? UserType.seller : UserType.general,
       companyName: companyName,
       businessNumber: businessNumber,
     );
@@ -477,13 +556,13 @@ class _SignupScreenState extends State<SignupScreen>
       case 0:
         return _buildUserTypeSelection();
       case 1:
-        return _buildIdInput();
+        return _buildEmailInput(); // 이메일 입력 (중복확인)
       case 2:
         return _buildPasswordInput();
       case 3:
         return _buildConfirmPasswordInput();
       case 4:
-        return _buildEmailInput();
+        return _buildNameInput(); // 성명 입력
       case 5:
         return _buildAdditionalInfo();
       default:
@@ -593,13 +672,14 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   // 단계 1: 아이디 입력
-  Widget _buildIdInput() {
+  // 단계 4: 성명 입력
+  Widget _buildNameInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Center(
           child: Text(
-            '아이디를 입력하세요',
+            '성명을 입력하세요',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -609,7 +689,7 @@ class _SignupScreenState extends State<SignupScreen>
         ),
         const SizedBox(height: 40),
         const Text(
-          '아이디',
+          '성명',
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF5A6C6D),
@@ -617,61 +697,38 @@ class _SignupScreenState extends State<SignupScreen>
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _idController,
-                autofocus: true,
-                onChanged: (_) {
-                  setState(() {
-                    _isIdChecked = false;
-                  });
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-              ),
+        TextField(
+          controller: _nameController,
+          autofocus: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            hintText: '이름을 입력하세요',
+            hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
             ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: _checkIdDuplicate,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3BA688),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
-              child: const Text(
-                '중복확인',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _proceedFromId,
+            onPressed: () {
+              if (_nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('성명을 입력해주세요.')),
+                );
+                return;
+              }
+              _changeStep(5); // 추가 정보 입력 단계로
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3BA688),
               foregroundColor: Colors.white,
@@ -857,7 +914,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // 단계 4: 이메일 입력 및 인증
+  // 단계 1: 이메일 입력 및 중복확인
   Widget _buildEmailInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -889,6 +946,11 @@ class _SignupScreenState extends State<SignupScreen>
               child: TextField(
                 controller: _emailLocalController,
                 autofocus: true,
+                onChanged: (_) {
+                  setState(() {
+                    _isEmailChecked = false; // 이메일 변경 시 중복확인 초기화
+                  });
+                },
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -921,6 +983,11 @@ class _SignupScreenState extends State<SignupScreen>
               child: _isCustomDomain
                   ? TextField(
                       controller: _emailDomainController,
+                      onChanged: (_) {
+                        setState(() {
+                          _isEmailChecked = false;
+                        });
+                      },
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
@@ -954,17 +1021,19 @@ class _SignupScreenState extends State<SignupScreen>
                       ),
                       items: _emailDomains.map((domain) {
                         return DropdownMenuItem(
-                          value: domain,
+                          value: domain == '직접 입력' ? null : domain,
                           child: Text(domain),
                         );
                       }).toList(),
                       onChanged: (value) {
                         setState(() {
-                          if (value == '직접 입력') {
+                          _isEmailChecked = false;
+                          if (value == null) {
                             _isCustomDomain = true;
                             _selectedEmailDomain = null;
                             _emailDomainController.clear();
                           } else {
+                            _isCustomDomain = false;
                             _selectedEmailDomain = value;
                           }
                         });
@@ -974,13 +1043,15 @@ class _SignupScreenState extends State<SignupScreen>
           ],
         ),
         const SizedBox(height: 16),
+        // 중복확인 버튼
         Align(
           alignment: Alignment.centerRight,
           child: ElevatedButton(
-            onPressed: _isVerified ? null : _sendVerificationCode,
+            onPressed: _checkEmailDuplicate,
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  _isVerified ? const Color(0xFFCCCCCC) : const Color(0xFF3BA688),
+              backgroundColor: _isEmailChecked
+                  ? const Color(0xFFCCCCCC)
+                  : const Color(0xFF3BA688),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -991,7 +1062,7 @@ class _SignupScreenState extends State<SignupScreen>
               ),
             ),
             child: Text(
-              _isVerified ? '인증완료' : '인증받기',
+              _isEmailChecked ? '확인완료' : '중복확인',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -999,55 +1070,6 @@ class _SignupScreenState extends State<SignupScreen>
             ),
           ),
         ),
-        if (_isVerificationSent && !_isVerified) ...[
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _verificationCodeController,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: '인증 코드',
-                    hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: _verifyCode,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3BA688),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                ),
-                child: const Text(
-                  '확인',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
@@ -1092,9 +1114,9 @@ class _SignupScreenState extends State<SignupScreen>
         ),
         const SizedBox(height: 40),
 
-        // 닉네임 (선택사항)
+        // 닉네임 (필수)
         const Text(
-          '닉네임 (선택)',
+          '닉네임 *',
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF5A6C6D),
@@ -1116,6 +1138,46 @@ class _SignupScreenState extends State<SignupScreen>
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // 성별 선택 (필수)
+        const Text(
+          '성별 *',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF5A6C6D),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedGender,
+              hint: const Text(
+                '성별을 선택하세요',
+                style: TextStyle(color: Color(0xFFB0B8B8)),
+              ),
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'MALE', child: Text('남성')),
+                DropdownMenuItem(value: 'FEMALE', child: Text('여성')),
+                DropdownMenuItem(value: 'OTHER', child: Text('기타')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedGender = value;
+                });
+              },
             ),
           ),
         ),
@@ -1408,7 +1470,10 @@ class _SignupScreenState extends State<SignupScreen>
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _handleSignup,
+            onPressed: () {
+              print('🔥🔥🔥 회원가입 버튼 클릭됨! 🔥🔥🔥');
+              _handleSignup();
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3BA688),
               foregroundColor: Colors.white,

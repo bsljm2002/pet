@@ -97,9 +97,30 @@ public class UserService {
         // 6) 저장 및 ID 반환
         return users.save(user).getId();
     }
+    public User login(String email, String password){
+        //1. email로 사용자 찾기
+        User user = users.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다."));
+        // 2. 비밀번호 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 3. 계정 상태 확인 (선택사항)
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("비활성화된 계정입니다.");
+        }
+
+        // 4. 로그인 성공 - User 엔티티 반환
+        return user;
+    }
 
     private String toCsv(List<String> days) {
         return (days == null || days.isEmpty()) ? null : String.join(",", days);
+    }
+
+    public boolean checkEmailExists(String email) {
+        return users.existsByEmail(email);
     }
 
 }

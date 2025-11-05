@@ -10,13 +10,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
-  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
   // 로그인 단계 관리
   // 0: 초기 화면 (로고 + 다른 방법으로 로그인)
-  // 1: 아이디 입력
+  // 1: 이메일 입력
   // 2: 비밀번호 입력
   int _loginStep = 0;
 
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void dispose() {
     _animationController.dispose();
-    _idController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -95,14 +95,23 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _changeStep(1);
   }
 
-  // 아이디 확인 및 다음 단계로 진행
+  // 이메일 확인 및 다음 단계로 진행
   void _proceedToPassword() {
-    if (_idController.text.trim().isEmpty) {
+    if (_emailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아이디를 입력해주세요.')),
+        const SnackBar(content: Text('이메일을 입력해주세요.')),
       );
       return;
     }
+
+    // 이메일 형식 검증
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('올바른 이메일 형식이 아닙니다.')),
+      );
+      return;
+    }
+
     _changeStep(2);
   }
 
@@ -112,16 +121,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _passwordController.clear();
       _changeStep(1);
     } else if (_loginStep == 1) {
-      _idController.clear();
+      _emailController.clear();
       _changeStep(0);
     }
   }
 
   Future<void> _handleLogin() async {
     // 입력값 검증
-    if (_idController.text.trim().isEmpty) {
+    if (_emailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('아이디를 입력해주세요.')),
+        const SnackBar(content: Text('이메일을 입력해주세요.')),
       );
       return;
     }
@@ -133,9 +142,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       return;
     }
 
-    // 로그인 처리
+    // 로그인 처리 (이메일로 로그인)
     final result = await _authService.login(
-      username: _idController.text.trim(),
+      username: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -212,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: _loginStep == 0
                             ? _buildInitialScreen()
                             : _loginStep == 1
-                                ? _buildIdInputScreen()
+                                ? _buildEmailInputScreen()
                                 : _buildPasswordInputScreen(),
                       ),
                     ),
@@ -388,15 +397,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  // 아이디 입력 화면
-  Widget _buildIdInputScreen() {
+  // 이메일 입력 화면
+  Widget _buildEmailInputScreen() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 제목
         const Center(
           child: Text(
-            '아이디를 입력하세요',
+            '이메일을 입력하세요',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -407,9 +416,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
         const SizedBox(height: 40),
 
-        // 아이디 라벨
+        // 이메일 라벨
         const Text(
-          '아이디',
+          '이메일',
           style: TextStyle(
             fontSize: 14,
             color: Color(0xFF5A6C6D),
@@ -418,14 +427,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         ),
         const SizedBox(height: 8),
 
-        // 아이디 입력 필드
+        // 이메일 입력 필드
         TextField(
-          controller: _idController,
+          controller: _emailController,
           autofocus: true,
+          keyboardType: TextInputType.emailAddress,
           onSubmitted: (_) => _proceedToPassword(),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
+            hintText: 'example@email.com',
+            hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -548,7 +560,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Center(
           child: TextButton(
             onPressed: () {
-              _idController.clear();
+              _emailController.clear();
               _passwordController.clear();
               _changeStep(0);
             },
