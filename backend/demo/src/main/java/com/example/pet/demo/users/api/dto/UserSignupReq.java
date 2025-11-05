@@ -32,10 +32,12 @@ public record UserSignupReq(
     @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     @Size(max = 255, message = "이메일은 255자 이하입니다.")
+
     String email,
 
     @NotBlank(message = "비밀번호는 필수입니다.")
     @Size(min = 8, max = 64, message = "비밀번호는 8~64자입니다.")
+
     // 필요한 경우 복잡도 정책 추가:
     // @Pattern(regexp="^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}\\[\\]|:;\"'<>,.?/]).{8,64}$",
     //          message="비밀번호는 문자/숫자/특수문자를 각각 1자 이상 포함해야 합니다.")
@@ -91,4 +93,5 @@ public record UserSignupReq(
 
 //     private boolean notBlank(String s) { return s != null && !s.isBlank(); }
 }
+
 
