@@ -1,0 +1,21 @@
+package com.example.pet.demo.users.infra.jpa;
+
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
+import com.example.pet.demo.users.domain.User;
+import com.example.pet.demo.users.domain.port.UserPersistencePort;
+
+import lombok.RequiredArgsConstructor;
+
+@Repository
+@RequiredArgsConstructor
+public class UserJpaAdapter implements UserPersistencePort  {
+    private final UserJpaRepository jpa;
+
+    @Override public boolean existsByEmail(String email) { return jpa.existsByEmail(email); }
+    @Override public Optional<User> findByEmail(String email) { return jpa.findByEmail(email); }
+    @Override public User save(User user) { return jpa.save(user); }
+    @Override public void touchLastLogin(Long id) { jpa.touchLastLogin(id); }
+}

@@ -1,8 +1,8 @@
 package com.example.pet.demo.reservation.domain;
 
-import org.springframework.stereotype.Repository;
+// import org.springframework.stereotype.Repository;
 
-@Repository
+// @Repository
 public class ReservationRepository {
 
 }
