@@ -23,7 +23,8 @@ public class SecurityBeansConfig {
                 "/swagger-ui.html"
             ).permitAll()
             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/v1/pets").permitAll()
+            .requestMatchers( "/api/v1/pets").permitAll()
+            .requestMatchers(HttpMethod.OPTIONS, "/").permitAll()
             .anyRequest().authenticated()   // 나머지는 보호 (원하면 .permitAll()로 전부 오픈)
         );
         http.httpBasic(Customizer.withDefaults()); // 또는 formLogin()
