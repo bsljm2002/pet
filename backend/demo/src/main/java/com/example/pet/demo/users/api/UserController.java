@@ -24,21 +24,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequiredArgsConstructor
 @Validated
 public class UserController {
-    // private final UserService userService;
 
-    // @PostMapping
-    //  public ResponseEntity<ApiResponse<Map<String, Long>>> signup(
-    //         @Valid @RequestBody UserSignupReq req,
-    //         UriComponentsBuilder uriBuilder
-    // ) {
-    //     // Long id = userService.signup(req);
-    //     // URI location = uriBuilder
-    //     //         .path("/api/v1/users/{id}")
-    //     //         .buildAndExpand(id)
-    //     //         .toUri();
-    //     return ResponseEntity
-    //             .created(location)
-    //             .body(ApiResponse.ok(Map.of("id", id)));;
-    // }
+    private final UserService userService;
+
+    @PostMapping
+     public ResponseEntity<ApiResponse<Map<String, Long>>> signup(
+            @Valid @RequestBody UserSignupReq req,
+            UriComponentsBuilder uriBuilder
+    ) {
+        Long id = userService.signup(req);
+        URI location = uriBuilder
+                .path("/api/v1/users/{id}")
+                .buildAndExpand(id)
+                .toUri();
+        return ResponseEntity
+                .created(location)
+                .body(ApiResponse.ok(Map.of("id", id)));
+    }
     
 }
