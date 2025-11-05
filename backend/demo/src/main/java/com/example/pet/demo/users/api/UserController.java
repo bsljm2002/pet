@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 @Validated
 public class UserController {
+
     private final UserService userService;
 
     @PostMapping

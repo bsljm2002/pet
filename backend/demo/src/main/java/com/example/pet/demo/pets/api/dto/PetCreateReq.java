@@ -34,10 +34,11 @@ public record PetCreateReq(
         regexp = "ISTJ|ISFJ|INFJ|INTJ|ISTP|ISFP|INFP|INTP|ESTP|ESFP|ENFP|ENTP|ESTJ|ESFJ|ENFJ|ENTJ",
         message = "abit_type_code는 유효한 MBTI 코드여야 합니다."
     )
-    String abitTypeCode,
 
     @Size(max = 2048, message = "imageUrl은 최대 2048자입니다.")
     String imageUrl,
+
+    String abitTypeCode,
 
     @NotBlank(message = "name은 필수입니다.")
     @Size(max = 20, message = "name은 최대 20자입니다.")

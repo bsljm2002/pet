@@ -1,6 +1,7 @@
 package com.example.pet.demo.pets.api;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -12,13 +13,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.example.pet.demo.common.ApiResponse;
 import com.example.pet.demo.pets.api.dto.PetCreateReq;
 import com.example.pet.demo.pets.app.PetService;
+import com.example.pet.demo.pets.domain.Pet;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1/pets")
@@ -29,9 +32,8 @@ public class PetController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Map<String, Long>>> createPet(
-        @Valid @RequestBody PetCreateReq req,
-        UriComponentsBuilder uriBuilder 
-    ) {
+            @Valid @RequestBody PetCreateReq req,
+            UriComponentsBuilder uriBuilder) {
         Long id = petService.create(req);
         URI location = uriBuilder
                 .path("/api/v1/pets/{id}")
@@ -41,5 +43,10 @@ public class PetController {
                 .created(location)
                 .body(ApiResponse.ok(Map.of("id", id)));
     }
-    
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<Pet>>> getPetsByOwner(@RequestParam("ownerId") Long ownerId) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(petService.getPetsByOwner(ownerId)));
+    }
 }

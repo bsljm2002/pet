@@ -6,7 +6,7 @@ public record ApiResponse<T>(
     String error,
     String message
 ) {
-     public static <T> ApiResponse<T> ok(T data) {
+    public static <T> ApiResponse<T> ok(T data) {
         return new ApiResponse<>(true, data, null, null);
     }
     public static <T> ApiResponse<T> error(String code, String message) {
