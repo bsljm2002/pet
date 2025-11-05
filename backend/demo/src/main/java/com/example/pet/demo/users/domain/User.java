@@ -131,5 +131,5 @@ public class User {
     }
 
     // 펫시터 업무: 산책/이동/위생관리/전체
-    public enum PetsitterWork { WALKING, TRANSPORT, HYGIENE, ALL }
+    public enum PetsitterWork { WALK, TRANSPORT, HYGIENE, ALL }
 }
