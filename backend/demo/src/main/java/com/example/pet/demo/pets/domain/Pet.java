@@ -9,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.example.pet.demo.users.domain.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,6 +44,7 @@ public class Pet {
     // FK: users.id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User owner;
 
     @Enumerated(EnumType.STRING)
