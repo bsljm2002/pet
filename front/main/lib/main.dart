@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/pet_diary_screen.dart';
-import 'screens/ai_diagnosis_screen.dart';
+import 'screens/ai_care_screen.dart';
 import 'screens/hospital_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/custom_app_bar.dart';
@@ -68,11 +67,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // 각 탭에 해당하는 화면들의 리스트
-  // 0: 홈, 1: 펫 일기, 2: AI 진단, 3: 동물병원, 4: 설정
+  // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
   final List<Widget> _screens = [
     HomeScreen(),
-    PetDiaryScreen(),
-    AiDiagnosisScreen(),
+    AiCareScreen(),
     HospitalScreen(),
     SettingsScreen(),
   ];
