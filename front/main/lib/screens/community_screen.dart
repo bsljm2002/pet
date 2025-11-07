@@ -29,9 +29,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           _buildCategoryTabs(),
 
           // 게시글 목록
-          Expanded(
-            child: _buildPostList(),
-          ),
+          Expanded(child: _buildPostList()),
         ],
       ),
       // 글쓰기 플로팅 버튼
@@ -44,10 +42,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         icon: Icon(Icons.edit, color: Colors.white),
         label: Text(
           '글쓰기',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -135,7 +130,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   category,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: isSelected ? Colors.white : Colors.grey[700],
                   ),
                 ),
@@ -267,34 +264,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Row(
               children: [
                 // 작성자 아이콘
-                Icon(
-                  Icons.person,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
+                Icon(Icons.person, size: 16, color: Colors.grey[600]),
                 SizedBox(width: 4),
                 Text(
                   post['author'] as String,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
                 SizedBox(width: 12),
                 Text(
                   post['date'] as String,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                 ),
                 Spacer(),
 
                 // 조회수, 댓글, 좋아요
-                _buildInfoBadge(
-                  Icons.visibility,
-                  post['views'] as int,
-                ),
+                _buildInfoBadge(Icons.visibility, post['views'] as int),
                 SizedBox(width: 8),
                 _buildInfoBadge(
                   Icons.comment,
@@ -319,11 +303,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildInfoBadge(IconData icon, int count, {Color? color}) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: color ?? Colors.grey[600],
-        ),
+        Icon(icon, size: 14, color: color ?? Colors.grey[600]),
         SizedBox(width: 2),
         Text(
           count.toString(),
@@ -342,9 +322,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
           '글쓰기',
           style: TextStyle(
@@ -374,9 +352,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
             Container(
