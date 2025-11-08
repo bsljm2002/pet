@@ -22,6 +22,9 @@ public class PetService {
         String species = req.species().toUpperCase();
         String name = req.name().trim();
         String abit = req.abitTypeCode().toUpperCase();
+        String gender = req.gender().toUpperCase();
+        String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
+
 
         return pets.create(
                 req.userId(),
@@ -30,7 +33,9 @@ public class PetService {
                 req.weight(),
                 abit,
                 req.imageUrl(),
-                name);
+                name,
+                gender,
+                speciesDetail);
     }
 
     @Transactional(readOnly = true)
