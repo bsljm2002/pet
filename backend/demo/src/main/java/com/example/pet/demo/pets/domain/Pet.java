@@ -75,6 +75,13 @@ public class Pet {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Gender gender;
+
+    @Column(name = "species_detail", length = 30)
+    private String speciesDetail;
+
     public enum Species {
         DOG, CAT
     }
@@ -82,5 +89,9 @@ public class Pet {
     public enum AbitTypeCode {
         ISTJ, ISFJ, INFJ, INTJ, ISTP, ISFP, INFP, INTP,
         ESTP, ESFP, ENFP, ENTP, ESTJ, ESFJ, ENFJ, ENTJ
+    }
+    
+    public enum Gender {
+        MALE, FEMALE
     }
 }

@@ -7,6 +7,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import com.example.pet.demo.pets.domain.Pet.Gender;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -50,8 +52,9 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private String gender;
+    private Gender gender;
 
     @Column(nullable = false)
     private LocalDate birthdate;
@@ -132,6 +135,10 @@ public class User {
         DERMATOLOGY,          // 피부과
         EMERGENCY_MEDICINE,   // 응급의학과
         GENERAL               // 기타/전체
+    }
+    
+    public enum Gender {
+        MALE, FEMALE
     }
 
     // 펫시터 업무: 산책/이동/위생관리/전체
