@@ -52,13 +52,13 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(16),
-            color: Color(0xFFD4F4E7),
+            color: Color.fromARGB(255, 224, 224, 224),
             child: Column(
               children: [
                 Text(
-                  '펫일기',
+                  'MyPet',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF00B27A),
                   ),
@@ -143,7 +143,8 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
               });
             },
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 12),
+              width: 90,
+              margin: EdgeInsets.symmetric(horizontal: 8),
               child: Column(
                 children: [
                   // 프로필 이미지
@@ -156,7 +157,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                         color: isSelected
                             ? Color(0xFF00B27A)
                             : Colors.transparent,
-                        width: 3,
+                        width: 2,
                       ),
                       image: profile.imageUrl != null
                           ? DecorationImage(
@@ -170,12 +171,15 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                         ? Icon(Icons.pets, size: 35, color: Colors.grey[600])
                         : null,
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 1),
                   // 반려동물 이름
                   Text(
                     profile.name,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
