@@ -27,7 +27,9 @@ public class PetJpaAdapter implements PetPersistencePort {
             BigDecimal weight,
             String abitTypeCode,
             String imageUrl,
-            String name) {
+            String name,
+            String gender,
+            String speciesDetail) {
 
         User ownerRef = em.getReference(User.class, userId);
 
@@ -39,6 +41,8 @@ public class PetJpaAdapter implements PetPersistencePort {
                 .abitTypeCode(Pet.AbitTypeCode.valueOf(abitTypeCode))
                 .imageUrl(imageUrl)
                 .name(name)
+                .gender(Pet.Gender.valueOf(gender))
+                .speciesDetail(speciesDetail)
                 .build();
 
         return jpa.save(pet).getId();

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.example.pet.demo.users.domain.User.CaCategorical;
+import com.example.pet.demo.users.domain.User.Gender;
 import com.example.pet.demo.users.domain.User.PetsitterWork;
 import com.example.pet.demo.users.domain.User.UserType;
 import com.example.pet.demo.users.domain.User.VetSpecialty;
@@ -43,9 +44,7 @@ public record UserSignupReq(
     //          message="비밀번호는 문자/숫자/특수문자를 각각 1자 이상 포함해야 합니다.")
     String password,
 
-    @NotBlank(message = "gender는 필수입니다.")
-    @Size(max = 10, message = "gender는 최대 10자입니다.")
-    String gender,
+    Gender gender,
 
     @NotNull(message = "birthdate는 필수입니다.")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

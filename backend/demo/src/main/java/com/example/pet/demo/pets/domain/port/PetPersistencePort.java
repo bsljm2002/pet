@@ -14,7 +14,9 @@ public interface PetPersistencePort {
             BigDecimal weight,
             String abitTypeCode,
             String imageUrl,
-            String name
+            String name,
+            String gender,
+            String speciesDetail
     );
     List<Pet> findByOwnerId(Long ownerId);
 }

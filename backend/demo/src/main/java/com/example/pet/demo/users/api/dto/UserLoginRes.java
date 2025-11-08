@@ -17,7 +17,7 @@ public record UserLoginRes(
             user.getUsername(),
             user.getNickname(),
             user.getEmail(),
-            user.getGender(),
+            user.getGender().name(),
             user.getUserType().name()
         );
     }
