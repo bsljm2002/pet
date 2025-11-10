@@ -241,6 +241,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SizedBox(height: 12),
 
+          // 펫샵 섹션
+          _buildPetShopCard(context),
+          SizedBox(height: 12),
+
           // 커뮤니티 섹션
           _buildCommunityCard(context),
         ],
@@ -458,6 +462,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case UserType.cafe:
         return '카페';
     }
+  }
+
+  /// 펫샵 카드
+  Widget _buildPetShopCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _navigateToTab(context, 3),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // 아이콘
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.fromARGB(255, 212, 244, 228),
+                ),
+                child: Icon(
+                  Icons.shopping_bag,
+                  color: Color.fromARGB(255, 0, 108, 82),
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 16),
+
+              // 타이틀과 설명
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '펫샵',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 0, 56, 41),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '반려동물 용품을 쇼핑하세요',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 화살표 아이콘
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// 커뮤니티 카드 (별도 화면으로 이동)

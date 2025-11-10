@@ -116,12 +116,71 @@ class _HospitalScreenState extends State<HospitalScreen> {
                 ),
 
                 // 2️⃣ 펫시터 찾기 탭
-                const Center(
-                  child: Text(
-                    '펫시터 찾기 기능은\n준비 중입니다.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
+                ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    // 상단 메뉴 버튼들
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            offset: const Offset(0, 2),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: HospitalScreenWidgets.buildMenuButton(
+                              context,
+                              icon: Icons.calendar_today,
+                              label: '내 예약',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MyReservation(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: HospitalScreenWidgets.buildMenuButton(
+                              context,
+                              icon: Icons.contacts,
+                              label: '내 상담',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MyContacts(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 펫시터 찾기 필터 섹션
+                    HospitalScreenWidgets.buildSitterFinderSection(),
+
+                    // 펫시터 목록 섹션
+                    HospitalScreenWidgets.buildSitterList(),
+                  ],
                 ),
               ],
             ),

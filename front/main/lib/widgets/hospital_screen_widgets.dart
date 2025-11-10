@@ -428,6 +428,195 @@ class HospitalScreenWidgets {
     );
   }
 
+  /// 펫시터 찾기 섹션 위젯
+  ///
+  /// 펫시터 검색을 위한 필터와 검색 버튼을 제공합니다.
+  static Widget buildSitterFinderSection() {
+    return Consumer<HospitalProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildPetTypeToggle(provider),
+              const SizedBox(height: 20),
+              _buildSitterServiceSelector(provider),
+              const SizedBox(height: 20),
+              _buildTimeSlotSelector(provider),
+              const SizedBox(height: 16),
+              // 펫시터 검색 버튼
+              ElevatedButton(
+                onPressed: () => provider.loadVets(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4FC59E),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: provider.isLoadingVets
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        '펫시터 찾기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 펫시터 서비스 선택 섹션
+  static Widget _buildSitterServiceSelector(HospitalProvider provider) {
+    final services = [
+      '방문 돌봄',
+      '산책 서비스',
+      '호텔/위탁',
+      '목욕/미용',
+      '놀이/훈련',
+      '응급 케어',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.pets,
+              color: Color(0xFF4FC59E),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              '펫시터 서비스',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Color(0xFF003829),
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () => provider.setSpecialty(null),
+              child: const Text('전체 해제'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: services.map((service) {
+            final isSelected = provider.selectedSpecialty == service;
+            return ChoiceChip(
+              label: Text(
+                service,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFF003829),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+              selected: isSelected,
+              selectedColor: const Color(0xFF4FC59E),
+              backgroundColor: Colors.grey.shade200,
+              onSelected: (_) =>
+                  provider.setSpecialty(isSelected ? null : service),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// 펫시터 목록을 표시하는 위젯
+  static Widget buildSitterList() {
+    return Consumer<HospitalProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoadingVets) {
+          return const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (provider.vetsError != null) {
+          return Padding(
+            padding: const EdgeInsets.all(32),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    '오류: ${provider.vetsError}',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => provider.loadVets(),
+                    child: const Text('다시 시도'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (provider.vets.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(32),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_off, size: 48, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    '검색 결과가 없습니다.\n다른 조건으로 검색해보세요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: _SitterStackedList(vets: provider.vets),
+        );
+      },
+    );
+  }
+
   /// 메뉴 버튼 위젯
   static Widget buildMenuButton(
     BuildContext context, {
@@ -467,6 +656,280 @@ class HospitalScreenWidgets {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SitterStackedList extends StatefulWidget {
+  final List<VetModel> vets;
+
+  const _SitterStackedList({required this.vets});
+
+  @override
+  State<_SitterStackedList> createState() => _SitterStackedListState();
+}
+
+class _SitterStackedListState extends State<_SitterStackedList>
+    with SingleTickerProviderStateMixin {
+  int _expandedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _expandedIndex = widget.vets.isNotEmpty ? 0 : -1;
+  }
+
+  @override
+  void didUpdateWidget(covariant _SitterStackedList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_expandedIndex >= widget.vets.length) {
+      _expandedIndex = widget.vets.isNotEmpty ? widget.vets.length - 1 : -1;
+    }
+  }
+
+  void _openVetProfile(BuildContext context, VetModel vet) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VetProfilePage(vet: vet),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 32),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: widget.vets.length,
+      itemBuilder: (context, index) {
+        final vet = widget.vets[index];
+        final bool isExpanded = index == _expandedIndex;
+
+        return GestureDetector(
+          onTap: () => setState(() => _expandedIndex = index),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeInOut,
+            margin: EdgeInsets.only(top: index == 0 ? 0 : 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: isExpanded ? 24 : 14,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(48),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isExpanded ? 0.16 : 0.06),
+                  offset: const Offset(0, 10),
+                  blurRadius: isExpanded ? 24 : 12,
+                ),
+              ],
+            ),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () => _openVetProfile(context, vet),
+                        child: CircleAvatar(
+                          radius: isExpanded ? 28 : 24,
+                          backgroundColor: const Color(0xFFE6F7F1),
+                          backgroundImage: (vet.imageUrl.isNotEmpty)
+                              ? NetworkImage(vet.imageUrl) as ImageProvider
+                              : null,
+                          onBackgroundImageError: (vet.imageUrl.isNotEmpty)
+                              ? (exception, stackTrace) {
+                                  // 이미지 로드 실패 시 기본 아이콘 표시
+                                }
+                              : null,
+                          child: vet.imageUrl.isEmpty
+                              ? Icon(
+                                  Icons.person_outline,
+                                  color: const Color(0xFF4FC59E),
+                                  size: isExpanded ? 26 : 22,
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () => _openVetProfile(context, vet),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                vet.name,
+                                style: TextStyle(
+                                  fontSize: isExpanded ? 21 : 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF003829),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                vet.doctorName ?? '펫시터',
+                                style: TextStyle(
+                                  fontSize: isExpanded ? 16 : 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF4FC59E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      AnimatedOpacity(
+                        opacity: isExpanded ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                (vet.isOpen
+                                        ? const Color(0xFF4FC59E)
+                                        : Colors.redAccent)
+                                    .withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            vet.isOpen ? '예약가능' : '휴무',
+                            style: TextStyle(
+                              color: vet.isOpen
+                                  ? const Color(0xFF2B8C6C)
+                                  : Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isExpanded) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.place, size: 18, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            vet.address,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, size: 18, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text(
+                          vet.phone,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: vet.specialties.map((specialty) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4FC59E).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            specialty,
+                            style: const TextStyle(
+                              color: Color(0xFF4FC59E),
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: vet.isOpen
+                            ? () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ReservationRequestPage(vet: vet),
+                                  ),
+                                );
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4FC59E),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 46),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.calendar_month, size: 18),
+                        label: const Text('예약하기'),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ConsultationRequestPage(vet: vet),
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF4FC59E),
+                          minimumSize: const Size(double.infinity, 46),
+                          side: const BorderSide(color: Color(0xFF4FC59E)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: const Text('상담하기'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
