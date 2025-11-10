@@ -85,7 +85,7 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen> {
       final diagnosis = await _diagnosisService.performDiagnosis(
         imagePath: _selectedImage!.path,
         petName: profiles.first.name,
-        petId: profiles.first.id,
+        petId: profiles.first.id?.toString(),
       );
 
       setState(() {

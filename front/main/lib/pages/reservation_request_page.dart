@@ -25,7 +25,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
   String? _selectedSpecialty;
   String? _selectedTime;
   late final List<PetProfile> _petProfiles;
-  final Set<String> _selectedPetIds = {};
+  final Set<int> _selectedPetIds = {};
 
   @override
   void initState() {
@@ -48,7 +48,8 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
     super.dispose();
   }
 
-  void _togglePetSelection(String petId) {
+  void _togglePetSelection(int? petId) {
+    if (petId == null) return;
     setState(() {
       if (_selectedPetIds.contains(petId)) {
         _selectedPetIds.remove(petId);
