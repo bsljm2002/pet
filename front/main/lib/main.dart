@@ -6,10 +6,13 @@ import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
 import 'screens/hospital_screen.dart';
+import 'screens/pet_shop_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/custom_app_bar.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'providers/hospital_provider.dart';
+import 'providers/product_provider.dart';
+import 'providers/cart_provider.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
@@ -18,6 +21,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => HospitalProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: const MyApp(),
     ),
@@ -67,11 +72,12 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // 각 탭에 해당하는 화면들의 리스트
-  // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
+  // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 펫샵, 4: 설정
   final List<Widget> _screens = [
     HomeScreen(),
     AiCareScreen(),
     HospitalScreen(),
+    PetShopScreen(),
     SettingsScreen(),
   ];
 
