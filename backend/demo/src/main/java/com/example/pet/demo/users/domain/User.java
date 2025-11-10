@@ -7,9 +7,10 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import com.example.pet.demo.pets.domain.Pet.Gender;
+import com.example.pet.demo.common.GenderConverter;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -52,7 +53,7 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = GenderConverter.class)
     @Column(nullable = false, length = 10)
     private Gender gender;
 

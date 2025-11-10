@@ -22,7 +22,7 @@ class PetProfileManager {
   }
 
   // 프로필 업데이트
-  void updateProfile(String id, PetProfile updatedProfile) {
+  void updateProfile(int id, PetProfile updatedProfile) {
     final index = _profiles.indexWhere((p) => p.id == id);
     if (index != -1) {
       _profiles[index] = updatedProfile;
@@ -30,12 +30,12 @@ class PetProfileManager {
   }
 
   // 프로필 삭제
-  void deleteProfile(String id) {
+  void deleteProfile(int id) {
     _profiles.removeWhere((p) => p.id == id);
   }
 
   // ID로 프로필 찾기
-  PetProfile? getProfileById(String id) {
+  PetProfile? getProfileById(int id) {
     try {
       return _profiles.firstWhere((p) => p.id == id);
     } catch (e) {

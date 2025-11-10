@@ -137,7 +137,7 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
 
     return Column(
       children: _matchedProfiles.map((profile) {
-        final ageLabel = _formatAge(profile.birthday);
+        final ageLabel = _formatAge(profile.birthdate);
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.only(top: 6, bottom: 12),
@@ -156,14 +156,12 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
               ),
               const SizedBox(height: 12),
               if (ageLabel != null) _detailRow('나이', ageLabel),
-              if (profile.breed != null && profile.breed!.trim().isNotEmpty)
-                _detailRow('품종', profile.breed!),
+              if (profile.speciesDetail != null && profile.speciesDetail!.trim().isNotEmpty)
+                _detailRow('품종', profile.speciesDetail!),
               if (profile.gender != null && profile.gender!.trim().isNotEmpty)
                 _detailRow('성별', profile.gender!),
-              if (profile.disease != null && profile.disease!.trim().isNotEmpty)
-                _detailRow('기저 질환', profile.disease!),
-              if (profile.abtiType != null && profile.abtiType!.trim().isNotEmpty)
-                _detailRow('성격 유형', profile.abtiType!),
+              if (profile.abtiTypeCode != null && profile.abtiTypeCode!.trim().isNotEmpty)
+                _detailRow('성격 유형', profile.abtiTypeCode!),
             ],
           ),
         );

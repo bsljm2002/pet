@@ -1,72 +1,85 @@
 // 펫 프로필 데이터 모델
 class PetProfile {
-  final String id;
+  final int? id;
+  final int userId;
   final String name;
-  final String? imageUrl;
-  final String? birthday;
-  final String? breed;
-  final String? disease;
+  final String species; // 종
+  final String? imageUrl; // 사진
+  final String birthdate; // 생일
+  final double weight; //몸무게
+  final String? speciesDetail;
   final String? gender;
-  final String? abtiType;
+  final String? abtiTypeCode;
 
   PetProfile({
-    required this.id,
-    required this.name,
-    this.imageUrl,
-    this.birthday,
-    this.breed,
-    this.disease,
-    this.gender,
-    this.abtiType,
+    this.id, // nullable (백엔드에서 자동 생성)
+    required this.userId, // 필수
+    required this.name, // 필수
+    required this.species, // 필수
+    required this.birthdate, // 필수
+    required this.weight, // 필수
+    required this.abtiTypeCode, // 필수
+    required this.gender, // 필수
+    this.speciesDetail, // 선택사항
+    this.imageUrl, // 선택사항
   });
 
-  // JSON 변환을 위한 메서드 (추후 데이터베이스 연동 시 사용)
+  // PetProfile 객체 -> JSON 변환 (백엔드 요청 전송용)
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'userId': userId,
       'name': name,
-      'imageUrl': imageUrl,
-      'birthday': birthday,
-      'breed': breed,
-      'disease': disease,
+      'species': species,
+      'birthdate': birthdate,
+      'weight': weight,
+      'abitTypeCode': abtiTypeCode,
       'gender': gender,
-      'abtiType': abtiType,
+      'speciesDetail': speciesDetail,
+      'imageUrl': imageUrl,
     };
   }
 
+  // JSON -> PetProfile 객체로 변환 (백엔드 응답 파싱용)
   factory PetProfile.fromJson(Map<String, dynamic> json) {
     return PetProfile(
       id: json['id'],
+      userId: json['userId'],
       name: json['name'],
-      imageUrl: json['imageUrl'],
-      birthday: json['birthday'],
-      breed: json['breed'],
-      disease: json['disease'],
+      species: json['species'],
+      birthdate: json['birthdate'],
+      weight: (json['weight'] as num).toDouble(),
+      abtiTypeCode: json['abitTypeCode'],
       gender: json['gender'],
-      abtiType: json['abtiType'],
+      speciesDetail: json['speciesDetail'],
+      imageUrl: json['imageUrl'],
     );
   }
 
-  // 프로필 복사 (업데이트 시 사용)
+  // 프로필 복사 메서드 (업데이트 시 사용)
   PetProfile copyWith({
-    String? id,
+    int? id,
+    int? userId,
     String? name,
-    String? imageUrl,
-    String? birthday,
-    String? breed,
-    String? disease,
+    String? species,
+    String? birthdate,
+    double? weight,
+    String? abtiTypeCode,
     String? gender,
-    String? abtiType,
+    String? speciesDetail,
+    String? imageUrl,
   }) {
     return PetProfile(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
-      imageUrl: imageUrl ?? this.imageUrl,
-      birthday: birthday ?? this.birthday,
-      breed: breed ?? this.breed,
-      disease: disease ?? this.disease,
+      species: species ?? this.species,
+      birthdate: birthdate ?? this.birthdate,
+      weight: weight ?? this.weight,
+      abtiTypeCode: abtiTypeCode ?? this.abtiTypeCode,
       gender: gender ?? this.gender,
-      abtiType: abtiType ?? this.abtiType,
+      speciesDetail: speciesDetail ?? this.speciesDetail,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 }

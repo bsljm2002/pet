@@ -136,7 +136,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
       );
     }
 
-    final ageLabel = _formatAge(profile.birthday);
+    final ageLabel = _formatAge(profile.birthdate);
 
     return Container(
       width: double.infinity,
@@ -147,14 +147,12 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (ageLabel != null) _detailRow('나이', ageLabel),
-          if (profile.breed != null && profile.breed!.trim().isNotEmpty)
-            _detailRow('품종', profile.breed!),
+          if (profile.speciesDetail != null && profile.speciesDetail!.trim().isNotEmpty)
+            _detailRow('품종', profile.speciesDetail!),
           if (profile.gender != null && profile.gender!.trim().isNotEmpty)
             _detailRow('성별', profile.gender!),
-          if (profile.disease != null && profile.disease!.trim().isNotEmpty)
-            _detailRow('기저 질환', profile.disease!),
-          if (profile.abtiType != null && profile.abtiType!.trim().isNotEmpty)
-            _detailRow('성격 유형', profile.abtiType!),
+          if (profile.abtiTypeCode != null && profile.abtiTypeCode!.trim().isNotEmpty)
+            _detailRow('성격 유형', profile.abtiTypeCode!),
           if (profile.imageUrl != null && profile.imageUrl!.trim().isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
