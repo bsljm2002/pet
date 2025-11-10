@@ -44,7 +44,7 @@ public record PetCreateReq(
     String name,
 
     @NotNull(message = "gender는 필수입니다.")
-    @Pattern(regexp = "MALE|FE", message = "gender는 MALE 또는 FEMALE 이어야 합니다.")
+    @Pattern(regexp = "MALE|FEMALE", message = "gender는 MALE 또는 FEMALE 이어야 합니다.")
     String gender,
 
     @Size(max = 30, message = "speciesDetail은 최대 30자입니다.")

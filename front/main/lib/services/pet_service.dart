@@ -15,7 +15,9 @@ class PetService {
     required String species, // "DOG" or "CAT"
     required String birthdate, // "yyyy-MM-dd"
     required double weight, // 몸무게 (kg)
-    required String abitTypeCode, // MBTI 코드
+    required String abitTypeCode, // ABTI코드
+    required String gender, // 성별
+    String? speciesDetail, // 품
     String? imageUrl, // 나중에 구현
   }) async {
     final url = Uri.parse(baseUrl);
@@ -31,6 +33,8 @@ class PetService {
           "birthdate": birthdate,
           "weight": weight,
           "abitTypeCode": abitTypeCode,
+          "gender": gender,
+          "speciesDetail": speciesDetail,
           "imageUrl": imageUrl, // null이면 백엔드에서 처리
         }),
       );

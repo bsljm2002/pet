@@ -28,7 +28,7 @@ class _ConsultationRequestPageState extends State<ConsultationRequestPage> {
   DateTime? _selectedDate;
   String? _selectedTime;
   late final List<PetProfile> _petProfiles;
-  final Set<String> _selectedPetIds = {};
+  final Set<int> _selectedPetIds = {};
 
   @override
   void initState() {
@@ -82,7 +82,8 @@ class _ConsultationRequestPageState extends State<ConsultationRequestPage> {
     Navigator.of(context).pop();
   }
 
-  void _togglePetSelection(String petId) {
+  void _togglePetSelection(int? petId) {
+    if (petId == null) return;
     setState(() {
       if (_selectedPetIds.contains(petId)) {
         _selectedPetIds.remove(petId);

@@ -16,10 +16,8 @@ import '../models/pet_profile.dart';
 class PetProfileDetailScreen extends StatefulWidget {
   final PetProfile profile;
 
-  const PetProfileDetailScreen({
-    Key? key,
-    required this.profile,
-  }) : super(key: key);
+  const PetProfileDetailScreen({Key? key, required this.profile})
+    : super(key: key);
 
   @override
   State<PetProfileDetailScreen> createState() => _PetProfileDetailScreenState();
@@ -36,19 +34,19 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
   void initState() {
     super.initState();
     // 초기 ABTI 타입 설정
-    _currentAbtiType = widget.profile.abtiType;
+    _currentAbtiType = widget.profile.abtiTypeCode;
   }
 
   /// 생년월일로부터 나이 계산
   String _calculateAge() {
-    if (widget.profile.birthday == null || widget.profile.birthday!.isEmpty) {
+    if (widget.profile.birthdate == null || widget.profile.birthdate!.isEmpty) {
       return '미등록';
     }
 
     try {
       // 생년월일 파싱 (여러 형식 지원)
       DateTime? birthDate;
-      final birthday = widget.profile.birthday!;
+      final birthday = widget.profile.birthdate!;
 
       // YYYY-MM-DD 또는 YYYY.MM.DD 형식
       if (birthday.contains('-')) {
@@ -259,11 +257,11 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
               radius: 60,
               backgroundColor: Color(0xFFE5E7EB),
               backgroundImage: widget.profile.imageUrl != null
-                ? NetworkImage(widget.profile.imageUrl!)
-                : null,
+                  ? NetworkImage(widget.profile.imageUrl!)
+                  : null,
               child: widget.profile.imageUrl == null
-                ? Icon(Icons.pets, size: 60, color: Colors.grey)
-                : null,
+                  ? Icon(Icons.pets, size: 60, color: Colors.grey)
+                  : null,
             ),
           ),
           SizedBox(height: 15),
@@ -334,10 +332,12 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
               });
 
               // 프로필 매니저에도 업데이트
-              PetProfileManager().updateProfile(
-                widget.profile.id,
-                widget.profile.copyWith(abtiType: result),
-              );
+              if (widget.profile.id != null) {
+                PetProfileManager().updateProfile(
+                  widget.profile.id!,
+                  widget.profile.copyWith(abtiTypeCode: result),
+                );
+              }
 
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -407,7 +407,11 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
                 SizedBox(height: 8),
                 _buildInfoRow('체중:', '5.12Kg', Color(0xFFFF9500)),
                 SizedBox(height: 8),
-                _buildInfoRow('품종:', widget.profile.breed ?? '미등록', Color(0xFF0066CC)),
+                _buildInfoRow(
+                  '품종:',
+                  widget.profile.speciesDetail ?? '미등록',
+                  Color(0xFF0066CC),
+                ),
                 SizedBox(height: 8),
                 _buildInfoRow('성별:', _getGenderDisplay(), Color(0xFF00CC66)),
               ],
