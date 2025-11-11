@@ -123,4 +123,9 @@ public class UserService {
         return users.existsByEmail(email);
     }
 
+    @Transactional(readOnly = true)
+    public List<User> findByUserType(UserType type){
+        return = users.findByUserType(type);
+    }
+
 }
