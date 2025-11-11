@@ -3,6 +3,7 @@ package com.example.pet.demo.pets.infra.jpa;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,5 +54,11 @@ public class PetJpaAdapter implements PetPersistencePort {
     public List<Pet> findByOwnerId(Long ownerId){
         return jpa.findByOwner_Id(ownerId);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Pet> findById(Long id) {
+        return jpa.findById(id);
+}
+    
 
 }

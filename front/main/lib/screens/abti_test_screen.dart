@@ -12,11 +12,8 @@ class AbtiTestScreen extends StatefulWidget {
   final String? petName;
   final String? currentAbtiType;
 
-  const AbtiTestScreen({
-    Key? key,
-    this.petName,
-    this.currentAbtiType,
-  }) : super(key: key);
+  const AbtiTestScreen({Key? key, this.petName, this.currentAbtiType})
+    : super(key: key);
 
   @override
   State<AbtiTestScreen> createState() => _AbtiTestScreenState();
@@ -24,13 +21,125 @@ class AbtiTestScreen extends StatefulWidget {
 
 class _AbtiTestScreenState extends State<AbtiTestScreen> {
   // ABTI 테스트 답변 저장 (질문 인덱스 -> 답변)
+  int _currentQuestionIndex = 0;
   // -2: 매우 그렇지 않다, -1: 그렇지 않다, 0: 보통이다, 1: 그렇다, 2: 매우 그렇다
   Map<int, int> _abtiAnswers = {};
 
+  // 전체 질문 목록
+  final List<Map<String, dynamic>> _questions = [
+    // 사회성 (I/E) - 0~4
+    {
+      'category': '사회성 (I/E)',
+      'question': '낯선 사람이 집에 오면 먼저 다가가 냄새 맡거나 인사하려 한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '사회성 (I/E)',
+      'question': '산책/외출 시 다른 개·고양이·사람을 피하고 거리를 둔다.',
+      'isPositive': false,
+    },
+    {
+      'category': '사회성 (I/E)',
+      'question': '새로운 장소(카페/병원 대기실)에서 3분 내 주변 대상에 접근한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '사회성 (I/E)',
+      'question': '방문객이 있으면 은신처/높은 곳으로 이동해 조용히 지낸다.',
+      'isPositive': false,
+    },
+    {
+      'category': '사회성 (I/E)',
+      'question': '사회적 놀이(그룹 플레이/교대 놀이)에 쉽게 합류한다.',
+      'isPositive': true,
+    },
+    // 자극 초점 (S/N) - 5~9
+    {
+      'category': '자극 초점 (S/N)',
+      'question': '장난감·그릇·가구 배치가 바뀌면 경계하거나 스트레스를 보인다.',
+      'isPositive': false,
+    },
+    {
+      'category': '자극 초점 (S/N)',
+      'question': '새 장난감·퍼즐 급여기에 스스로 다가가 탐색한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '자극 초점 (S/N)',
+      'question': '익숙한 산책 코스/루틴일수록 안정적이다.',
+      'isPositive': false,
+    },
+    {
+      'category': '자극 초점 (S/N)',
+      'question': '집에 새 물건이 생기면 금방 흥미를 보이고 활용한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '자극 초점 (S/N)',
+      'question': '냄새·소리 같은 구체 감각 단서가 있을 때 반응이 더 확실하다.',
+      'isPositive': false,
+    },
+    // 의사결정 (T/F) - 10~14
+    {
+      'category': '의사결정 (T/F)',
+      'question': '"앉아/기다려/이리 와"처럼 명확한 지시 및 보상에서 학습이 빠르다.',
+      'isPositive': true,
+    },
+    {
+      'category': '의사결정 (T/F)',
+      'question': '보호자의 목소리 톤·표정 변화에 행동이 크게 달라진다.',
+      'isPositive': false,
+    },
+    {
+      'category': '의사결정 (T/F)',
+      'question': '퍼즐 급여기/노즈워크 등 과제 해결형 놀이에 오래 몰입한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '의사결정 (T/F)',
+      'question': '쓰다듬기·함께 있기 같은 정서적 보상이 특히 잘 먹힌다.',
+      'isPositive': false,
+    },
+    {
+      'category': '의사결정 (T/F)',
+      'question': '보상 규칙이 바뀌면 행동도 즉시 조정한다.',
+      'isPositive': true,
+    },
+    // 생활양식 (J/P) - 15~19
+    {
+      'category': '생활양식 (J/P)',
+      'question': '식사·산책·놀이 시간이 일정할수록 더 안정적이다.',
+      'isPositive': true,
+    },
+    {
+      'category': '생활양식 (J/P)',
+      'question': '갑작스런 일정 변화(외출/방문객)에도 비교적 빨리 적응한다.',
+      'isPositive': false,
+    },
+    {
+      'category': '생활양식 (J/P)',
+      'question': '"자리/대기/금지구역" 같은 규칙을 빠르게 이해한다.',
+      'isPositive': true,
+    },
+    {
+      'category': '생활양식 (J/P)',
+      'question': '산책/놀이 중 활동 전환이 잦아도 스트레스가 적다.',
+      'isPositive': false,
+    },
+    {
+      'category': '생활양식 (J/P)',
+      'question': '정해진 장소(화장실/배변패드/스크래처)를 꾸준히 사용한다.',
+      'isPositive': true,
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final currentQuestion = _questions[_currentQuestionIndex];
+    final progress = (_currentQuestionIndex + 1) / _questions.length;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 207, 229, 218),
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 207, 229, 218),
         elevation: 0,
@@ -63,123 +172,177 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
         ),
         centerTitle: true,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color.fromARGB(255, 207, 229, 218),
-              Colors.white,
-            ],
-            stops: [0.0, 0.3],
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
+      body: Column(
+        children: [
+          // 진행률 표시
+          Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.petName != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20.0),
-                    child: Center(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '질문 ${_currentQuestionIndex + 1} / ${_questions.length}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color.fromARGB(255, 0, 108, 82),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color.fromARGB(255, 0, 108, 82),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      const Color.fromARGB(255, 0, 108, 82),
+                    ),
+                    minHeight: 8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 질문 카드
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(30),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // 카테고리 배지
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(
+                              255,
+                              0,
+                              108,
+                              82,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            currentQuestion['category'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: const Color.fromARGB(255, 0, 108, 82),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 30),
+
+                        // 질문 텍스트
+                        Text(
+                          currentQuestion['question'],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black87,
+                            height: 1.6,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 50),
+
+                        // 5단계 답변 버튼
+                        Column(
+                          children: [
+                            _buildAnswerButton('매우 그렇다', 2),
+                            SizedBox(height: 12),
+                            _buildAnswerButton('그렇다', 1),
+                            SizedBox(height: 12),
+                            _buildAnswerButton('보통이다', 0),
+                            SizedBox(height: 12),
+                            _buildAnswerButton('그렇지 않다', -1),
+                            SizedBox(height: 12),
+                            _buildAnswerButton('매우 그렇지 않다', -2),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 이전/다음 버튼
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                // 이전 버튼
+                if (_currentQuestionIndex > 0)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _previousQuestion,
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 15),
+                        side: BorderSide(
+                          color: const Color.fromARGB(255, 0, 108, 82),
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                       child: Text(
-                        '${widget.petName}의 ABTI 테스트',
+                        '이전',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: const Color.fromARGB(255, 0, 108, 82),
                         ),
                       ),
                     ),
                   ),
-                SizedBox(height: 10),
-                // 사회성 (I/E) 질문들
-                _buildAbtiCategory('사회성 (I/E)', 0, [
-                  '낯선 사람이 집에 오면 먼저 다가가 냄새 맡거나 인사하려 한다.',
-                  '산책/외출 시 다른 개·고양이·사람을 피하고 거리를 둔다.',
-                  '새로운 장소(카페/병원 대기실)에서 3분 내 주변 대상에 접근한다.',
-                  '방문객이 있으면 은신처/높은 곳으로 이동해 조용히 지낸다.',
-                  '사회적 놀이(그룹 플레이/교대 놀이)에 쉽게 합류한다.',
-                ], [
-                  true,
-                  false,
-                  true,
-                  false,
-                  true
-                ]), // true는 E, false는 I
+                if (_currentQuestionIndex > 0) SizedBox(width: 10),
 
-                SizedBox(height: 30),
-
-                // 자극 초점 (S/N) 질문들
-                _buildAbtiCategory('자극 초점 (S/N)', 5, [
-                  '장난감·그릇·가구 배치가 바뀌면 경계하거나 스트레스를 보인다.',
-                  '새 장난감·퍼즐 급여기에 스스로 다가가 탐색한다.',
-                  '익숙한 산책 코스/루틴일수록 안정적이다.',
-                  '집에 새 물건이 생기면 금방 흥미를 보이고 활용한다.',
-                  '냄새·소리 같은 구체 감각 단서가 있을 때 반응이 더 확실하다.',
-                ], [
-                  false,
-                  true,
-                  false,
-                  true,
-                  false
-                ]), // true는 N, false는 S
-
-                SizedBox(height: 30),
-
-                // 의사결정 (T/F) 질문들
-                _buildAbtiCategory('의사결정 (T/F)', 10, [
-                  '"앉아/기다려/이리 와"처럼 명확한 지시 및 보상에서 학습이 빠르다.',
-                  '보호자의 목소리 톤·표정 변화에 행동이 크게 달라진다.',
-                  '퍼즐 급여기/노즈워크 등 과제 해결형 놀이에 오래 몰입한다.',
-                  '쓰다듬기·함께 있기 같은 정서적 보상이 특히 잘 먹힌다.',
-                  '보상 규칙이 바뀌면 행동도 즉시 조정한다.',
-                ], [
-                  true,
-                  false,
-                  true,
-                  false,
-                  true
-                ]), // true는 T, false는 F
-
-                SizedBox(height: 30),
-
-                // 생활양식 (J/P) 질문들
-                _buildAbtiCategory('생활양식 (J/P)', 15, [
-                  '식사·산책·놀이 시간이 일정할수록 더 안정적이다.',
-                  '갑작스런 일정 변화(외출/방문객)에도 비교적 빨리 적응한다.',
-                  '"자리/대기/금지구역" 같은 규칙을 빠르게 이해한다.',
-                  '산책/놀이 중 활동 전환이 잦아도 스트레스가 적다.',
-                  '정해진 장소(화장실/배변패드/스크래처)를 꾸준히 사용한다.',
-                ], [
-                  true,
-                  false,
-                  true,
-                  false,
-                  true
-                ]), // true는 J, false는 P
-
-                SizedBox(height: 40),
-
-                // ABTI 결과 보기 버튼
-                Center(
+                // 다음/결과 보기 버튼
+                Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      _calculateAbtiResult();
-                    },
+                    onPressed: _abtiAnswers.containsKey(_currentQuestionIndex)
+                        ? _nextQuestion
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                      padding: EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      disabledBackgroundColor: Colors.grey,
                     ),
                     child: Text(
-                      'ABTI 결과 보기',
+                      _currentQuestionIndex == _questions.length - 1
+                          ? '결과 보기'
+                          : '다음',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -188,124 +351,8 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
                     ),
                   ),
                 ),
-                SizedBox(height: 30),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ABTI 카테고리 섹션 빌더
-  Widget _buildAbtiCategory(
-    String title,
-    int startIndex,
-    List<String> questions,
-    List<bool> isPositiveType, // true면 예가 해당 타입, false면 아니오가 해당 타입
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 0, 108, 82),
-          ),
-        ),
-        SizedBox(height: 15),
-        ...List.generate(questions.length, (index) {
-          int questionIndex = startIndex + index;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 15.0),
-            child: _buildAbtiQuestion(
-              questionIndex + 1,
-              questions[index],
-              questionIndex,
-            ),
-          );
-        }),
-      ],
-    );
-  }
-
-  /// ABTI 질문 항목
-  Widget _buildAbtiQuestion(int number, String question, int questionIndex) {
-    int? answer = _abtiAnswers[questionIndex];
-
-    return Container(
-      padding: EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color.fromARGB(255, 200, 200, 200),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$number. $question',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              height: 1.5,
-            ),
-          ),
-          SizedBox(height: 20),
-          // 5단계 원형 라디오 버튼
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 왼쪽 라벨
-              Expanded(
-                flex: 2,
-                child: Text(
-                  '동의함',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color.fromARGB(255, 100, 100, 100),
-                  ),
-                ),
-              ),
-              // 5개의 원형 버튼 (가운데로 갈수록 작아짐)
-              Expanded(
-                flex: 5,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildCircleRadioButton(questionIndex, 2, answer, 36),
-                    _buildCircleRadioButton(questionIndex, 1, answer, 32),
-                    _buildCircleRadioButton(questionIndex, 0, answer, 28),
-                    _buildCircleRadioButton(questionIndex, -1, answer, 32),
-                    _buildCircleRadioButton(questionIndex, -2, answer, 36),
-                  ],
-                ),
-              ),
-              // 오른쪽 라벨
-              Expanded(
-                flex: 2,
-                child: Text(
-                  '동의하지 않음',
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color.fromARGB(255, 100, 100, 100),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -313,47 +360,70 @@ class _AbtiTestScreenState extends State<AbtiTestScreen> {
   }
 
   /// 원형 라디오 버튼
-  Widget _buildCircleRadioButton(int questionIndex, int value, int? currentAnswer, double size) {
-    bool isSelected = currentAnswer == value;
+  Widget _buildAnswerButton(String text, int value) {
+    bool isSelected = _abtiAnswers[_currentQuestionIndex] == value;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         setState(() {
-          _abtiAnswers[questionIndex] = value;
+          _abtiAnswers[_currentQuestionIndex] = value;
         });
       },
       child: Container(
-        width: size,
-        height: size,
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          color: isSelected
+              ? const Color.fromARGB(255, 0, 108, 82)
+              : Colors.white,
           border: Border.all(
             color: isSelected
                 ? const Color.fromARGB(255, 0, 108, 82)
-                : const Color.fromARGB(255, 180, 180, 180),
+                : const Color.fromARGB(255, 200, 200, 200),
             width: 2,
           ),
-          color: isSelected
-              ? const Color.fromARGB(255, 0, 108, 82).withValues(alpha: 0.15)
-              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: isSelected
-            ? Icon(
-                Icons.check,
-                color: const Color.fromARGB(255, 0, 108, 82),
-                size: size * 0.6,
-              )
-            : null,
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.white : Colors.black87,
+          ),
+        ),
       ),
     );
+  }
+
+  /// 이전 질문
+  void _previousQuestion() {
+    if (_currentQuestionIndex > 0) {
+      setState(() {
+        _currentQuestionIndex--;
+      });
+    }
+  }
+
+  /// 다음 질문
+  void _nextQuestion() {
+    if (_currentQuestionIndex < _questions.length - 1) {
+      setState(() {
+        _currentQuestionIndex++;
+      });
+    } else {
+      // 마지막 질문 - 결과 계산
+      _calculateAbtiResult();
+    }
   }
 
   /// ABTI 결과 계산
   void _calculateAbtiResult() {
     if (_abtiAnswers.length < 20) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('모든 질문에 답변해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('모든 질문에 답변해주세요.')));
       return;
     }
 

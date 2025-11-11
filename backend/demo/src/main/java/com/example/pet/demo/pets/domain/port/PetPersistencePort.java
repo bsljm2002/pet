@@ -3,6 +3,7 @@ package com.example.pet.demo.pets.domain.port;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import com.example.pet.demo.pets.domain.Pet;
 
@@ -19,4 +20,5 @@ public interface PetPersistencePort {
             String speciesDetail
     );
     List<Pet> findByOwnerId(Long ownerId);
+    Optional<Pet> findById(Long id);
 }

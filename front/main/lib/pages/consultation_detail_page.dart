@@ -34,8 +34,10 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
   Widget build(BuildContext context) {
     final record = widget.record;
     final accentColor = _statusColor(record.status);
-    final requestedLabel =
-        DateFormat('yyyy.MM.dd (E) HH:mm', 'ko_KR').format(record.requestedAt);
+    final requestedLabel = DateFormat(
+      'yyyy.MM.dd (E) HH:mm',
+      'ko_KR',
+    ).format(record.requestedAt);
     final isUpcoming = record.requestedAt.isAfter(DateTime.now());
 
     return Scaffold(
@@ -63,7 +65,11 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
             _buildNotesCard(record.notes),
             const SizedBox(height: 24),
             _buildSectionTitle('담당 수의사 & 상담 일정'),
-            _buildDoctorCard(record.vetName, requestedLabel, record.contactMethod),
+            _buildDoctorCard(
+              record.vetName,
+              requestedLabel,
+              record.contactMethod,
+            ),
             const SizedBox(height: 24),
             _buildSectionTitle('병원 위치'),
             _buildMapPlaceholder(),
@@ -156,11 +162,13 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
               ),
               const SizedBox(height: 12),
               if (ageLabel != null) _detailRow('나이', ageLabel),
-              if (profile.speciesDetail != null && profile.speciesDetail!.trim().isNotEmpty)
+              if (profile.speciesDetail != null &&
+                  profile.speciesDetail!.trim().isNotEmpty)
                 _detailRow('품종', profile.speciesDetail!),
               if (profile.gender != null && profile.gender!.trim().isNotEmpty)
                 _detailRow('성별', profile.gender!),
-              if (profile.abtiTypeCode != null && profile.abtiTypeCode!.trim().isNotEmpty)
+              if (profile.abtiTypeCode != null &&
+                  profile.abtiTypeCode!.trim().isNotEmpty)
                 _detailRow('성격 유형', profile.abtiTypeCode!),
             ],
           ),
@@ -183,7 +191,11 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
     );
   }
 
-  Widget _buildDoctorCard(String vetName, String requestedLabel, String contactMethod) {
+  Widget _buildDoctorCard(
+    String vetName,
+    String requestedLabel,
+    String contactMethod,
+  ) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 6),
@@ -256,9 +268,9 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('상담이 취소되었습니다.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('상담이 취소되었습니다.')));
           Navigator.of(context).pop();
         },
         style: ElevatedButton.styleFrom(
@@ -294,12 +306,7 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14.5),
-            ),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14.5))),
         ],
       ),
     );
@@ -321,9 +328,9 @@ class _ConsultationDetailPageState extends State<ConsultationDetailPage> {
 
   PetProfile? _findPetProfile(String name) {
     try {
-      return PetProfileManager()
-          .getAllProfiles()
-          .firstWhere((profile) => profile.name == name);
+      return PetProfileManager().getAllProfiles().firstWhere(
+        (profile) => profile.name == name,
+      );
     } catch (_) {
       return null;
     }
@@ -391,10 +398,7 @@ class _HeaderCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            accentColor.withOpacity(0.12),
-            Colors.white,
-          ],
+          colors: [accentColor.withOpacity(0.12), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -425,7 +429,10 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(16),

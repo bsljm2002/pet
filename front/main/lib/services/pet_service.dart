@@ -10,7 +10,7 @@ class PetService {
 
   /// 펫 프로필 등록 API 호출
   Future<Map<String, dynamic>> createPet({
-    required int userId,
+    required String userId,
     required String name,
     required String species, // "DOG" or "CAT"
     required String birthdate, // "yyyy-MM-dd"
@@ -66,7 +66,7 @@ class PetService {
   }
 
   /// 사용자의 펫 목록 조회
-  Future<Map<String, dynamic>> getPetsByOwner(int userId) async {
+  Future<Map<String, dynamic>> getPetsByOwner(String userId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl?ownerId=$userId'),
@@ -77,6 +77,29 @@ class PetService {
         final data = jsonDecode(response.body);
         if (data["ok"] == true) {
           return {"success": true, "pets": data["data"] as List};
+        } else {
+          return {"success": false, "message": data["message"]};
+        }
+      } else {
+        return {"success": false, "message": "조회 실패 (${response.statusCode})"};
+      }
+    } catch (e) {
+      return {"success": false, "message": "네트워크 오류: $e"};
+    }
+  }
+
+  /// 개별 펫 조회
+  Future<Map<String, dynamic>> getPetById(int petId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/$petId'),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["ok"] == true) {
+          return {"success": true, "pet": data["data"]};
         } else {
           return {"success": false, "message": data["message"]};
         }
