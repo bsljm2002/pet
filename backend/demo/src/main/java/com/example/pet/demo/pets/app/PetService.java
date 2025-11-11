@@ -42,4 +42,10 @@ public class PetService {
     public List<Pet> getPetsByOwner(Long ownerId) {
         return pets.findByOwnerId(ownerId);
     }
+    @Transactional(readOnly = true)
+    public Pet getPetById(Long id) {
+        return pets.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found with id:" + id));
+    }
+
 }

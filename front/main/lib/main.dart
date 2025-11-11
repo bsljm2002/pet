@@ -92,7 +92,9 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(showBackButton: false), // 상단 앱 바 (메인 화면에서는 뒤로가기 버튼 숨김)
+      appBar: CustomAppBar(
+        showBackButton: false,
+      ), // 상단 앱 바 (메인 화면에서는 뒤로가기 버튼 숨김)
       body: _screens[_currentIndex], // 현재 선택된 탭의 화면을 표시
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex, // 현재 선택된 탭 인덱스 전달

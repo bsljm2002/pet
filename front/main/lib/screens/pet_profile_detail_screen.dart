@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'abti_test_screen.dart';
 import '../services/pet_profile_manager.dart';
 import '../models/pet_profile.dart';
+import '../services/pet_service.dart';
 
 /// 펫 프로필 상세보기 화면
 ///
@@ -30,23 +31,65 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
   // ABTI 결과 (테스트 완료 시 업데이트)
   String? _currentAbtiType;
 
+  PetProfile? _latestProfile; // 최신 펫 데이터
+  bool _isLoading = true; // 로딩 상태
+
   @override
   void initState() {
     super.initState();
     // 초기 ABTI 타입 설정
     _currentAbtiType = widget.profile.abtiTypeCode;
+    _loadPetDetails();
+  }
+
+  Future<void> _loadPetDetails() async {
+    if (widget.profile.id == null) {
+      setState(() {
+        _latestProfile = widget.profile;
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await PetService().getPetById(widget.profile.id!);
+
+      if (response['success'] == true) {
+        final petData = response['pet'];
+        final profile = PetProfile.fromJson(petData as Map<String, dynamic>);
+
+        setState(() {
+          _latestProfile = profile;
+          _currentAbtiType = profile.abtiTypeCode;
+          _isLoading = false;
+        });
+      } else {
+        // 실패 시 기존 데이터 사용
+        setState(() {
+          _latestProfile = widget.profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // 오류 시 기존 데이터 사용
+      setState(() {
+        _latestProfile = widget.profile;
+        _isLoading = false;
+      });
+    }
   }
 
   /// 생년월일로부터 나이 계산
   String _calculateAge() {
-    if (widget.profile.birthdate == null || widget.profile.birthdate!.isEmpty) {
+    final profile = _latestProfile ?? widget.profile;
+    if (profile.birthdate.isEmpty) {
       return '미등록';
     }
 
     try {
       // 생년월일 파싱 (여러 형식 지원)
       DateTime? birthDate;
-      final birthday = widget.profile.birthdate!;
+      final birthday = profile.birthdate;
 
       // YYYY-MM-DD 또는 YYYY.MM.DD 형식
       if (birthday.contains('-')) {
@@ -82,14 +125,17 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
 
   /// 성별 표시 문자열 반환
   String _getGenderDisplay() {
-    if (widget.profile.gender == null) {
+    final profile = _latestProfile ?? widget.profile;
+    if (profile.gender == null) {
       return '미등록';
     }
 
-    switch (widget.profile.gender) {
-      case 'Man':
+    switch (profile.gender!.toUpperCase()) {
+      case 'MALE':
+      case 'MAN':
         return '♂ 수컷';
-      case 'Woman':
+      case 'FEMALE':
+      case 'WOMAN':
         return '♀ 암컷';
       default:
         return '미등록';
@@ -256,10 +302,10 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
             child: CircleAvatar(
               radius: 60,
               backgroundColor: Color(0xFFE5E7EB),
-              backgroundImage: widget.profile.imageUrl != null
-                  ? NetworkImage(widget.profile.imageUrl!)
+              backgroundImage: (_latestProfile ?? widget.profile).imageUrl != null
+                  ? NetworkImage((_latestProfile ?? widget.profile).imageUrl!)
                   : null,
-              child: widget.profile.imageUrl == null
+              child: (_latestProfile ?? widget.profile).imageUrl == null
                   ? Icon(Icons.pets, size: 60, color: Colors.grey)
                   : null,
             ),
@@ -270,7 +316,7 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                widget.profile.name,
+                (_latestProfile ?? widget.profile).name,
                 style: TextStyle(
                   fontSize: 24,
                   color: Colors.white,
@@ -314,12 +360,13 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
         // ABTI 원형 (클릭 가능)
         GestureDetector(
           onTap: () async {
+            final profile = _latestProfile ?? widget.profile;
             // ABTI 테스트 페이지로 이동
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AbtiTestScreen(
-                  petName: widget.profile.name,
+                  petName: profile.name,
                   currentAbtiType: _currentAbtiType,
                 ),
               ),
@@ -332,10 +379,10 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
               });
 
               // 프로필 매니저에도 업데이트
-              if (widget.profile.id != null) {
+              if (profile.id != null) {
                 PetProfileManager().updateProfile(
-                  widget.profile.id!,
-                  widget.profile.copyWith(abtiTypeCode: result),
+                  profile.id!,
+                  profile.copyWith(abtiTypeCode: result),
                 );
               }
 
@@ -405,11 +452,15 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
               children: [
                 _buildInfoRow('나이:', _calculateAge(), Colors.black87),
                 SizedBox(height: 8),
-                _buildInfoRow('체중:', '5.12Kg', Color(0xFFFF9500)),
+                _buildInfoRow(
+                  '체중:',
+                  '${(_latestProfile ?? widget.profile).weight.toStringAsFixed(2)}Kg',
+                  Color(0xFFFF9500),
+                ),
                 SizedBox(height: 8),
                 _buildInfoRow(
                   '품종:',
-                  widget.profile.speciesDetail ?? '미등록',
+                  (_latestProfile ?? widget.profile).speciesDetail ?? '미등록',
                   Color(0xFF0066CC),
                 ),
                 SizedBox(height: 8),

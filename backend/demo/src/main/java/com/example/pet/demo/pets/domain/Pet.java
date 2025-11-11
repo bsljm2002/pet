@@ -82,6 +82,12 @@ public class Pet {
     @Column(name = "species_detail", length = 30)
     private String speciesDetail;
 
+        // JSON 직렬화를 위한 userId getter 추가
+    public Long getUserId() {
+        return owner != null ? owner.getId() : null;
+    }
+
+
     public enum Species {
         DOG, CAT
     }
