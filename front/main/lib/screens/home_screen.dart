@@ -1,6 +1,9 @@
 // 홈 화면 위젯
 // 반려동물 프로필 관리 및 펫 일기 화면
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import '../services/pet_service.dart';
+import '../services/auth_service.dart';
 import 'add_pet_profile_screen.dart';
 import 'pet_profile_detail_screen.dart';
 import 'pet_diary_screen.dart';
@@ -18,6 +21,62 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedTabIndex = 0; // 0: 펫 프로필, 1: 펫 일기
+
+  List<PetProfile> _petProfiles = []; // 펫 목록 데이터
+  bool _isLoading = true; // 로딩 상태
+  String? _errorMessage; // 에러 메세지
+
+  Future<void> _loadPetProfiles() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 현재 로그인 한 사용자 확인
+      final currentUser = AuthService().currentUser;
+
+      if (currentUser == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "로그인이 필요합니다. 냥!";
+        });
+        return;
+      }
+      // 백엔드 API호
+      final response = await PetService().getPetsByOwner(currentUser.id);
+
+      if (response['success'] == true) {
+        // 성공: JSON 데이터를 PetProfile 객체로 변환
+        final List<dynamic> petsData = response['pets'];
+        final List<PetProfile> profiles = petsData
+            .map((json) => PetProfile.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        setState(() {
+          _petProfiles = profiles;
+          _isLoading = false;
+        });
+      } else {
+        // 실패: 에러 메시지 설정
+        setState(() {
+          _isLoading = false;
+          _errorMessage = response['message'] ?? '펫 목록을 불러오지 못했습니다.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '네트워크 오류: $e';
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPetProfiles(); // 화면 로드 시 펫 목록 조회
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,13 +214,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    // 등록된 펫 프로필 목록
-                    ...PetProfileManager().getAllProfiles().map((profile) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 20),
-                        child: _buildPetProfile(context, profile: profile),
-                      );
-                    }),
+                    // 로딩 중일 때
+                    if (_isLoading)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: CircularProgressIndicator(
+                          color: Color.fromARGB(255, 0, 108, 82),
+                        ),
+                      )
+                    // 에러가 있을 때
+                    else if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    // 정상적으로 데이터를 불러왔을 때
+                    else
+                      ..._petProfiles.map((profile) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 20),
+                          child: _buildPetProfile(context, profile: profile),
+                        );
+                      }),
                     // 새로운 펫 추가 버튼
                     _buildAddPetButton(context),
                   ],
@@ -185,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => PetProfileDetailScreen(profile: profile),
           ),
         );
-        setState(() {});
+        await _loadPetProfiles();
       },
       child: Column(
         children: [
@@ -236,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => AddPetProfileScreen()),
         );
         if (result == true) {
-          setState(() {});
+          await _loadPetProfiles();
         }
       },
       child: Column(

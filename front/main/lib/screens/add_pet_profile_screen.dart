@@ -246,7 +246,11 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
                   children: [
                     _buildInputField('펫 이름', _nameController, isRequired: true),
                     SizedBox(height: 12),
-                    _buildInputField('펫 생년월일', _birthdayController, isRequired: true),
+                    _buildInputField(
+                      '펫 생년월일',
+                      _birthdayController,
+                      isRequired: true,
+                    ),
                     SizedBox(height: 12),
                     _buildWeightInputField(),
                     SizedBox(height: 12),
@@ -352,7 +356,11 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
   }
 
   /// 입력 필드
-  Widget _buildInputField(String label, TextEditingController controller, {bool isRequired = false}) {
+  Widget _buildInputField(
+    String label,
+    TextEditingController controller, {
+    bool isRequired = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -439,10 +447,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               contentPadding: EdgeInsets.symmetric(horizontal: 12),
               hintText: '예: 5.5',
               suffixText: 'kg',
-              suffixStyle: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              suffixStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
         ),
@@ -825,11 +830,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
             ),
           ] else ...[
             // 테스트 시작 안내
-            Icon(
-              Icons.quiz_outlined,
-              size: 48,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.quiz_outlined, size: 48, color: Colors.grey.shade400),
             SizedBox(height: 12),
             Text(
               'ABTI 테스트를 진행해주세요',
@@ -843,10 +844,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
             Text(
               '반려동물의 성향을 파악하여\n맞춤형 케어를 제공합니다',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
             SizedBox(height: 16),
             ElevatedButton.icon(
@@ -854,9 +852,8 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AbtiTestScreen(
-                      petName: _nameController.text.trim(),
-                    ),
+                    builder: (context) =>
+                        AbtiTestScreen(petName: _nameController.text.trim()),
                   ),
                 );
                 if (result != null) {
@@ -990,13 +987,12 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               return;
             }
 
-            final userId = int.parse(authService.currentUser!.id);
-
             // ===== 4. API 호출 =====
             final result = await PetService().createPet(
-              userId: userId, // 실제 로그인한 사용자 ID 사용
+              userId: authService.currentUser!.id, // 실제 로그인한 사용자 ID 사용
               name: _nameController.text.trim(),
-              species: _selectedSpecies!.toUpperCase(), // "dog" -> "DOG", "cat" -> "CAT"
+              species: _selectedSpecies!
+                  .toUpperCase(), // "dog" -> "DOG", "cat" -> "CAT"
               birthdate: _birthdayController.text.trim(), // "yyyy-MM-dd"
               weight: weight,
               abitTypeCode: _selectedAbtiType!, // "ENFP" 등
