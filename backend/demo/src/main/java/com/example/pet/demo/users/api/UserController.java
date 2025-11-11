@@ -15,6 +15,7 @@ import com.example.pet.demo.users.api.dto.UserLoginReq;
 import com.example.pet.demo.users.api.dto.UserLoginRes;
 import com.example.pet.demo.users.app.UserService;
 import com.example.pet.demo.users.domain.User;
+import com.example.pet.demo.users.domain.User.UserType;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,7 @@ public class UserController {
         @Valid @RequestBody UserLoginReq req
         ) {
                 //1. 로그인 처리(이메일 로그인)
-                User user = userService.login(req.email(), req.password());
+                User user = userService.login(req.email(), req.p        assword());
 
                 //2. User 엔티티를 DTO로 변환
                 UserLoginRes response = UserLoginRes.from(user);
@@ -71,5 +72,21 @@ public class UserController {
         return ResponseEntity
                 .ok(ApiResponse.ok(Map.of("exists", exists)));
     }
+
+    @GetMapping("/partners")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPartners(@RequestParam("user_type") String userType) {
+        UserType type;
+        try {
+                type = UserType.valueOf(userType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("INVALID_USER_TYPE");
+        }
+        if (type != UserType.HOSPITAL && type != UserType.SITTER) {
+                throw new IllegalArgumentException("UNSUPPORTED_USER_TYPE");
+        }
+
+        return 
+    }
+    
 
 }
