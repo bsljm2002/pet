@@ -115,6 +115,9 @@ public class User {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "profileurl")
+    private String profileUrl;
+
     public boolean isActive() { return this.status == UserStatus.ACTIVE; }
     public void markLastLoginNow() { this.lastLoginAt = LocalDateTime.now(); }
     public void lockUntil(LocalDateTime until) { this.status = UserStatus.LOCKED; this.lockedUntil = until; }
