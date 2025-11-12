@@ -125,7 +125,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<User> findByUserType(UserType type){
-        return = users.findByUserType(type);
+        return users.findByUserType(type);
     }
 
 }
