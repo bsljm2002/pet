@@ -128,4 +128,8 @@ public class UserService {
         return users.findByUserType(type);
     }
 
+    @Transactional
+    public void updateProfileUrl(Long userId, String imageUrl) {
+        users.updateProfileUrl(userId, imageUrl);
+    }
 }
