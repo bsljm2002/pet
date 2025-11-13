@@ -142,7 +142,7 @@ public class UserController {
                         .fromCurrentContextPath()
                         .path(relative)
                         .toUriString();
-                
+                userService.updateProfileUrl(userId, imageUrl); // 여기서 DB 반영
                 return ResponseEntity.ok(ApiResponse.ok(Map.of("imageUrl", imageUrl)));
         }
 

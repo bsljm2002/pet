@@ -21,4 +21,7 @@ public class UserJpaAdapter implements UserPersistencePort  {
     @Override public User save(User user) { return jpa.save(user); }
     @Override public void touchLastLogin(Long id) { jpa.touchLastLogin(id); }
     @Override public List<User> findByUserType(UserType type) { return jpa.findByUserType(type); }
+    @Override public void updateProfileUrl(Long id, String url) {
+        jpa.updateProfileUrl(id, url);
+    }
 }
