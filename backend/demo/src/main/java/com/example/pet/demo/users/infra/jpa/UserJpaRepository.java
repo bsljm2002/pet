@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.pet.demo.users.domain.User;
 import com.example.pet.demo.users.domain.User.UserType;
@@ -21,4 +22,7 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     List<User> findByUserType(UserType type);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update User u set u.profileUrl = :url where u.id = :id")
+    int updateProfileUrl(@Param("id")Long id, @Param("url") String url);
 }

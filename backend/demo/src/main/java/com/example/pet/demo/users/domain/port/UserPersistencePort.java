@@ -12,4 +12,5 @@ public interface UserPersistencePort {
     User save(User user);
     void touchLastLogin(Long id); // 선택
     List<User> findByUserType(UserType type);
+    void updateProfileUrl(Long id, String url);
 }
