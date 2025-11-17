@@ -26,10 +26,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-// 엔티티
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
@@ -117,6 +118,9 @@ public class User {
 
     @Column(name = "profileurl")
     private String profileUrl;
+
+    @Column(name = "fcm_token", length = 255)
+    private String fcmToken;
 
     public boolean isActive() { return this.status == UserStatus.ACTIVE; }
     public void markLastLoginNow() { this.lastLoginAt = LocalDateTime.now(); }

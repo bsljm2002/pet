@@ -15,7 +15,7 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
     Optional<User> findByEmail(String email);
-
+    
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update User u set u.lastLoginAt = CURRENT_TIMESTAMP where u.id = :id")
     int touchLastLogin(Long id);
@@ -25,4 +25,8 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update User u set u.profileUrl = :url where u.id = :id")
     int updateProfileUrl(@Param("id")Long id, @Param("url") String url);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update User u set u.fcmToken = :token where u.id = :id")
+    int updateFcmToken(Long id, String token);
 }
