@@ -18,10 +18,10 @@ public class UserJpaAdapter implements UserPersistencePort  {
 
     @Override public boolean existsByEmail(String email) { return jpa.existsByEmail(email); }
     @Override public Optional<User> findByEmail(String email) { return jpa.findByEmail(email); }
+    @Override public Optional<User> findById(Long id) { return jpa.findById(id); } 
     @Override public User save(User user) { return jpa.save(user); }
     @Override public void touchLastLogin(Long id) { jpa.touchLastLogin(id); }
     @Override public List<User> findByUserType(UserType type) { return jpa.findByUserType(type); }
-    @Override public void updateProfileUrl(Long id, String url) {
-        jpa.updateProfileUrl(id, url);
-    }
+    @Override public void updateProfileUrl(Long id, String url) {jpa.updateProfileUrl(id, url);}
+    @Override public void updateFcmToken(Long id, String token) { jpa.updateFcmToken(id, token); }
 }
