@@ -23,7 +23,9 @@ public class FileStorageService {
         PETS("pets"),
         USERS("users"),
         ARTICLE("article"),
-        DISEASES("diseases");
+        DISEASES("diseases"),
+        RESERVATION("reservation");
+
 
         private final String dir;
 
@@ -50,6 +52,10 @@ public class FileStorageService {
 
     public String saveDiseaseImage(Long ownerId, MultipartFile file) throws IOException {
         return save(ImageCategory.DISEASES, ownerId, file);
+    }
+
+    public String saveReservationImage(Long ownerId, MultipartFile file) throws IOException {
+        return save(ImageCategory.RESERVATION, ownerId, file);
     }
 
     public String save(ImageCategory category, Long refId, MultipartFile file) throws IOException {
