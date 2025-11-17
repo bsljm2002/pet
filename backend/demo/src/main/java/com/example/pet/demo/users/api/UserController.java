@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -144,6 +145,19 @@ public class UserController {
                         .toUriString();
                 userService.updateProfileUrl(userId, imageUrl); // 여기서 DB 반영
                 return ResponseEntity.ok(ApiResponse.ok(Map.of("imageUrl", imageUrl)));
+        }
+
+        @PatchMapping("/{id}/fcm-token")
+        public ResponseEntity<ApiResponse<Map<String, Boolean>>> updateFcmToken(
+                @PathVariable("id") Long userId,
+                @RequestBody Map<String, String> body
+        ) {
+        String token = body.get("token");
+        if (token == null || token.isBlank()) {
+                throw new IllegalArgumentException("FCM_TOKEN_REQUIRED");
+        }
+        userService.updateFcmToken(userId, token);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("updated", true)));
         }
 
 }
