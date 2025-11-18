@@ -247,13 +247,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
   /// 필터링된 게시글 가져오기
   List<Map<String, dynamic>> _getFilteredPosts() {
     final allPosts = [..._getSamplePosts(), ..._myPosts];
+
     if (_selectedTags.isEmpty) {
       return allPosts;
+    } else {
+      return allPosts.where((post) {
+        final postTags = post['tags'] as List<String>;
+        return postTags.any((tag) => _selectedTags.contains(tag));
+      }).toList();
     }
-    return allPosts.where((post) {
-      final postTags = post['tags'] as List<String>;
-      return postTags.any((tag) => _selectedTags.contains(tag));
-    }).toList();
   }
 
   /// 게시글 작성 페이지로 이동

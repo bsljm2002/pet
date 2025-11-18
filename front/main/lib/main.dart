@@ -13,6 +13,7 @@ import 'widgets/custom_bottom_nav.dart';
 import 'providers/hospital_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
+import 'providers/llm_emoticon_provider.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
@@ -23,6 +24,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => HospitalProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => LlmEmoticonProvider()),
       ],
       child: const MyApp(),
     ),

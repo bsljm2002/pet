@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../main.dart';
 import 'login_screen.dart';
 import 'community_screen.dart';
+import '../pages/llm_emoticon_create_page.dart';
 
 // 설정 화면
 // 사용자 프로필, 바로가기 메뉴, 로그아웃 기능 제공
@@ -247,6 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // 커뮤니티 섹션
           _buildCommunityCard(context),
+          SizedBox(height: 12),
+
+          // 이모티콘 생성 섹션
+          _buildEmoticonCreateCard(context),
         ],
       ),
     );
@@ -516,21 +521,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(height: 4),
                     Text(
                       '반려동물 용품을 쇼핑하세요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
 
               // 화살표 아이콘
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 18,
-              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 18),
             ],
           ),
         ),
@@ -590,21 +588,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SizedBox(height: 4),
                     Text(
                       '반려동물 정보를 공유하고 소통해보세요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
 
               // 화살표 아이콘
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 18,
+              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 이모티콘 생성 카드 (별도 화면으로 이동)
+  Widget _buildEmoticonCreateCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _navigateToEmoticonCreate(context),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Container(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // 아이콘
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.fromARGB(255, 255, 243, 224),
+                ),
+                child: Icon(
+                  Icons.auto_awesome,
+                  color: Color.fromARGB(255, 255, 152, 0),
+                  size: 28,
+                ),
               ),
+              SizedBox(width: 16),
+
+              // 타이틀과 설명
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '이모티콘 생성',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 0, 56, 41),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'AI가 만드는 우리 아이만의 이모티콘',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 화살표 아이콘
+              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 18),
             ],
           ),
         ),
@@ -614,11 +672,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// 커뮤니티로 이동
   void _navigateToCommunity(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CommunityScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => CommunityScreen()));
+  }
+
+  /// 이모티콘 생성 페이지로 이동
+  void _navigateToEmoticonCreate(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => LlmEmoticonCreatePage()));
   }
 
   /// 탭 이동 처리

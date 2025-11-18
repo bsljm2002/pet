@@ -230,5 +230,27 @@ COMMENT='예약';
 COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
 
+CREATE TABLE IF NOT EXISTS `llm_pet_emojis` (
+    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `pet_id`        BIGINT UNSIGNED NULL COMMENT 'pets.id (사진 주인)',
+    `user_id`       BIGINT UNSIGNED NOT NULL COMMENT '요청자 users.id',
+    `image_url`     VARCHAR(512) NOT NULL COMMENT '원본 반려동물 이미지 경로',
+    `model_name`    VARCHAR(100) NOT NULL COMMENT '사용된 LLM/이미지 모델',
+    `prompt_meta`   JSON NULL COMMENT '품종/감정/스타일 등 프롬프트 구성요소',
+    `status`        ENUM('REQUESTED','PROCESSING','SUCCEEDED','FAILED') NOT NULL DEFAULT 'REQUESTED',
+    `emoji_url`     VARCHAR(512) NOT NULL COMMENT '생성된 이모지 이미지 경로',
+    `error_message` VARCHAR(1000) NULL,
+    `confidence`    DECIMAL(5,2) NULL COMMENT '신뢰도 (0~100)',
+    `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_pet` (`pet_id`),
+    KEY `idx_user` (`user_id`, `status`),
+    KEY `idx_status_created` (`status`, `created_at`),
+    CONSTRAINT `fk_llm_pet` FOREIGN KEY (`pet_id`) REFERENCES `pets`(`id`),
+    CONSTRAINT `fk_llm_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+COMMIT;
+SET FOREIGN_KEY_CHECKS = 1;
 

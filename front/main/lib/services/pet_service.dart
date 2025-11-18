@@ -6,7 +6,7 @@ class PetService {
   factory PetService() => _instance;
   PetService._internal();
 
-  static const String baseUrl = "http://10.0.2.2:9075/api/v1/pets";
+  static const String baseUrl = "http://223.130.130.225:9075/api/v1/pets";
 
   /// 펫 프로필 등록 API 호출
   Future<Map<String, dynamic>> createPet({
