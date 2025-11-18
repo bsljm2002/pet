@@ -3,6 +3,7 @@ package com.example.pet.demo.users.api.dto;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.example.pet.demo.users.domain.User;
 import com.example.pet.demo.users.domain.User.CaCategorical;
 import com.example.pet.demo.users.domain.User.Gender;
 import com.example.pet.demo.users.domain.User.PetsitterWork;
@@ -10,6 +11,8 @@ import com.example.pet.demo.users.domain.User.UserType;
 import com.example.pet.demo.users.domain.User.VetSpecialty;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -58,10 +61,14 @@ public record UserSignupReq(
     CaCategorical caCategorical,                  // "dog" | "cat" | "both"
 
     // 병원 전용
-    VetSpecialty vetSpecialty,                    // "surgery" 등
+    // VetSpecialty vetSpecialty,                    // "surgery" 등
+    @ArraySchema(schema = @Schema(implementation = User.VetSpecialty.class))
+    List<User.VetSpecialty> vetSpecialty, 
 
     // 펫시터 전용
-    PetsitterWork petsitterWork,                  // "walk" 등
+    // PetsitterWork petsitterWork,                  // "walk" 등
+    @ArraySchema(schema = @Schema(implementation = User.PetsitterWork.class))
+    List<User.PetsitterWork> petsitterWork, 
 
     // 근무 정보(선택)
     List<String> workingDays,

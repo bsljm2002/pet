@@ -1,5 +1,6 @@
 package com.example.pet.demo.users.app;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,27 +43,30 @@ public class UserService {
         UserType type = req.userType();
         String tin = null;
         User.CaCategorical caCat = null;
-        User.VetSpecialty vet = null;
-        User.PetsitterWork sitterWork = null;
+        // User.VetSpecialty vet = null;
+        // User.PetsitterWork sitterWork = null;
+        String vetCsv = null;
+        String sitterCsv = null;
+
         String start = null;
         String end = null;
 
         switch (type) {
             case GENERAL -> {
-                tin = null; caCat = null; vet = null; sitterWork = null;
-                start = null; end = null; // 근무시간 저장 금지
+                // tin = null; caCat = null; vet = null; sitterWork = null;
+                // start = null; end = null; // 근무시간 저장 금지
             }
             case HOSPITAL -> {
                 tin = req.tin();
-                caCat = req.caCategorical();
-                vet = req.vetSpecialty();
+                caCat = req.caCategorical();           // 단일 enum 그대로
+                vetCsv = toCsv(req.vetSpecialty());    // List<String> -> CSV
                 start = req.workingStartHours();
                 end = req.workingEndHours();
             }
             case SITTER -> {
                 tin = req.tin();
                 caCat = req.caCategorical();
-                sitterWork = req.petsitterWork();
+                sitterCsv = toCsv(req.petsitterWork()); // List<String> -> CSV
                 start = req.workingStartHours();
                 end = req.workingEndHours();
             }
@@ -85,8 +89,8 @@ public class UserService {
                 .status(UserStatus.ACTIVE)       // 기본 활성
                 .tin(tin)        
                 .caCategorical(caCat)
-                .vetSpecialty(vet)
-                .petsitterWork(sitterWork)
+                .vetSpecialtyCsv(vetCsv)       
+                .petsitterWorkCsv(sitterCsv) 
                 .workingDays(workingDaysCsv)
                 .workingStartHours(req.workingStartHours())
                 .workingEndHours(req.workingEndHours())
@@ -132,9 +136,9 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
     }
 
-    private String toCsv(List<String> days) {
-        return (days == null || days.isEmpty()) ? null : String.join(",", days);
-    }
+    // private String toCsv(List<String> days) {
+    //     return (days == null || days.isEmpty()) ? null : String.join(",", days);
+    // }
 
     public boolean checkEmailExists(String email) {
         return users.existsByEmail(email);
@@ -148,5 +152,17 @@ public class UserService {
     @Transactional
     public void updateProfileUrl(Long userId, String imageUrl) {
         users.updateProfileUrl(userId, imageUrl);
+    }
+
+    private String toCsv(Collection<?> values) {
+        return (values == null || values.isEmpty())
+                ? null
+                : values.stream()
+                        .map(Object::toString)
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(String::toUpperCase)
+                        .reduce((a, b) -> a + "," + b)
+                        .orElse(null);
     }
 }

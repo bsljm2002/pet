@@ -82,13 +82,19 @@ public class User {
     @Column(name = "ca_categorical", length = 10)
     private CaCategorical caCategorical;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "vet_specialty", length = 30)
-    private VetSpecialty vetSpecialty;   
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "vet_specialty", length = 30)
+    // private VetSpecialty vetSpecialty;   
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "petsitter_work", length = 20)
-    private PetsitterWork petsitterWork;
+    // @Enumerated(EnumType.STRING)
+    // @Column(name = "petsitter_work", length = 20)
+    // private PetsitterWork petsitterWork;
+
+    @Column(name = "vet_specialty", length = 255)
+    private String vetSpecialtyCsv;      // 예: "SURGERY,DERMATOLOGY"
+
+    @Column(name = "petsitter_work", length = 255)
+    private String petsitterWorkCsv;  
 
     @Column(name = "working_days")
     private String workingDays;

@@ -98,17 +98,13 @@ public class UserController {
                         row.put("username", u.getUsername());
 
                         if (type == UserType.HOSPITAL) {
-                                row.put("vet_specialty", u.getVetSpecialty() == null
-                                                ? List.of()
-                                                : List.of(u.getVetSpecialty().name()));
+                                row.put("vet_specialty", splitCsv(u.getVetSpecialtyCsv()));
                                 row.put("ca_categorical", u.getCaCategorical() == null
                                                 ? null
                                                 : u.getCaCategorical().name());
                                 row.put("image_url", u.getProfileUrl());
                         } else {
-                                row.put("petsitter", u.getPetsitterWork() == null
-                                                ? List.of()
-                                                : List.of(u.getPetsitterWork().name()));
+                                row.put("petsitter", splitCsv(u.getPetsitterWorkCsv()));
                                 row.put("image_url", u.getProfileUrl());
                         }
 
@@ -152,12 +148,21 @@ public class UserController {
                 @PathVariable("id") Long userId,
                 @RequestBody Map<String, String> body
         ) {
-        String token = body.get("token");
-        if (token == null || token.isBlank()) {
-                throw new IllegalArgumentException("FCM_TOKEN_REQUIRED");
+                String token = body.get("token");
+                if (token == null || token.isBlank()) {
+                        throw new IllegalArgumentException("FCM_TOKEN_REQUIRED");
+                }
+                userService.updateFcmToken(userId, token);
+                return ResponseEntity.ok(ApiResponse.ok(Map.of("updated", true)));
         }
-        userService.updateFcmToken(userId, token);
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("updated", true)));
-        }
+
+        private List<String> splitCsv(String csv) {
+                return (csv == null || csv.isBlank())
+                        ? List.of()
+                        : Arrays.stream(csv.split(","))
+                                .map(String::trim)
+                                .filter(s -> !s.isEmpty())
+                                .toList();
+                }
 
 }
