@@ -40,6 +40,7 @@ dependencies:
 
   # HTTP 통신을 위한 패키지
   http: ^1.2.0
+  http_parser: ^4.0.2
 
   # 상태 관리를 위한 Provider 패키지
   provider: ^6.1.1
