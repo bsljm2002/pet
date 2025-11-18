@@ -21,4 +21,5 @@ public interface PetPersistencePort {
     );
     List<Pet> findByOwnerId(Long ownerId);
     Optional<Pet> findById(Long id);
+    void deleteById(Long id);
 }

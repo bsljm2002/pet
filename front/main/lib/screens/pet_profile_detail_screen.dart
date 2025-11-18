@@ -5,6 +5,8 @@ import 'abti_test_screen.dart';
 import '../services/pet_profile_manager.dart';
 import '../models/pet_profile.dart';
 import '../services/pet_service.dart';
+import '../main.dart';
+import 'create_pet_diary_screen.dart';
 
 /// 펫 프로필 상세보기 화면
 ///
@@ -33,6 +35,8 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
 
   PetProfile? _latestProfile; // 최신 펫 데이터
   bool _isLoading = true; // 로딩 상태
+
+  bool _isDeleting = false;
 
   @override
   void initState() {
@@ -77,6 +81,89 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  /// 삭제 확인 다이얼로그 표시
+  Future<void> _showDeleteConfirmDialog() async {
+    if (widget.profile.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('저장되지 않은 프로필은 삭제할 수 없습니다.')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('프로필 삭제'),
+        content: const Text('정말 삭제할까요? 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: _isDeleting ? null : () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: _isDeleting
+                ? null
+                : () async {
+                    Navigator.pop(ctx);
+                    await _deletePet();
+                  },
+            child: _isDeleting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 펫 프로필 삭제
+  Future<void> _deletePet() async {
+    final petId = _latestProfile?.id ?? widget.profile.id;
+    if (petId == null) return;
+
+    setState(() => _isDeleting = true);
+    final result = await PetService().deletePet(petId);
+    if (!mounted) return;
+
+    setState(() => _isDeleting = false);
+
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필이 삭제되었습니다.')),
+      );
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? '삭제에 실패했습니다.')),
+      );
+    }
+  }
+
+  /// 유효한 네트워크 URL인지 확인
+  bool _isValidNetworkUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('/media/');
+  }
+
+  /// 이미지 URL을 전체 경로로 변환
+  String _getFullImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('/media/')) {
+      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
+      return 'http://10.0.2.2:9075$url';
+    }
+    return url;
   }
 
   /// 생년월일로부터 나이 계산
@@ -256,12 +343,17 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
                   children: [
                     _buildSettingsMenuItem('프로필 수정', () {
                       // TODO: 프로필 수정 기능
+                      setState(() {
+                        _showSettingsMenu = false;
+                      });
                       print('프로필 수정');
                     }),
                     Divider(height: 1, color: Colors.grey.shade300),
                     _buildSettingsMenuItem('삭제', () {
-                      // TODO: 삭제 기능
-                      print('삭제');
+                      setState(() {
+                        _showSettingsMenu = false;
+                      });
+                      _showDeleteConfirmDialog();
                     }),
                     Divider(height: 1, color: Colors.grey.shade300),
                     _buildSettingsMenuItem('취소', () {
@@ -302,10 +394,20 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
             child: CircleAvatar(
               radius: 60,
               backgroundColor: Color(0xFFE5E7EB),
-              backgroundImage: (_latestProfile ?? widget.profile).imageUrl != null
-                  ? NetworkImage((_latestProfile ?? widget.profile).imageUrl!)
+              backgroundImage:
+                  _isValidNetworkUrl(
+                    (_latestProfile ?? widget.profile).imageUrl,
+                  )
+                  ? NetworkImage(
+                      _getFullImageUrl(
+                        (_latestProfile ?? widget.profile).imageUrl,
+                      ),
+                    )
                   : null,
-              child: (_latestProfile ?? widget.profile).imageUrl == null
+              child:
+                  !_isValidNetworkUrl(
+                    (_latestProfile ?? widget.profile).imageUrl,
+                  )
                   ? Icon(Icons.pets, size: 60, color: Colors.grey)
                   : null,
             ),
@@ -324,6 +426,37 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
                 ),
               ),
             ],
+          ),
+          SizedBox(height: 20),
+          // 오늘의 일기 작성 버튼
+          ElevatedButton.icon(
+            onPressed: () async {
+              // 일기 생성 화면으로 이동
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreatePetDiaryScreen(
+                    profile: _latestProfile ?? widget.profile,
+                  ),
+                ),
+              );
+            },
+            icon: Icon(Icons.edit_note, color: Colors.white),
+            label: Text(
+              '오늘의 일기 작성',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromARGB(255, 0, 108, 82),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
           ),
         ],
       ),

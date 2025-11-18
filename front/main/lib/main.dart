@@ -52,8 +52,9 @@ class MyApp extends StatelessWidget {
 // StatefulWidget으로 화면 전환 시 상태를 관리
 class MainScreen extends StatefulWidget {
   final int initialIndex; // 초기 탭 인덱스
+  final int homeTabIndex; // 홈 화면의 초기 탭 인덱스 (0: 펫 프로필, 1: 펫 일기)
 
-  const MainScreen({super.key, this.initialIndex = 0});
+  const MainScreen({super.key, this.initialIndex = 0, this.homeTabIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -64,22 +65,23 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   // 현재 선택된 하단 네비게이션 바 탭의 인덱스
   late int _currentIndex;
+  late List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex; // 초기 인덱스 설정
-  }
 
-  // 각 탭에 해당하는 화면들의 리스트
-  // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 펫샵, 4: 설정
-  final List<Widget> _screens = [
-    HomeScreen(),
-    AiCareScreen(),
-    HospitalScreen(),
-    PetShopScreen(),
-    SettingsScreen(),
-  ];
+    // 각 탭에 해당하는 화면들의 리스트
+    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 펫샵, 4: 설정
+    _screens = [
+      HomeScreen(initialTabIndex: widget.homeTabIndex),
+      AiCareScreen(),
+      HospitalScreen(),
+      PetShopScreen(),
+      SettingsScreen(),
+    ];
+  }
 
   // 하단 네비게이션 바의 탭이 눌렸을 때 호출되는 콜백 함수
   // 선택된 탭의 인덱스를 받아 현재 화면을 변경

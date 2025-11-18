@@ -13,14 +13,16 @@ import '../models/pet_profile.dart';
 /// 홈 화면
 /// 반려동물 프로필 목록과 펫 일기를 표시하는 화면
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int initialTabIndex; // 초기 탭 인덱스 (0: 펫 프로필, 1: 펫 일기)
+
+  const HomeScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedTabIndex = 0; // 0: 펫 프로필, 1: 펫 일기
+  late int _selectedTabIndex; // 0: 펫 프로필, 1: 펫 일기
 
   List<PetProfile> _petProfiles = []; // 펫 목록 데이터
   bool _isLoading = true; // 로딩 상태
@@ -75,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTabIndex = widget.initialTabIndex; // 초기 탭 설정
     _loadPetProfiles(); // 화면 로드 시 펫 목록 조회
   }
 
@@ -210,40 +213,49 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               SizedBox(height: 20),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    // 로딩 중일 때
-                    if (_isLoading)
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: CircularProgressIndicator(
-                          color: Color.fromARGB(255, 0, 108, 82),
+              // 로딩 중일 때
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: CircularProgressIndicator(
+                    color: Color.fromARGB(255, 0, 108, 82),
+                  ),
+                )
+              // 에러가 있을 때
+              else if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                )
+              // 정상적으로 데이터를 불러왔을 때
+              else
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 한 줄에 4개 표시, spacing 고려
+                    final itemWidth = (constraints.maxWidth - (3 * 20)) / 4;
+                    return Wrap(
+                      spacing: 20,
+                      runSpacing: 20,
+                      alignment: WrapAlignment.start,
+                      children: [
+                        ..._petProfiles.map((profile) {
+                          return SizedBox(
+                            width: itemWidth,
+                            child: _buildPetProfile(context, profile: profile),
+                          );
+                        }),
+                        // 새로운 펫 추가 버튼
+                        SizedBox(
+                          width: itemWidth,
+                          child: _buildAddPetButton(context),
                         ),
-                      )
-                    // 에러가 있을 때
-                    else if (_errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      )
-                    // 정상적으로 데이터를 불러왔을 때
-                    else
-                      ..._petProfiles.map((profile) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 20),
-                          child: _buildPetProfile(context, profile: profile),
-                        );
-                      }),
-                    // 새로운 펫 추가 버튼
-                    _buildAddPetButton(context),
-                  ],
+                      ],
+                    );
+                  },
                 ),
-              ),
               SizedBox(height: 20),
             ],
           ),
@@ -282,10 +294,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CircleAvatar(
               radius: 40,
               backgroundColor: Color(0xFFE5E7EB),
-              backgroundImage: profile.imageUrl != null
-                  ? NetworkImage(profile.imageUrl!)
+              backgroundImage: _isValidNetworkUrl(profile.imageUrl)
+                  ? NetworkImage(_getFullImageUrl(profile.imageUrl))
                   : null,
-              child: profile.imageUrl == null
+              child: !_isValidNetworkUrl(profile.imageUrl)
                   ? Icon(Icons.pets, size: 40, color: Colors.grey)
                   : null,
             ),
@@ -302,6 +314,25 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  /// 유효한 네트워크 URL인지 확인
+  bool _isValidNetworkUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/media/');
+  }
+
+  /// 이미지 URL을 전체 경로로 변환
+  String _getFullImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('/media/')) {
+      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
+      return 'http://10.0.2.2:9075$url';
+    }
+    return url;
   }
 
   /// 새로운 펫 추가 버튼
