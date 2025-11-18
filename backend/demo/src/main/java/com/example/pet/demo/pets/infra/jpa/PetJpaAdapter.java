@@ -58,7 +58,20 @@ public class PetJpaAdapter implements PetPersistencePort {
     @Transactional(readOnly = true)
     public Optional<Pet> findById(Long id) {
         return jpa.findById(id);
-}
-    
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(Long id) {
+        System.out.println("JpaAdapter.deleteById 호출: ID=" + id);
+
+        // Pet이 존재하는지 먼저 확인
+        if (!jpa.existsById(id)) {
+            throw new IllegalArgumentException("Pet not found with id: " + id);
+        }
+
+        jpa.deleteById(id);
+        System.out.println("JPA deleteById 완료: ID=" + id);
+    }
 
 }

@@ -987,7 +987,23 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               return;
             }
 
-            // ===== 4. API 호출 =====
+            // ===== 4. 이미지 업로드 (있는 경우) =====
+            String? uploadedImageUrl;
+            if (_selectedImageFile != null) {
+              final imageUploadResult = await PetService().uploadPetImage(
+                authService.currentUser!.id,
+                _selectedImageFile!,
+              );
+
+              if (imageUploadResult['success'] == true) {
+                uploadedImageUrl = imageUploadResult['imageUrl'];
+              } else {
+                // 이미지 업로드 실패해도 프로필은 등록하도록 함
+                print('이미지 업로드 실패: ${imageUploadResult['message']}');
+              }
+            }
+
+            // ===== 5. 펫 프로필 생성 API 호출 =====
             final result = await PetService().createPet(
               userId: authService.currentUser!.id, // 실제 로그인한 사용자 ID 사용
               name: _nameController.text.trim(),
@@ -998,13 +1014,13 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               abitTypeCode: _selectedAbtiType!, // "ENFP" 등
               gender: _selectedGender!, // "MALE" 또는 "FEMALE"
               speciesDetail: _selectedBreed, // 품종 (선택사항)
-              imageUrl: _selectedImageUrl, // 이미지 URL (선택사항)
+              imageUrl: uploadedImageUrl, // 업로드된 이미지 URL
             );
 
-            // ===== 5. 로딩 닫기 =====
+            // ===== 6. 로딩 닫기 =====
             Navigator.pop(context);
 
-            // ===== 6. 결과 처리 =====
+            // ===== 7. 결과 처리 =====
             if (result['success'] == true) {
               // 성공
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1024,7 +1040,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               );
             }
           } catch (e) {
-            // ===== 7. 오류 처리 =====
+            // ===== 8. 오류 처리 =====
             Navigator.pop(context); // 로딩 닫기
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
