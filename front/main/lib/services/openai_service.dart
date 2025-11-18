@@ -99,6 +99,7 @@ class OpenAIService {
   /// [style]: 변환할 스타일
   /// [emotion]: 감정 표현
   /// [action]: 행동
+  /// [customPrompt]: 사용자 커스텀 프롬프트 (우선순위 최상)
   Future<String> generateEmoticonFromImage({
     required String imageUrl,
     required String petName,
@@ -106,6 +107,7 @@ class OpenAIService {
     String? style,
     String? emotion,
     String? action,
+    String? customPrompt,
   }) async {
     try {
       if (_apiKey.isEmpty) {
@@ -119,6 +121,7 @@ class OpenAIService {
         style: style ?? 'cute',
         emotion: emotion,
         action: action,
+        customPrompt: customPrompt,
       );
 
       print('🎨 이미지 기반 이모티콘 생성 중...');
@@ -163,24 +166,66 @@ class OpenAIService {
     required String style,
     String? emotion,
     String? action,
+    String? customPrompt,
   }) {
-    final typeStr = petType ?? 'pet';
-    final emotionStr = emotion ?? 'happy';
-    final actionStr = action ?? 'looking at camera';
+    // 기본 타입 설정
+    final typeStr = petType ?? 'cute pet animal';
 
-    return 'Create a KakaoTalk style emoticon sticker of a $typeStr. '
-        'Style: Cute, oversized head with big expressive eyes, simple rounded body proportions. '
-        'Emotion: $emotionStr expression while $actionStr. '
+    // 감정 매핑 (한국어 감정을 영어로 변환)
+    final emotionMap = {
+      'joy': 'joyful and laughing with big smile',
+      'happy': 'happy with bright smile',
+      'love': 'loving with heart eyes',
+      'surprised': 'surprised with wide open eyes and mouth',
+      'angry': 'angry with furrowed brows',
+      'flustered': 'flustered and confused',
+      'shy': 'shy and blushing',
+      'sleepy': 'sleepy with droopy eyes',
+      'bored': 'bored with tired expression',
+      'grumpy': 'grumpy and cranky',
+      'cool': 'cool and confident',
+      'cheering': 'cheering enthusiastically',
+      'thankful': 'thankful and grateful',
+      'curious': 'curious with questioning look',
+      'playful': 'playful and mischievous',
+      'excited': 'excited with sparkling eyes',
+      'shocked': 'shocked and alarmed',
+      'disappointed': 'disappointed and sad',
+      'impressed': 'impressed and amazed',
+      'moved': 'moved to tears emotionally',
+      'neutral': 'neutral with blank expression',
+      'deflated': 'deflated and defeated',
+      'nervous': 'nervous and anxious',
+      'serious': 'serious and focused',
+      'funny': 'funny and silly',
+      'trembling': 'trembling with intense emotion',
+      'anticipating': 'anticipating with sparkling excitement',
+      'dazed': 'dazed and dizzy',
+    };
+
+    final emotionStr = emotion != null
+        ? emotionMap[emotion] ?? emotion
+        : 'happy';
+
+    // 커스텀 프롬프트가 있으면 추가 설명으로 활용
+    final customDescription = customPrompt != null && customPrompt.isNotEmpty
+        ? ' $customPrompt.'
+        : '';
+
+    return 'Create a KakaoTalk style animal emoticon sticker of a $typeStr. '
+        'IMPORTANT: Only create emoticons of ANIMALS (pets like dogs, cats, birds, rabbits, etc.). '
+        'Main emotion: The animal should be $emotionStr.$customDescription '
         'Design requirements: '
-        '- Kawaii/chibi art style with exaggerated facial features '
-        '- Bold black outlines for clarity '
+        '- Kawaii/chibi art style with oversized head (60% of body) and big expressive eyes '
+        '- Bold black outlines for clarity and cuteness '
         '- Bright, vibrant, flat colors with slight gradients '
-        '- Simple background or transparent-looking (use white/very light gray) '
+        '- Simple white or very light background '
         '- Centered composition, facing forward '
-        '- Clear, easily recognizable emotion '
+        '- EXAGGERATE the emotion - make it very clear and recognizable '
         '- Similar to popular Korean messaging app stickers (LINE Friends, KakaoTalk characters) '
         '- Friendly, adorable, and highly expressive '
-        '- Square format, suitable for 360x360px display';
+        '- Square format, suitable for 360x360px display '
+        '- MUST BE AN ANIMAL CHARACTER ONLY';
   }
 
   /// API 키 확인

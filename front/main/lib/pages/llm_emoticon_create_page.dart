@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../providers/llm_emoticon_provider.dart';
+import '../services/image_save_service.dart';
 
 /// LLM 이모티콘 생성 페이지
 /// 반려동물 사진 업로드 및 AI 이모티콘 생성 기능 제공
@@ -20,12 +21,52 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
   String? _selectedPetId;
   String? _generatedImageUrl; // 생성된 이미지 URL
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _promptController = TextEditingController();
+  String? _selectedEmotion; // 선택된 감정
 
   // 샘플 반려동물 목록 (나중에 실제 API로 대체)
   final List<Map<String, String>> _samplePets = [
     {'id': '1', 'name': '멍멍이', 'type': '강아지'},
     {'id': '2', 'name': '야옹이', 'type': '고양이'},
   ];
+
+  // 감정 목록
+  final List<Map<String, String>> _emotions = [
+    {'label': '기쁨/웃음', 'emoji': '😄', 'value': 'joy'},
+    {'label': '행복/미소', 'emoji': '😊', 'value': 'happy'},
+    {'label': '사랑/하트', 'emoji': '😍', 'value': 'love'},
+    {'label': '놀람', 'emoji': '😲', 'value': 'surprised'},
+    {'label': '분노/화남', 'emoji': '😠', 'value': 'angry'},
+    {'label': '당황', 'emoji': '😰', 'value': 'flustered'},
+    {'label': '부끄러움', 'emoji': '😳', 'value': 'shy'},
+    {'label': '졸림', 'emoji': '😴', 'value': 'sleepy'},
+    {'label': '지루함', 'emoji': '😑', 'value': 'bored'},
+    {'label': '까칠', 'emoji': '😒', 'value': 'grumpy'},
+    {'label': '허세', 'emoji': '😎', 'value': 'cool'},
+    {'label': '응원', 'emoji': '💪', 'value': 'cheering'},
+    {'label': '감사', 'emoji': '🙏', 'value': 'thankful'},
+    {'label': '의문/궁금', 'emoji': '🤔', 'value': 'curious'},
+    {'label': '악동/장난기', 'emoji': '😜', 'value': 'playful'},
+    {'label': '심쿵', 'emoji': '💓', 'value': 'excited'},
+    {'label': '허걱/쇼크', 'emoji': '😱', 'value': 'shocked'},
+    {'label': '좌절', 'emoji': '😞', 'value': 'disappointed'},
+    {'label': '감탄/칭찬', 'emoji': '👏', 'value': 'impressed'},
+    {'label': '감격/눈물', 'emoji': '😭', 'value': 'moved'},
+    {'label': '무념/무표정', 'emoji': '😐', 'value': 'neutral'},
+    {'label': '허탈', 'emoji': '😔', 'value': 'deflated'},
+    {'label': '긴장', 'emoji': '😬', 'value': 'nervous'},
+    {'label': '진심/진지', 'emoji': '🧐', 'value': 'serious'},
+    {'label': '개그', 'emoji': '🤪', 'value': 'funny'},
+    {'label': '부들부들', 'emoji': '😤', 'value': 'trembling'},
+    {'label': '기대함/반짝반짝', 'emoji': '✨', 'value': 'anticipating'},
+    {'label': '최면/멍~', 'emoji': '😵', 'value': 'dazed'},
+  ];
+
+  @override
+  void dispose() {
+    _promptController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +103,14 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
 
               // 반려동물 선택 섹션
               _buildPetSelector(),
+              SizedBox(height: 30),
+
+              // 감정 선택 섹션
+              _buildEmotionSelector(),
+              SizedBox(height: 30),
+
+              // 프롬프트 입력 섹션
+              _buildPromptSection(),
               SizedBox(height: 30),
 
               // 생성 버튼
@@ -153,7 +202,7 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '반려동물 사진을 선택하면 AI가 자동으로 귀여운 이모티콘을 만들어드려요!',
+                    '동물 사진을 선택하고 원하는 스타일을 입력하면 AI가 동물 이모티콘을 만들어드려요!',
                     style: TextStyle(
                       fontSize: 13,
                       color: Color.fromARGB(255, 77, 61, 0),
@@ -251,6 +300,233 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
                         ),
                       ],
                     ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 감정 선택 섹션
+  Widget _buildEmotionSelector() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '감정 선택',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 56, 41),
+                ),
+              ),
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 0, 108, 82),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '필수',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Color.fromARGB(255, 255, 243, 224),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.emoji_emotions,
+                  color: Color.fromARGB(255, 255, 152, 0),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '이모티콘에 표현될 감정을 선택해주세요',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color.fromARGB(255, 77, 61, 0),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _emotions.map((emotion) {
+              final isSelected = _selectedEmotion == emotion['value'];
+              return GestureDetector(
+                onTap: () {
+                  // 이미 선택된 감정을 다시 클릭해도 선택 해제되지 않음 (1개 필수 선택)
+                  setState(() {
+                    _selectedEmotion = emotion['value'];
+                  });
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Color.fromARGB(255, 0, 108, 82)
+                        : Color.fromARGB(255, 248, 250, 252),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? Color.fromARGB(255, 0, 108, 82)
+                          : Colors.grey[300]!,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(emotion['emoji']!, style: TextStyle(fontSize: 16)),
+                      SizedBox(width: 6),
+                      Text(
+                        emotion['label']!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.white
+                              : Color.fromARGB(255, 0, 56, 41),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 프롬프트 입력 섹션
+  Widget _buildPromptSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '추가 설명',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 56, 41),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                '(선택)',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Color.fromARGB(255, 232, 245, 233),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lightbulb_outline,
+                  color: Color.fromARGB(255, 0, 108, 82),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '예: "풍선을 들고 있는", "선글라스를 쓴", "꽃을 물고 있는"',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color.fromARGB(255, 1, 87, 55),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 16),
+          TextField(
+            controller: _promptController,
+            maxLines: 3,
+            maxLength: 200,
+            decoration: InputDecoration(
+              hintText:
+                  '감정 외 추가로 표현하고 싶은 요소를 입력하세요...\n예: 풍선 들고, 선글라스 착용, 꽃 물고 등',
+              suffixText: '(선택사항)',
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Color.fromARGB(255, 0, 108, 82),
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: Color.fromARGB(255, 248, 250, 252),
+              contentPadding: EdgeInsets.all(16),
+            ),
+            style: TextStyle(
+              fontSize: 14,
+              color: Color.fromARGB(255, 0, 56, 41),
             ),
           ),
         ],
@@ -360,7 +636,10 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
   /// 생성 버튼
   Widget _buildGenerateButton() {
     final provider = Provider.of<LlmEmoticonProvider>(context);
-    final canGenerate = _selectedImage != null && _selectedPetId != null;
+    final canGenerate =
+        _selectedImage != null &&
+        _selectedPetId != null &&
+        _selectedEmotion != null;
 
     return Container(
       width: double.infinity,
@@ -532,6 +811,8 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
                 onPressed: () {
                   setState(() {
                     _generatedImageUrl = null;
+                    _selectedEmotion = null;
+                    _promptController.clear();
                   });
                 },
                 icon: Icon(
@@ -694,10 +975,30 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
       // TODO: 실제 사용자 ID 가져오기
       final userId = 1;
 
+      // 선택된 펫 정보 가져오기
+      final selectedPet = _samplePets.firstWhere(
+        (pet) => pet['id'] == _selectedPetId,
+      );
+
+      // 선택된 감정 정보 가져오기
+      final selectedEmotion = _emotions.firstWhere(
+        (emotion) => emotion['value'] == _selectedEmotion,
+      );
+
+      // 프롬프트 메타데이터 구성
+      final promptMeta = {
+        'petName': selectedPet['name'],
+        'petType': selectedPet['type'],
+        'emotion': _selectedEmotion,
+        'emotionLabel': selectedEmotion['label'],
+        'customPrompt': _promptController.text.trim(),
+      };
+
       final result = await provider.createEmoticon(
         userId: userId,
         petId: int.parse(_selectedPetId!),
         imageFile: _selectedImage!,
+        promptMeta: promptMeta,
       );
 
       if (mounted) {
@@ -750,41 +1051,62 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
     if (_generatedImageUrl == null) return;
 
     try {
-      // TODO: 실제 저장 로직 구현 (갤러리에 저장 등)
+      // Show loading indicator
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Text('이모티콘이 저장되었습니다!'),
-            ],
-          ),
-          backgroundColor: Color.fromARGB(255, 0, 108, 82),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        const SnackBar(
+          content: Text('이미지 저장 중...'),
+          duration: Duration(seconds: 1),
         ),
       );
 
-      // 저장 후 초기화
-      setState(() {
-        _generatedImageUrl = null;
-        _selectedImage = null;
-        _selectedPetId = null;
-      });
+      // Save image to gallery
+      final success = await ImageSaveService().saveImageFromUrl(
+        imageUrl: _generatedImageUrl!,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('갤러리에 저장되었습니다!'),
+              ],
+            ),
+            backgroundColor: Color.fromARGB(255, 0, 108, 82),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+
+        // 저장 후 초기화
+        setState(() {
+          _generatedImageUrl = null;
+          _selectedImage = null;
+          _selectedPetId = null;
+          _selectedEmotion = null;
+          _promptController.clear();
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('저장에 실패했습니다. 권한을 확인해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(child: Text('저장 실패: $e')),
-            ],
-          ),
-          backgroundColor: Colors.red[600],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          content: Text('저장 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
         ),
       );
     }

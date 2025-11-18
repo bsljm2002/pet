@@ -7,7 +7,13 @@ import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,12 +26,6 @@ import com.example.pet.demo.pets.domain.Pet;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1/pets")
@@ -53,7 +53,22 @@ public class PetController {
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadPetImage(
             @RequestParam("ownerId") Long ownerId,
             @RequestParam("file") MultipartFile file) throws Exception {
+        System.out.println("📥 이미지 업로드 요청 - ownerId: " + ownerId + ", file: " + file.getOriginalFilename());
+        
+        if (ownerId == null) {
+            System.err.println("❌ ownerId가 null입니다!");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("MISSING_OWNER_ID", "ownerId is required"));
+        }
+        
+        if (file == null || file.isEmpty()) {
+            System.err.println("❌ 파일이 비어있습니다!");
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("MISSING_FILE", "file is required"));
+        }
+        
         String url = fileStorageService.savePetImage(ownerId, file);
+        System.out.println("✅ 이미지 저장 성공: " + url);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("imageUrl", url)));
     }
 
@@ -69,5 +84,11 @@ public class PetController {
     public ResponseEntity<ApiResponse<Pet>> getPetById(@PathVariable Long id) {
         return ResponseEntity.ok(
                 ApiResponse.ok(petService.getPetById(id)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deletePet(@PathVariable("id") Long id) {
+        petService.delete(id);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

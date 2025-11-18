@@ -10,7 +10,7 @@ class LlmEmoticonService {
   factory LlmEmoticonService() => _instance;
   LlmEmoticonService._internal();
 
-  static const String baseUrl = 'http://223.130.130.225:9075';
+  static const String baseUrl = 'http://192.168.70.107:9075';
   final OpenAIService _openAI = OpenAIService();
 
   /// 이모티콘 생성 요청 (비동기)
@@ -43,8 +43,12 @@ class LlmEmoticonService {
       final style = promptMeta?['style'] as String?;
       final emotion = promptMeta?['emotion'] as String?;
       final action = promptMeta?['action'] as String?;
+      final customPrompt = promptMeta?['customPrompt'] as String?;
 
       print('📤 OpenAI DALL-E로 이미지 생성 시작...');
+      if (customPrompt != null && customPrompt.isNotEmpty) {
+        print('🎨 사용자 커스텀 프롬프트: $customPrompt');
+      }
 
       final generatedImageUrl = await _openAI.generateEmoticonFromImage(
         imageUrl: imageUrl,
@@ -53,6 +57,7 @@ class LlmEmoticonService {
         style: style,
         emotion: emotion,
         action: action,
+        customPrompt: customPrompt,
       );
 
       print('✅ OpenAI 이미지 생성 완료: $generatedImageUrl');

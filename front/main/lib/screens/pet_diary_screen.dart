@@ -2,7 +2,10 @@
 // 반려동물의 일상과 추억을 기록하는 다이어리 기능
 import 'package:flutter/material.dart';
 import '../models/pet_profile.dart';
-import '../services/pet_profile_manager.dart';
+import '../models/pet_diary.dart';
+import '../services/pet_service.dart';
+import '../services/auth_service.dart';
+import '../services/diary_service.dart';
 
 // 펫 일기 화면
 // 반려동물의 일상, 건강 상태, 특별한 순간 등을 기록하고 관리
@@ -20,6 +23,82 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
   String _selectedBottomTab = '체중'; // 하단 탭 선택 상태
   String _selectedDiaryTab = '하루 일기'; // 하루 일기 / 종합 상태 선택
   final TextEditingController _diaryController = TextEditingController();
+
+  List<PetProfile> _petProfiles = []; // 펫 목록 데이터
+  bool _isLoading = true; // 로딩 상태
+  String? _errorMessage; // 에러 메시지
+  PetDiary? _currentDiary; // 현재 선택된 날짜의 일기
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPetProfiles(); // 화면 로드 시 펫 목록 조회
+  }
+
+  Future<void> _loadPetProfiles() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // 현재 로그인 한 사용자 확인
+      final currentUser = AuthService().currentUser;
+
+      if (currentUser == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "로그인이 필요합니다.";
+        });
+        return;
+      }
+      // 백엔드 API 호출
+      final response = await PetService().getPetsByOwner(currentUser.id);
+
+      if (response['success'] == true) {
+        // 성공: JSON 데이터를 PetProfile 객체로 변환
+        final List<dynamic> petsData = response['pets'];
+        final List<PetProfile> profiles = petsData
+            .map((json) => PetProfile.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        setState(() {
+          _petProfiles = profiles;
+          _isLoading = false;
+        });
+
+        // 펫 목록 로드 후 일기 불러오기
+        _loadDiary();
+      } else {
+        // 실패: 에러 메시지 설정
+        setState(() {
+          _isLoading = false;
+          _errorMessage = response['message'] ?? '펫 목록을 불러오지 못했습니다.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '네트워크 오류: $e';
+      });
+    }
+  }
+
+  /// 일기 불러오기
+  Future<void> _loadDiary() async {
+    if (_petProfiles.isEmpty) return;
+    if (_petProfiles[_selectedPetIndex].id == null) return;
+
+    final diary = await DiaryService().getDiary(
+      _petProfiles[_selectedPetIndex].id!,
+      _selectedDate,
+    );
+
+    setState(() {
+      _currentDiary = diary;
+      _diaryController.text = diary?.content ?? '';
+    });
+  }
 
   @override
   void dispose() {
@@ -42,8 +121,6 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profiles = PetProfileManager().getAllProfiles();
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +154,25 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
           ),
 
           // 펫 프로필 캐러셀 (동그라미 아이콘)
-          if (profiles.isNotEmpty) _buildPetCarousel(profiles),
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF00B27A)),
+              ),
+            )
+          else if (_errorMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            )
+          else if (_petProfiles.isNotEmpty)
+            _buildPetCarousel(_petProfiles),
 
           // 반려동물과 달력 사이 간격
           SizedBox(height: 24),
@@ -141,6 +236,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
               setState(() {
                 _selectedPetIndex = index;
               });
+              _loadDiary(); // 펫 변경 시 일기 다시 불러오기
             },
             child: Container(
               width: 90,
@@ -260,6 +356,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                   setState(() {
                     _selectedDate = date;
                   });
+                  _loadDiary(); // 날짜 변경 시 일기 다시 불러오기
                 },
                 child: Column(
                   children: [
@@ -399,23 +496,25 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
       children: [
         // 일기 작성 영역
         Container(
-          height: 200,
+          height: 350,
           margin: EdgeInsets.all(16),
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Color(0xFFD4F4E7), // 연한 민트색
             borderRadius: BorderRadius.circular(8),
           ),
-          child: TextField(
-            controller: _diaryController,
-            maxLines: null,
-            expands: true,
-            decoration: InputDecoration(
-              hintText: '오늘의 일기를 작성해주세요...',
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: Colors.grey[500]),
+          child: SingleChildScrollView(
+            child: TextField(
+              controller: _diaryController,
+              maxLines: null,
+              readOnly: true, // 읽기 전용으로 설정
+              decoration: InputDecoration(
+                hintText: '아직 작성된 일기가 없습니다.',
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.grey[500]),
+              ),
+              style: TextStyle(fontSize: 16, height: 1.5),
             ),
-            style: TextStyle(fontSize: 16),
           ),
         ),
 

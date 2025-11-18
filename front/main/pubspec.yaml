@@ -40,8 +40,6 @@ dependencies:
 
   # HTTP 통신을 위한 패키지
   http: ^1.2.0
-
-  # HTTP Multipart 업로드를 위한 패키지
   http_parser: ^4.0.2
 
   # 상태 관리를 위한 Provider 패키지
@@ -52,11 +50,21 @@ dependencies:
   # 이미지 선택 패키지 (카메라/갤러리)
   image_picker: ^1.0.7
 
+  # 갤러리에 이미지 저장 패키지 (최신 Android 호환)
+  gal: ^2.3.2
+  
+  # 권한 요청 패키지
+  permission_handler: ^11.0.1
+
+  # HTTP 요청으로 이미지 다운로드
+  dio: ^5.9.0
+
   # SVG 이미지 패키지
   flutter_svg: ^2.0.9
 
   # 환경 변수 로드 패키지
   flutter_dotenv: ^5.1.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

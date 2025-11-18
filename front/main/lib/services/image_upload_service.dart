@@ -9,7 +9,7 @@ class ImageUploadService {
   factory ImageUploadService() => _instance;
   ImageUploadService._internal();
 
-  static const String baseUrl = 'http://223.130.130.225:9075';
+  static const String baseUrl = 'http://192.168.70.107:9075';
 
   /// 이미지 업로드
   ///

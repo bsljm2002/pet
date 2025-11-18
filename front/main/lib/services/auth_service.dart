@@ -8,7 +8,7 @@ class AuthService {
   AuthService._internal();
 
   static const String baseUrl =
-      "http://223.130.130.225:9075/api/v1/users"; // 백엔드 URL (Android 에뮬레이터용)
+      "http://192.168.70.107:9075/api/v1/users"; // 백엔드 URL (Android 에뮬레이터용)
 
   User? _currentUser;
   User? get currentUser => _currentUser;
