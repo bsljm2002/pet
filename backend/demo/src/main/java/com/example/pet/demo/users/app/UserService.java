@@ -115,6 +115,23 @@ public class UserService {
         return user;
     }
 
+    @Transactional
+    public void updateFcmToken(Long userId, String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("FCM_TOKEN_REQUIRED");
+        }
+        User user = users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+        user.setFcmToken(token.trim());
+        users.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User get(Long userId) {
+        return users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+    }
+
     private String toCsv(List<String> days) {
         return (days == null || days.isEmpty()) ? null : String.join(",", days);
     }

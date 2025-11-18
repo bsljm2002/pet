@@ -66,7 +66,10 @@ class ImageUploadService {
 
       // 6. 응답 처리
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+
+        // ApiResponse 구조: { ok, data: { imageUrl }, error, message }
+        final data = responseData['data'] as Map<String, dynamic>;
         final imageUrl = data['imageUrl'] as String;
 
         // 상대 URL을 절대 URL로 변환

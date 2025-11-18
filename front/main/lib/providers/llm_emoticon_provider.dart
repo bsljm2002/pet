@@ -90,10 +90,13 @@ class LlmEmoticonProvider with ChangeNotifier {
       _emoticons.insert(0, request);
       notifyListeners();
 
-      // 5. 폴링 시작
-      if (request.id != null) {
+      // 5. 폴링 시작 (OpenAI 직접 생성은 이미 완료 상태이므로 폴링 불필요)
+      // 백엔드 API 사용 시에만 폴링 시작
+      if (request.id != null && !request.isCompleted) {
         _startPolling(request.id!);
         print('⏰ 폴링 시작 (ID: ${request.id})');
+      } else {
+        print('✅ 이미 완료된 요청입니다. 폴링 스킵.');
       }
 
       _isLoading = false;
@@ -148,7 +151,13 @@ class LlmEmoticonProvider with ChangeNotifier {
         }
       } catch (e) {
         print('⚠️ 폴링 오류 (ID: $requestId): $e');
-        // 폴링 오류는 계속 재시도
+
+        // 404 에러가 3번 이상 발생하면 폴링 중지 (백엔드 API 없음)
+        if (e.toString().contains('404')) {
+          print('⏹️ 백엔드 API 없음. 폴링 중지 (ID: $requestId)');
+          timer.cancel();
+          _pollingTimers.remove(requestId);
+        }
       }
     });
   }

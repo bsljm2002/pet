@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/llm_emoticon_request.dart';
+import '../models/llm_emoticon_status.dart';
+import 'openai_service.dart';
 
 /// LLM 이모티콘 생성 서비스
 class LlmEmoticonService {
@@ -9,6 +11,7 @@ class LlmEmoticonService {
   LlmEmoticonService._internal();
 
   static const String baseUrl = 'http://223.130.130.225:9075';
+  final OpenAIService _openAI = OpenAIService();
 
   /// 이모티콘 생성 요청 (비동기)
   ///
@@ -31,6 +34,44 @@ class LlmEmoticonService {
     try {
       print('🎨 이모티콘 생성 요청 중...');
 
+      // OpenAI 초기화 및 이미지 생성
+      _openAI.initialize();
+
+      // 프롬프트 메타데이터에서 정보 추출
+      final petName = promptMeta?['petName'] as String?;
+      final petType = promptMeta?['petType'] as String?;
+      final style = promptMeta?['style'] as String?;
+      final emotion = promptMeta?['emotion'] as String?;
+      final action = promptMeta?['action'] as String?;
+
+      print('📤 OpenAI DALL-E로 이미지 생성 시작...');
+
+      final generatedImageUrl = await _openAI.generateEmoticonFromImage(
+        imageUrl: imageUrl,
+        petName: petName ?? '반려동물',
+        petType: petType,
+        style: style,
+        emotion: emotion,
+        action: action,
+      );
+
+      print('✅ OpenAI 이미지 생성 완료: $generatedImageUrl');
+
+      final request = LlmEmoticonRequest(
+        id: DateTime.now().millisecondsSinceEpoch,
+        userId: userId,
+        petId: petId,
+        imageUrl: imageUrl,
+        promptMeta: promptMeta ?? {'style': 'cute', 'mood': 'happy'},
+        status: EmoticonStatus.succeeded,
+        generatedImageUrl: generatedImageUrl,
+        createdAt: DateTime.now(),
+      );
+
+      print('✅ 이모티콘 생성 요청 성공 (ID: ${request.id})');
+      return request;
+
+      /* TODO: 백엔드 API 구현 후 아래 코드 활성화
       final requestBody = {
         'userId': userId,
         'petId': petId,
@@ -59,6 +100,7 @@ class LlmEmoticonService {
         print('❌ 이모티콘 생성 요청 실패: ${response.statusCode} - $errorBody');
         throw Exception('이모티콘 생성 요청 실패: ${response.statusCode}');
       }
+      */
     } catch (e) {
       print('❌ 이모티콘 생성 오류: $e');
       rethrow;

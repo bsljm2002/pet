@@ -18,6 +18,7 @@ class LlmEmoticonCreatePage extends StatefulWidget {
 class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
   File? _selectedImage;
   String? _selectedPetId;
+  String? _generatedImageUrl; // 생성된 이미지 URL
   final ImagePicker _picker = ImagePicker();
 
   // 샘플 반려동물 목록 (나중에 실제 API로 대체)
@@ -65,7 +66,11 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
 
               // 생성 버튼
               _buildGenerateButton(),
-              SizedBox(height: 40),
+              SizedBox(height: 30),
+
+              // 생성된 이미지 표시 섹션
+              if (_generatedImageUrl != null) _buildGeneratedImageSection(),
+              if (_generatedImageUrl != null) SizedBox(height: 30),
 
               // 진행 중인 이모티콘 섹션
               _buildInProgressSection(),
@@ -414,6 +419,153 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
     );
   }
 
+  /// 생성된 이미지 섹션
+  Widget _buildGeneratedImageSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Color.fromARGB(255, 0, 108, 82),
+                size: 24,
+              ),
+              SizedBox(width: 12),
+              Text(
+                '생성 완료!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 0, 56, 41),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+
+          // 생성된 이미지
+          Container(
+            width: double.infinity,
+            height: 300,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Color.fromARGB(255, 0, 108, 82).withValues(alpha: 0.2),
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                _generatedImageUrl!,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                          : null,
+                      color: Color.fromARGB(255, 0, 108, 82),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        SizedBox(height: 8),
+                        Text('이미지 로드 실패'),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+
+          // 저장 버튼
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _saveEmoticon,
+                  icon: Icon(Icons.download, color: Colors.white),
+                  label: Text(
+                    '이모티콘 저장하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 0, 108, 82),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _generatedImageUrl = null;
+                  });
+                },
+                icon: Icon(
+                  Icons.refresh,
+                  color: Color.fromARGB(255, 0, 108, 82),
+                ),
+                label: Text(
+                  '새로 생성',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 0, 108, 82),
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: Color.fromARGB(255, 0, 108, 82),
+                      width: 2,
+                    ),
+                  ),
+                  elevation: 0,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 진행 중인 이모티콘 섹션
   Widget _buildInProgressSection() {
     final provider = Provider.of<LlmEmoticonProvider>(context);
@@ -542,20 +694,25 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
       // TODO: 실제 사용자 ID 가져오기
       final userId = 1;
 
-      await provider.createEmoticon(
+      final result = await provider.createEmoticon(
         userId: userId,
         petId: int.parse(_selectedPetId!),
         imageFile: _selectedImage!,
       );
 
       if (mounted) {
+        // 생성된 이미지 URL 저장
+        setState(() {
+          _generatedImageUrl = result.generatedImageUrl;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 12),
-                Text('이모티콘 생성을 시작했어요!'),
+                Text('이모티콘 생성 완료!'),
               ],
             ),
             backgroundColor: Color.fromARGB(255, 0, 108, 82),
@@ -565,12 +722,6 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
             ),
           ),
         );
-
-        // 이미지와 선택 초기화
-        setState(() {
-          _selectedImage = null;
-          _selectedPetId = null;
-        });
       }
     } catch (e) {
       if (mounted) {
@@ -591,6 +742,51 @@ class _LlmEmoticonCreatePageState extends State<LlmEmoticonCreatePage> {
           ),
         );
       }
+    }
+  }
+
+  /// 이모티콘 저장
+  Future<void> _saveEmoticon() async {
+    if (_generatedImageUrl == null) return;
+
+    try {
+      // TODO: 실제 저장 로직 구현 (갤러리에 저장 등)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('이모티콘이 저장되었습니다!'),
+            ],
+          ),
+          backgroundColor: Color.fromARGB(255, 0, 108, 82),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+
+      // 저장 후 초기화
+      setState(() {
+        _generatedImageUrl = null;
+        _selectedImage = null;
+        _selectedPetId = null;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('저장 실패: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 }

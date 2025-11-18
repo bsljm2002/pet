@@ -2,6 +2,7 @@
 // '숨숨루나' 반려동물 케어 애플리케이션의 루트 구성을 담당
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
@@ -17,7 +18,12 @@ import 'providers/llm_emoticon_provider.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // .env 파일 로드
+  await dotenv.load(fileName: ".env");
+
   runApp(
     MultiProvider(
       providers: [
