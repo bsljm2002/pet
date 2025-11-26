@@ -10,7 +10,7 @@ class LlmEmoticonService {
   factory LlmEmoticonService() => _instance;
   LlmEmoticonService._internal();
 
-  static const String baseUrl = 'http://192.168.70.107:9075';
+  static const String baseUrl = 'http://223.130.130.225:9075';
   final OpenAIService _openAI = OpenAIService();
 
   /// 이모티콘 생성 요청 (비동기)

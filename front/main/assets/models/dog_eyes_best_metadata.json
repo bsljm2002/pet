@@ -1,0 +1,30 @@
+{
+  "model_name": "dog_eyes_best",
+  "original_file": "dog_eyes_best.pt",
+  "converted_file": "dog_eyes_best.ptl",
+  "conversion_date": "2025-11-26T09:05:28.164701",
+  "pytorch_version": "2.6.0+cu124",
+  "training_config": {
+    "task": "classify",
+    "model_architecture": "yolo11n-cls.pt",
+    "epochs": 80,
+    "batch_size": 32,
+    "image_size": 224,
+    "optimizer": "SGD",
+    "learning_rate": 0.01,
+    "project": "model_cls",
+    "name": "dog-eyes-classifier"
+  },
+  "class_names": {
+    "0": "Pigmented_keratitis",
+    "1": "blepharitis",
+    "2": "entropion",
+    "3": "eyelid_tumor",
+    "4": "mastopathy"
+  },
+  "num_classes": 5,
+  "file_size_bytes": 3207316,
+  "file_size_mb": 3.06,
+  "converted_file_size_bytes": 6171747,
+  "converted_file_size_mb": 5.89
+}
