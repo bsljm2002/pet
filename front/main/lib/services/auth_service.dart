@@ -8,7 +8,7 @@ class AuthService {
   AuthService._internal();
 
   static const String baseUrl =
-      "http://223.130.130.225:9075/api/v1/users"; // 백엔드 URL
+      "http://223.130.130.225:9075/api/v1/users"; // 백엔드 URL (실제 디바이스용)
 
   User? _currentUser;
   User? get currentUser => _currentUser;
@@ -143,9 +143,20 @@ class AuthService {
           "success": false,
           "message": errorData["message"] ?? "이메일 또는 비밀번호가 일치하지 않습니다.",
         };
+      } else if (response.statusCode == 500) {
+        // 500 Internal Server Error
+        String errorMsg = "서버 내부 오류가 발생했습니다.";
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMsg = errorData["message"] ?? errorMsg;
+        } catch (_) {}
+        return {"success": false, "message": "$errorMsg (코드: 500)"};
       } else {
         // 기타 서버 오류
-        return {"success": false, "message": "서버 오류가 발생했습니다."};
+        return {
+          "success": false,
+          "message": "서버 오류가 발생했습니다. (코드: ${response.statusCode})",
+        };
       }
     } catch (e) {
       // 네트워크 오류

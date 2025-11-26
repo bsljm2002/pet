@@ -1,6 +1,7 @@
 // AI 진단 화면 위젯
 // AI 기반 반려동물 건강 진단 기능
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../services/ai_diagnosis_service.dart';
@@ -88,11 +89,19 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen> {
         petId: profiles.first.id?.toString(),
       );
 
+      if (!mounted) return;
+
       setState(() {
         _isAnalyzing = false;
       });
 
       _showDiagnosisResult(diagnosis);
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isAnalyzing = false;
+      });
+      _showErrorDialog('AI 모델 실행에 실패했습니다: ${e.message ?? '알 수 없는 오류'}');
     } catch (e) {
       setState(() {
         _isAnalyzing = false;
@@ -510,70 +519,78 @@ class _DiagnosisResultSheet extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // 진단명 및 심각도
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: diagnosis.getSeverityColor().withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: diagnosis.getSeverityColor().withValues(alpha: 0.3),
-                        width: 2,
+                  if (diagnosis.hasSeverity)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: diagnosis.getSeverityColor().withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: diagnosis.getSeverityColor().withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildResultHeader(showSeverity: true),
+                          const SizedBox(height: 12),
+                          Text(
+                            diagnosis.diagnosis,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2D3E3F),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            diagnosis.description,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF5A6C6D),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2F1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFB2DFDB),
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildResultHeader(showSeverity: false),
+                          const SizedBox(height: 12),
+                          Text(
+                            diagnosis.diagnosis,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2D3E3F),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            diagnosis.description,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF5A6C6D),
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: diagnosis.getSeverityColor(),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                diagnosis.getSeverityText(),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '신뢰도: ${(diagnosis.confidence * 100).toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          diagnosis.diagnosis,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D3E3F),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          diagnosis.description,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF5A6C6D),
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
                   const SizedBox(height: 24),
 
@@ -681,6 +698,62 @@ class _DiagnosisResultSheet extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildResultHeader({required bool showSeverity}) {
+    return Row(
+      children: [
+        _buildStatusChip(),
+        if (showSeverity) ...[
+          const SizedBox(width: 8),
+          _buildSeverityChip(),
+        ],
+        const Spacer(),
+        Text(
+          '신뢰도: ${(diagnosis.confidence * 100).toStringAsFixed(0)}%',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: diagnosis.getStatusColor(),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        diagnosis.getStatusText(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeverityChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: diagnosis.getSeverityColor(),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        diagnosis.getSeverityText(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 }

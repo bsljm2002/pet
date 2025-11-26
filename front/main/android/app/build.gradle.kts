@@ -42,3 +42,9 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    val pytorchVersion = "2.1.0"
+    implementation("org.pytorch:pytorch_android:$pytorchVersion")
+    implementation("org.pytorch:pytorch_android_torchvision:$pytorchVersion")
+}

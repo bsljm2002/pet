@@ -1,13 +1,59 @@
 // AI 진단 서비스
-import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../models/ai_diagnosis.dart';
+
+/// 진단 모델 타입
+enum DiagnosisModelType { dogEyes, dogSkin, catEyes, catSkin }
 
 class AIDiagnosisService {
   static final AIDiagnosisService _instance = AIDiagnosisService._internal();
   factory AIDiagnosisService() => _instance;
   AIDiagnosisService._internal();
 
+  static const MethodChannel _pytorchChannel = MethodChannel('ai_care/pytorch');
+
   final List<AIDiagnosis> _diagnoses = [];
+
+  /// 사용 가능한 모델인지 확인
+  static bool isModelAvailable(DiagnosisModelType modelType) {
+    // cat_eyes 모델은 아직 준비되지 않음
+    if (modelType == DiagnosisModelType.catEyes) {
+      return false;
+    }
+    return true;
+  }
+
+  /// 모델 타입에 따른 파일명 반환
+  static (String modelFile, String metadataFile) getModelFiles(
+    DiagnosisModelType modelType,
+  ) {
+    switch (modelType) {
+      case DiagnosisModelType.dogEyes:
+        return ('dog_eyes_best.ptl', 'dog_eyes_best_metadata.json');
+      case DiagnosisModelType.dogSkin:
+        return ('dog_skin_best.ptl', 'dog_skin_best_metadata.json');
+      case DiagnosisModelType.catEyes:
+        // 아직 준비되지 않음 - 호출되면 안 됨
+        throw UnsupportedError('cat_eyes 모델은 아직 준비되지 않았습니다.');
+      case DiagnosisModelType.catSkin:
+        return ('cat_skin_best.ptl', 'cat_skin_best_metadata.json');
+    }
+  }
+
+  /// 모델 타입 이름 (한국어)
+  static String getModelTypeName(DiagnosisModelType modelType) {
+    switch (modelType) {
+      case DiagnosisModelType.dogEyes:
+        return '강아지 눈 질환';
+      case DiagnosisModelType.dogSkin:
+        return '강아지 피부 질환';
+      case DiagnosisModelType.catEyes:
+        return '고양이 눈 질환';
+      case DiagnosisModelType.catSkin:
+        return '고양이 피부 질환';
+    }
+  }
 
   // 모든 진단 결과 가져오기
   Future<List<AIDiagnosis>> getAllDiagnoses() async {
@@ -20,41 +66,330 @@ class AIDiagnosisService {
     return allDiagnoses.where((d) => d.petId == petId).toList();
   }
 
-  // AI 진단 수행 (실제로는 서버 API 호출, 여기서는 시뮬레이션)
+  // AI 진단 수행 (디바이스 내 PyTorch 모델 호출)
   Future<AIDiagnosis> performDiagnosis({
     required String imagePath,
     required String petName,
     String? petId,
+    DiagnosisModelType modelType = DiagnosisModelType.dogEyes,
   }) async {
-    // TODO: 실제 AI 서버 API 호출
-    // 현재는 시뮬레이션으로 랜덤 결과 생성
-    await Future.delayed(const Duration(seconds: 2)); // API 호출 시뮬레이션
+    if (!isModelAvailable(modelType)) {
+      throw PlatformException(
+        code: 'MODEL_NOT_AVAILABLE',
+        message: '${getModelTypeName(modelType)} 모델이 아직 준비되지 않았습니다.',
+      );
+    }
 
-    final random = Random();
-    final severities = ['low', 'medium', 'high'];
-    final severity = severities[random.nextInt(severities.length)];
+    final inference = await _runClassification(imagePath, modelType);
+    final diagnosis = _buildDiagnosisFromInference(
+      inference,
+      imagePath,
+      petName,
+      petId,
+      modelType,
+    );
 
-    // 샘플 진단 결과들
-    final sampleDiagnoses = _getSampleDiagnoses(severity);
-    final selectedDiagnosis =
-        sampleDiagnoses[random.nextInt(sampleDiagnoses.length)];
+    await saveDiagnosis(diagnosis);
+    return diagnosis;
+  }
 
-    final diagnosis = AIDiagnosis(
+  Future<Map<String, dynamic>> _runClassification(
+    String imagePath,
+    DiagnosisModelType modelType,
+  ) async {
+    final (modelFile, metadataFile) = getModelFiles(modelType);
+
+    final result = await _pytorchChannel.invokeMapMethod<String, dynamic>(
+      'runClassification',
+      {
+        'imagePath': imagePath,
+        'modelFile': modelFile,
+        'metadataFile': metadataFile,
+      },
+    );
+
+    if (result == null) {
+      throw PlatformException(
+        code: 'EMPTY_RESULT',
+        message: 'AI 모델이 결과를 반환하지 않았습니다.',
+      );
+    }
+
+    // 디버그 로그: 모델 추론 결과 확인
+    debugPrint('=== AI Model Inference Result ===');
+    debugPrint('Model: $modelFile');
+    debugPrint('Raw Label: ${result['label']}');
+    debugPrint('Confidence: ${result['confidence']}');
+    debugPrint('Class Index: ${result['index']}');
+    debugPrint('Num Classes: ${result['numClasses']}');
+    debugPrint('=================================');
+
+    return result;
+  }
+
+  AIDiagnosis _buildDiagnosisFromInference(
+    Map<String, dynamic> inference,
+    String imagePath,
+    String petName,
+    String? petId,
+    DiagnosisModelType modelType,
+  ) {
+    final rawLabel = inference['label'] as String? ?? '알 수 없음';
+    final confidence = (inference['confidence'] as num?)?.toDouble() ?? 0.0;
+
+    // 모델 타입에 따른 질병명 매핑
+    final diseaseNameMap = _getDiseaseNameMap(modelType);
+    final koreanDisease = diseaseNameMap[rawLabel] ?? rawLabel;
+    final severity = _confidenceToSeverity(confidence);
+
+    final modelTypeName = getModelTypeName(modelType);
+
+    // 정상/건강 여부 확인
+    final isHealthy = _isHealthyResult(rawLabel, modelType);
+
+    // 설명 문구 생성
+    String description;
+    if (isHealthy) {
+      description = '검사 결과, 현재 특별한 이상 소견이 발견되지 않았습니다.';
+    } else {
+      description =
+          '검사 결과, \'$koreanDisease\' 증상이 의심됩니다. 정확한 진단을 위해 수의사와 상담하시기 바랍니다.';
+    }
+
+    // Disease-specific symptoms and recommendations
+    final symptoms = _getSymptomsForDisease(rawLabel, modelType);
+    final recommendations = _getRecommendationsForDisease(rawLabel, modelType);
+
+    return AIDiagnosis(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       imagePath: imagePath,
       diagnosisDate: DateTime.now(),
       petName: petName,
       petId: petId,
-      diagnosis: selectedDiagnosis['diagnosis']!,
-      description: selectedDiagnosis['description']!,
-      severity: severity,
-      symptoms: selectedDiagnosis['symptoms']!,
-      recommendations: selectedDiagnosis['recommendations']!,
-      confidence: 0.75 + random.nextDouble() * 0.2, // 0.75 ~ 0.95
+      diagnosis: koreanDisease,
+      description: description,
+      severity: isHealthy ? 'none' : severity,
+      symptoms: symptoms,
+      recommendations: recommendations,
+      confidence: confidence,
+      diseaseStatus: isHealthy ? '정상' : '질병 의심',
     );
+  }
 
-    await saveDiagnosis(diagnosis);
-    return diagnosis;
+  Map<String, String> _getDiseaseNameMap(DiagnosisModelType modelType) {
+    switch (modelType) {
+      case DiagnosisModelType.dogEyes:
+        return {
+          'Pigmented_keratitis': '색소침착성각막염',
+          'blepharitis': '안검염',
+          'entropion': '안검내반증',
+          'eyelid_tumor': '안검종양',
+          'mastopathy': '유방병증',
+        };
+      case DiagnosisModelType.dogSkin:
+        return {
+          'bacterial dermatosis': '세균성 피부염',
+          'fungal infection': '곰팡이 감염',
+          'healthy': '정상',
+          'hypersensitivity dermatitis': '과민성 피부염',
+        };
+      case DiagnosisModelType.catSkin:
+        return {
+          'Alopecia': '탈모증',
+          'Eosinophilic Plague': '호산구성 플라크',
+          'Flea_Allergy': '벼룩 알레르기',
+          'Health': '정상',
+          'Miliary Dermatitis': '좁쌀 피부염',
+          'Ringworm': '백선 (링웜)',
+          'Scabies': '옴',
+        };
+      case DiagnosisModelType.catEyes:
+        // 아직 준비되지 않음
+        return {};
+    }
+  }
+
+  List<String> _getSymptomsForDisease(
+    String disease,
+    DiagnosisModelType modelType,
+  ) {
+    // 강아지 눈 질환
+    if (modelType == DiagnosisModelType.dogEyes) {
+      switch (disease) {
+        case 'Pigmented_keratitis':
+          return ['각막에 갈색 또는 검은색 색소 침착', '눈물 분비 증가', '눈 주변 털의 변색', '시력 저하 가능성'];
+        case 'blepharitis':
+          return ['눈꺼풀 부종', '눈꺼풀 발적', '눈곱 증가', '눈 주변 가려움'];
+        case 'entropion':
+          return ['눈꺼풀이 안쪽으로 말림', '속눈썹이 각막 자극', '눈물 과다 분비', '각막 손상 가능성'];
+        case 'eyelid_tumor':
+          return ['눈꺼풀에 종괴 발견', '종괴 주변 부종', '눈물 분비 증가', '눈 깜빡임 이상'];
+        case 'mastopathy':
+          return ['유선 조직 비대', '유선 주변 종괴', '피부 변색 가능', '통증 또는 불편감'];
+      }
+    }
+
+    // 강아지 피부 질환
+    if (modelType == DiagnosisModelType.dogSkin) {
+      switch (disease) {
+        case 'bacterial dermatosis':
+          return ['피부 발적', '농포 형성', '비듬 증가', '가려움증'];
+        case 'fungal infection':
+          return ['원형 탈모 부위', '피부 각질', '비듬', '가려움'];
+        case 'healthy':
+          return ['정상적인 피부 상태', '건강한 털 상태'];
+        case 'hypersensitivity dermatitis':
+          return ['심한 가려움', '피부 발적', '긁는 행동', '피부 손상'];
+      }
+    }
+
+    // 고양이 피부 질환
+    if (modelType == DiagnosisModelType.catSkin) {
+      switch (disease) {
+        case 'Alopecia':
+          return ['탈모 부위 발생', '피부 노출', '과도한 그루밍', '스트레스 징후'];
+        case 'Eosinophilic Plague':
+          return ['붉은 융기 병변', '피부 궤양', '가려움', '털 빠짐'];
+        case 'Flea_Allergy':
+          return ['심한 가려움', '과도한 긁기', '탈모', '피부 발진'];
+        case 'Health':
+          return ['정상적인 피부 상태', '건강한 털 상태'];
+        case 'Miliary Dermatitis':
+          return ['작은 딱지 형성', '피부 돌기', '가려움', '털 빠짐'];
+        case 'Ringworm':
+          return ['원형 탈모', '비늘 형성', '피부 발적', '전염 가능성'];
+        case 'Scabies':
+          return ['심한 가려움', '피부 두꺼워짐', '딱지 형성', '탈모'];
+      }
+    }
+
+    return ['관찰된 이상 소견'];
+  }
+
+  List<String> _getRecommendationsForDisease(
+    String disease,
+    DiagnosisModelType modelType,
+  ) {
+    // 강아지 눈 질환
+    if (modelType == DiagnosisModelType.dogEyes) {
+      switch (disease) {
+        case 'Pigmented_keratitis':
+          return [
+            '즉시 동물병원 방문하여 정밀 검사 받기',
+            '눈 주변을 청결하게 유지',
+            '눈물 분비 개선을 위한 안약 처방 필요',
+            '정기적인 안과 검진 권장',
+          ];
+        case 'blepharitis':
+          return [
+            '동물병원에서 항생제 또는 항염증제 처방 받기',
+            '눈 주변 청결 유지',
+            '온찜질로 증상 완화',
+            '알레르기 원인 파악 및 제거',
+          ];
+        case 'entropion':
+          return [
+            '즉시 수의사 상담 필요 (수술 필요할 수 있음)',
+            '각막 손상 방지를 위한 안약 사용',
+            '눈 비비는 행동 방지',
+            '엘리자베스 칼라 착용 고려',
+          ];
+        case 'eyelid_tumor':
+          return [
+            '즉시 동물병원 방문하여 조직검사',
+            '종양의 양성/악성 여부 확인 필요',
+            '수술적 제거 고려',
+            '정기적인 모니터링',
+          ];
+        case 'mastopathy':
+          return [
+            '동물병원 방문하여 정밀 검사',
+            '호르몬 검사 필요',
+            '중성화 수술 고려',
+            '종양 가능성 배제를 위한 조직검사',
+          ];
+      }
+    }
+
+    // 강아지 피부 질환
+    if (modelType == DiagnosisModelType.dogSkin) {
+      switch (disease) {
+        case 'bacterial dermatosis':
+          return [
+            '동물병원에서 항생제 처방 받기',
+            '피부 청결 유지',
+            '정기적인 목욕 및 그루밍',
+            '감염 부위 긁지 않도록 주의',
+          ];
+        case 'fungal infection':
+          return ['항진균제 처방 받기', '감염 부위 청결 유지', '다른 동물과의 접촉 피하기', '환경 소독 필요'];
+        case 'healthy':
+          return ['현재 피부 상태가 건강합니다', '정기적인 건강 검진 유지', '균형 잡힌 식단 유지'];
+        case 'hypersensitivity dermatitis':
+          return [
+            '알레르기 원인 파악 필요',
+            '항히스타민제 또는 스테로이드 처방 고려',
+            '저알레르기 식단 시도',
+            '환경 알레르겐 제거',
+          ];
+      }
+    }
+
+    // 고양이 피부 질환
+    if (modelType == DiagnosisModelType.catSkin) {
+      switch (disease) {
+        case 'Alopecia':
+          return [
+            '스트레스 요인 파악 및 제거',
+            '수의사 상담으로 원인 진단',
+            '환경 개선 및 안정감 제공',
+            '필요시 호르몬 검사',
+          ];
+        case 'Eosinophilic Plague':
+          return [
+            '즉시 수의사 진료 필요',
+            '스테로이드 또는 면역조절제 처방 필요',
+            '알레르기 원인 파악',
+            '정기적인 추적 관찰',
+          ];
+        case 'Flea_Allergy':
+          return ['벼룩 구제 프로그램 시작', '환경 벼룩 제거', '예방약 정기 투여', '가려움 완화를 위한 처방약'];
+        case 'Health':
+          return ['현재 피부 상태가 건강합니다', '정기적인 건강 검진 유지', '균형 잡힌 식단 유지'];
+        case 'Miliary Dermatitis':
+          return ['원인 파악을 위한 수의사 상담', '알레르기 검사 권장', '벼룩 예방 확인', '식이 알레르기 검사'];
+        case 'Ringworm':
+          return ['항진균제 처방 받기', '다른 동물/사람과 격리 필요', '환경 철저한 소독', '완치까지 치료 지속'];
+        case 'Scabies':
+          return ['즉시 수의사 진료 필요', '처방된 살충제 사용', '다른 동물과 격리', '환경 소독 필수'];
+      }
+    }
+
+    return ['가까운 동물병원 방문 권장', '정기적인 건강 검진'];
+  }
+
+  String _confidenceToSeverity(double confidence) {
+    if (confidence >= 0.75) {
+      return 'high';
+    }
+    if (confidence >= 0.5) {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  /// 정상/건강 결과인지 확인
+  bool _isHealthyResult(String rawLabel, DiagnosisModelType modelType) {
+    // 각 모델별 정상 라벨
+    final healthyLabels = {
+      DiagnosisModelType.dogSkin: ['healthy'],
+      DiagnosisModelType.catSkin: ['Health'],
+      // 눈 모델은 정상 라벨이 없음 (모든 결과가 질병)
+      DiagnosisModelType.dogEyes: <String>[],
+      DiagnosisModelType.catEyes: <String>[],
+    };
+
+    return healthyLabels[modelType]?.contains(rawLabel) ?? false;
   }
 
   // 진단 결과 저장
@@ -65,81 +400,5 @@ class AIDiagnosisService {
   // 진단 결과 삭제
   Future<void> deleteDiagnosis(String id) async {
     _diagnoses.removeWhere((d) => d.id == id);
-  }
-
-  // 샘플 진단 결과 데이터
-  List<Map<String, dynamic>> _getSampleDiagnoses(String severity) {
-    if (severity == 'low') {
-      return [
-        {
-          'diagnosis': '경미한 피부 자극',
-          'description': '피부에 경미한 붉은 반점이 관찰됩니다. 알레르기나 경미한 자극으로 인한 것으로 보입니다.',
-          'symptoms': ['붉은 반점', '가벼운 가려움증'],
-          'recommendations': [
-            '해당 부위를 청결하게 유지하세요',
-            '긁지 못하도록 주의하세요',
-            '2-3일 내에 호전되지 않으면 병원 방문을 권장합니다'
-          ],
-        },
-        {
-          'diagnosis': '정상 범위의 눈곱',
-          'description': '정상적인 범위의 눈곱이 관찰됩니다. 건강 상태에 큰 문제는 없어 보입니다.',
-          'symptoms': ['소량의 눈곱'],
-          'recommendations': [
-            '깨끗한 거즈로 부드럽게 닦아주세요',
-            '눈곱 양이 갑자기 증가하면 병원을 방문하세요',
-            '정기적인 눈 건강 체크를 권장합니다'
-          ],
-        },
-      ];
-    } else if (severity == 'medium') {
-      return [
-        {
-          'diagnosis': '외이염 의심',
-          'description': '귀 내부에 염증 징후가 보입니다. 외이염일 가능성이 있으며 조기 치료가 필요합니다.',
-          'symptoms': ['귀 내부 붉음', '분비물', '귀 냄새'],
-          'recommendations': [
-            '빠른 시일 내에 동물병원을 방문하세요',
-            '귀를 긁지 못하도록 주의하세요',
-            '귀 청소는 전문가의 지도 하에 진행하세요'
-          ],
-        },
-        {
-          'diagnosis': '치석 축적',
-          'description': '치아에 치석이 상당량 축적되어 있습니다. 구강 건강 관리가 필요합니다.',
-          'symptoms': ['치석', '잇몸 붉음', '구취'],
-          'recommendations': [
-            '치과 스케일링을 고려하세요',
-            '정기적인 양치질을 시작하세요',
-            '치아 건강 간식을 제공하세요'
-          ],
-        },
-      ];
-    } else {
-      // high
-      return [
-        {
-          'diagnosis': '심각한 피부 질환 가능성',
-          'description':
-              '피부에 심각한 병변이 관찰됩니다. 세균 감염, 곰팡이 감염, 또는 기타 피부 질환의 가능성이 있습니다.',
-          'symptoms': ['심한 붉은 반점', '탈모', '진물', '딱지'],
-          'recommendations': [
-            '즉시 동물병원을 방문하세요',
-            '해당 부위를 긁거나 만지지 않도록 하세요',
-            '다른 반려동물과의 접촉을 제한하세요'
-          ],
-        },
-        {
-          'diagnosis': '눈 감염 또는 외상',
-          'description': '눈에 심각한 충혈과 염증이 관찰됩니다. 감염이나 외상의 가능성이 높습니다.',
-          'symptoms': ['심한 충혈', '과도한 눈물', '눈 부음', '눈곱'],
-          'recommendations': [
-            '긴급히 동물병원을 방문하세요',
-            '눈을 비비지 못하도록 하세요',
-            '깨끗한 식염수로 부드럽게 씻어주세요'
-          ],
-        },
-      ];
-    }
   }
 }

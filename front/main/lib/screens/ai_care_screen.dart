@@ -1,15 +1,21 @@
 // AI 케어 화면 위젯
 // 케이지 센서 모니터링과 AI 진단 기능을 제공
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'ai_diagnosis_gallery_screen.dart';
+import '../models/ai_diagnosis.dart';
+import '../models/pet_profile.dart';
 import '../services/ai_diagnosis_service.dart';
 import '../services/pet_profile_manager.dart';
-import '../models/ai_diagnosis.dart';
 
 /// AI 케어 화면
 /// 케이지 센서 데이터와 AI 진단 기능을 통합 제공
+enum DiagnosisMode { eye, skin }
+
+enum PetType { dog, cat }
+
 class AiCareScreen extends StatefulWidget {
   const AiCareScreen({Key? key}) : super(key: key);
 
@@ -20,11 +26,13 @@ class AiCareScreen extends StatefulWidget {
 class _AiCareScreenState extends State<AiCareScreen> {
   // 현재 선택된 탭 인덱스 (0: 케이지, 1: AI진단)
   int _selectedTabIndex = 0;
+  DiagnosisMode _selectedMode = DiagnosisMode.eye;
+  PetType _selectedPetType = PetType.dog;
 
   // 센서 데이터 상태 관리
   double? temperature; // 온도 (°C)
-  double? humidity;    // 습도 (%)
-  int? airQuality;     // 공기질 (CAI)
+  double? humidity; // 습도 (%)
+  int? airQuality; // 공기질 (CAI)
 
   // AI 진단 관련 변수
   final AIDiagnosisService _diagnosisService = AIDiagnosisService();
@@ -192,11 +200,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.pets,
-                          color: Color(0xFF93C5FD),
-                          size: 55,
-                        ),
+                        Icon(Icons.pets, color: Color(0xFF93C5FD), size: 55),
                         SizedBox(height: 1),
                         Text(
                           '작동',
@@ -248,13 +252,17 @@ class _AiCareScreenState extends State<AiCareScreen> {
               // 온도 센서
               _buildSensorCard(
                 label: '온도',
-                value: temperature != null ? '${temperature!.toStringAsFixed(1)} °C' : '--',
+                value: temperature != null
+                    ? '${temperature!.toStringAsFixed(1)} °C'
+                    : '--',
                 color: Colors.red,
               ),
               // 습도 센서
               _buildSensorCard(
                 label: '습도',
-                value: humidity != null ? '${humidity!.toStringAsFixed(1)} %' : '--',
+                value: humidity != null
+                    ? '${humidity!.toStringAsFixed(1)} %'
+                    : '--',
                 color: Colors.blue,
               ),
               // 공기질 센서
@@ -366,16 +374,15 @@ class _AiCareScreenState extends State<AiCareScreen> {
               const SizedBox(height: 12),
               const Text(
                 '반려동물의 사진을 찍어 AI 진단을 받아보세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF5A6C6D),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF5A6C6D)),
               ),
             ],
           ),
         ),
 
-        // 이미지 선택 영역
+        // 진단 모드 선택 + 이미지 선택 영역
+        _buildPetTypeSelector(),
+        _buildModeSelector(),
         Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -395,7 +402,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
               // 이미지 미리보기
               _selectedImage != null
                   ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
                       child: Image.file(
                         _selectedImage!,
                         width: double.infinity,
@@ -407,7 +416,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       height: 300,
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -484,7 +495,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_selectedImage != null && !_isAnalyzing) ? _performDiagnosis : null,
+            onPressed: (_selectedImage != null && !_isAnalyzing)
+                ? _performDiagnosis
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00B27A),
               foregroundColor: Colors.white,
@@ -518,10 +531,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                   )
                 : const Text(
                     'AI 진단 시작',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
         ),
@@ -545,10 +555,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
             label: const Text('진단 기록 보기'),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF00B27A),
-              side: const BorderSide(
-                color: Color(0xFF00B27A),
-                width: 2,
-              ),
+              side: const BorderSide(color: Color(0xFF00B27A), width: 2),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -572,11 +579,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF00B27A),
-                    size: 20,
-                  ),
+                  Icon(Icons.info_outline, color: Color(0xFF00B27A), size: 20),
                   SizedBox(width: 8),
                   Text(
                     '진단 안내',
@@ -600,6 +603,144 @@ class _AiCareScreenState extends State<AiCareScreen> {
         const SizedBox(height: 40),
       ],
     );
+  }
+
+  Widget _buildModeSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(child: _buildModeButton(DiagnosisMode.eye, '눈')),
+          const SizedBox(width: 12),
+          Expanded(child: _buildModeButton(DiagnosisMode.skin, '피부')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPetTypeSelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(child: _buildPetTypeButton(PetType.dog, '🐕 강아지')),
+          const SizedBox(width: 12),
+          Expanded(child: _buildPetTypeButton(PetType.cat, '🐈 고양이')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPetTypeButton(PetType petType, String label) {
+    final isSelected = _selectedPetType == petType;
+    return GestureDetector(
+      onTap: () => _handlePetTypeChange(petType),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2196F3) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF2196F3), width: 2),
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(
+                color: const Color(0xFF2196F3).withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : const Color(0xFF2196F3),
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handlePetTypeChange(PetType petType) async {
+    if (_selectedPetType == petType) {
+      return;
+    }
+    setState(() {
+      _selectedPetType = petType;
+    });
+  }
+
+  Widget _buildModeButton(DiagnosisMode mode, String label) {
+    final isSelected = _selectedMode == mode;
+    // cat_eyes 모델은 아직 준비되지 않음
+    final isCatEyeUnavailable =
+        _selectedPetType == PetType.cat && mode == DiagnosisMode.eye;
+    final isDisabled = isCatEyeUnavailable;
+
+    return GestureDetector(
+      onTap: isDisabled ? null : () => _handleModeChange(mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isDisabled
+              ? Colors.grey[200]
+              : (isSelected ? const Color(0xFF00B27A) : Colors.white),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDisabled ? Colors.grey[400]! : const Color(0xFF00B27A),
+            width: 2,
+          ),
+          boxShadow: [
+            if (isSelected && !isDisabled)
+              BoxShadow(
+                color: const Color(0xFF00B27A).withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDisabled
+                      ? Colors.grey[500]
+                      : (isSelected ? Colors.white : const Color(0xFF00B27A)),
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                ),
+              ),
+              if (isCatEyeUnavailable)
+                Text(
+                  '(준비 중)',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleModeChange(DiagnosisMode mode) async {
+    if (_selectedMode == mode) {
+      return;
+    }
+    // 고양이 눈 모델은 아직 준비되지 않음
+    if (_selectedPetType == PetType.cat && mode == DiagnosisMode.eye) {
+      _showErrorDialog('고양이 눈 진단 모델은 아직 준비 중입니다.');
+      return;
+    }
+    setState(() {
+      _selectedMode = mode;
+    });
   }
 
   Widget _buildInfoItem(String text) {
@@ -663,11 +804,31 @@ class _AiCareScreenState extends State<AiCareScreen> {
       return;
     }
 
-    final profiles = PetProfileManager().getAllProfiles();
-    if (profiles.isEmpty) {
-      _showErrorDialog('등록된 반려동물이 없습니다.');
+    // 모델 타입 결정
+    DiagnosisModelType modelType;
+    if (_selectedPetType == PetType.dog) {
+      modelType = _selectedMode == DiagnosisMode.eye
+          ? DiagnosisModelType.dogEyes
+          : DiagnosisModelType.dogSkin;
+    } else {
+      // 고양이
+      if (_selectedMode == DiagnosisMode.eye) {
+        _showErrorDialog('고양이 눈 진단 모델은 아직 준비 중입니다.');
+        return;
+      }
+      modelType = DiagnosisModelType.catSkin;
+    }
+
+    // 모델 사용 가능 여부 확인
+    if (!AIDiagnosisService.isModelAvailable(modelType)) {
+      _showErrorDialog(
+        '${AIDiagnosisService.getModelTypeName(modelType)} 모델은 아직 준비 중입니다.',
+      );
       return;
     }
+
+    final profiles = PetProfileManager().getAllProfiles();
+    final selectedPet = profiles.isNotEmpty ? profiles.first : null;
 
     setState(() {
       _isAnalyzing = true;
@@ -676,20 +837,28 @@ class _AiCareScreenState extends State<AiCareScreen> {
     try {
       final diagnosis = await _diagnosisService.performDiagnosis(
         imagePath: _selectedImage!.path,
-        petName: profiles.first.name,
-        petId: profiles.first.id?.toString(),
+        petName: selectedPet?.name ?? '반려동물',
+        petId: selectedPet?.id?.toString(),
+        modelType: modelType,
       );
+
+      if (!mounted) return;
 
       setState(() {
         _isAnalyzing = false;
       });
 
       _showDiagnosisResult(diagnosis);
+    } on PlatformException catch (e) {
+      setState(() {
+        _isAnalyzing = false;
+      });
+      _showErrorDialog('AI 모델 실행에 실패했습니다: ${e.message ?? '알 수 없는 오류'}');
     } catch (e) {
       setState(() {
         _isAnalyzing = false;
       });
-      _showErrorDialog('진단 중 오류가 발생했습니다.');
+      _showErrorDialog('진단 중 오류가 발생했습니다: $e');
     }
   }
 
@@ -760,13 +929,25 @@ class _DiagnosisResultSheet extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // 제목
-                  const Text(
-                    'AI 진단 결과',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3E3F),
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        diagnosis.isNormal
+                            ? Icons.check_circle
+                            : Icons.warning_rounded,
+                        color: diagnosis.getStatusColor(),
+                        size: 32,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'AI 진단 결과',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2D3E3F),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -778,66 +959,146 @@ class _DiagnosisResultSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // 진단명 및 심각도
+                  // 메인 진단 결과 카드
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: diagnosis.getSeverityColor().withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: diagnosis.getStatusColor().withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: diagnosis.getSeverityColor().withValues(alpha: 0.3),
+                        color: diagnosis.getStatusColor().withValues(
+                          alpha: 0.3,
+                        ),
                         width: 2,
                       ),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: diagnosis.getSeverityColor(),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                diagnosis.getSeverityText(),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                        // 상태 배지
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: diagnosis.getStatusColor(),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            diagnosis.getStatusText(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '신뢰도: ${(diagnosis.confidence * 100).toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          diagnosis.diagnosis,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D3E3F),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
+
+                        // 진단명
+                        Text(
+                          diagnosis.diagnosis,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: diagnosis.getStatusColor(),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 설명
                         Text(
                           diagnosis.description,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             color: Color(0xFF5A6C6D),
                             height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+
+                        // 신뢰도 표시 (질병 의심일 때만)
+                        if (diagnosis.hasAbnormality) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.psychology,
+                                  size: 16,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '신뢰도: ${(diagnosis.confidence * 100).toStringAsFixed(1)}%',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 증상 (질병 의심일 때만)
+                  if (diagnosis.hasAbnormality) ...[
+                    _buildSection(
+                      title: '예상 증상',
+                      icon: Icons.medical_services,
+                      items: diagnosis.symptoms,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // 권장사항
+                  _buildSection(
+                    title: diagnosis.isNormal ? '건강 유지 팁' : '권장사항',
+                    icon: Icons.assignment_turned_in,
+                    items: diagnosis.recommendations,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 안내 문구
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'AI 진단은 참고용이며, 정확한 진단은 수의사와 상담하세요.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ),
                       ],
@@ -845,24 +1106,6 @@ class _DiagnosisResultSheet extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 24),
-
-                  // 증상
-                  _buildSection(
-                    title: '관찰된 증상',
-                    icon: Icons.medical_services,
-                    items: diagnosis.symptoms,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 권장사항
-                  _buildSection(
-                    title: '권장사항',
-                    icon: Icons.assignment_turned_in,
-                    items: diagnosis.recommendations,
-                  ),
-
-                  const SizedBox(height: 32),
 
                   // 닫기 버튼
                   SizedBox(
@@ -905,11 +1148,7 @@ class _DiagnosisResultSheet extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFF00B27A),
-              size: 20,
-            ),
+            Icon(icon, color: const Color(0xFF00B27A), size: 20),
             const SizedBox(width: 8),
             Text(
               title,
@@ -930,10 +1169,7 @@ class _DiagnosisResultSheet extends StatelessWidget {
               children: [
                 const Text(
                   '• ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF5A6C6D),
-                  ),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF5A6C6D)),
                 ),
                 Expanded(
                   child: Text(
