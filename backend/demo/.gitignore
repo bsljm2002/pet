@@ -38,3 +38,5 @@ out/
 
 ### Firebase ###
 src/main/resources/firebase-service-account.json
+# Firebase 서비스 계정 키 (보안상 Git에 올리지 않음)
+**/firebase/*-firebase-adminsdk-*.json
