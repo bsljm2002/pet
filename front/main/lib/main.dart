@@ -11,7 +11,6 @@ import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
 import 'screens/hospital_screen.dart';
-import 'screens/pet_shop_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/custom_app_bar.dart';
 import 'widgets/custom_bottom_nav.dart';
@@ -114,12 +113,11 @@ class _MainScreenState extends State<MainScreen> {
     _currentIndex = widget.initialIndex; // 초기 인덱스 설정
 
     // 각 탭에 해당하는 화면들의 리스트
-    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 펫샵, 4: 설정
+    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
     _screens = [
       HomeScreen(initialTabIndex: widget.homeTabIndex),
       AiCareScreen(),
       HospitalScreen(),
-      PetShopScreen(),
       SettingsScreen(),
     ];
   }

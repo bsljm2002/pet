@@ -1,10 +1,10 @@
 // 커스텀 하단 네비게이션 바 위젯
-// 앱의 주요 5개 화면 간 이동을 담당하는 네비게이션 바
+// 앱의 주요 4개 화면 간 이동을 담당하는 네비게이션 바
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // 하단 네비게이션 바 위젯
-// 홈, AI케어, 펫 일기, 동물병원, 설정 화면으로 이동할 수 있는 5개의 탭 제공
+// 홈, AI케어, 동물병원, 설정 화면으로 이동할 수 있는 4개의 탭 제공
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex; // 현재 선택된 탭의 인덱스
   final Function(int) onTap; // 탭 클릭 시 호출되는 콜백 함수
@@ -76,27 +76,14 @@ class CustomBottomNav extends StatelessWidget {
           ),
           label: '의사/시터',
         ),
-        // 3번: 펫샵 (SVG 아이콘 사용)
-        BottomNavigationBarItem(
-          icon: SvgPicture.asset(
-            'assets/icons/petshop.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              currentIndex == 3 ? Colors.white : Colors.grey,
-              BlendMode.srcIn,
-            ),
-          ),
-          label: '펫샵',
-        ),
-        // 4번: 설정 (SVG 아이콘 사용)
+        // 3번: 설정 (SVG 아이콘 사용)
         BottomNavigationBarItem(
           icon: SvgPicture.asset(
             'assets/icons/settings.svg',
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
-              currentIndex == 4 ? Colors.white : Colors.grey,
+              currentIndex == 3 ? Colors.white : Colors.grey,
               BlendMode.srcIn,
             ),
           ),
