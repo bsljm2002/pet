@@ -17,10 +17,7 @@ class AIDiagnosisService {
 
   /// 사용 가능한 모델인지 확인
   static bool isModelAvailable(DiagnosisModelType modelType) {
-    // cat_eyes 모델은 아직 준비되지 않음
-    if (modelType == DiagnosisModelType.catEyes) {
-      return false;
-    }
+    // 모든 모델 사용 가능
     return true;
   }
 
@@ -34,8 +31,7 @@ class AIDiagnosisService {
       case DiagnosisModelType.dogSkin:
         return ('dog_skin_best.ptl', 'dog_skin_best_metadata.json');
       case DiagnosisModelType.catEyes:
-        // 아직 준비되지 않음 - 호출되면 안 됨
-        throw UnsupportedError('cat_eyes 모델은 아직 준비되지 않았습니다.');
+        return ('cat_eyes_best.ptl', 'cat_eyes_best_metadata.json');
       case DiagnosisModelType.catSkin:
         return ('cat_skin_best.ptl', 'cat_skin_best_metadata.json');
     }
@@ -204,8 +200,14 @@ class AIDiagnosisService {
           'Scabies': '옴',
         };
       case DiagnosisModelType.catEyes:
-        // 아직 준비되지 않음
-        return {};
+        return {
+          'Blepharitis': '안검염',
+          'Conjunctivitis': '결막염',
+          'Corneal Sequestrum': '각막부골편',
+          'Corneal Ulcer': '각막궤양',
+          'Health': '정상',
+          'Non-ulcerative': '비궤양성 각막질환',
+        };
     }
   }
 
@@ -260,6 +262,24 @@ class AIDiagnosisService {
           return ['원형 탈모', '비늘 형성', '피부 발적', '전염 가능성'];
         case 'Scabies':
           return ['심한 가려움', '피부 두꺼워짐', '딱지 형성', '탈모'];
+      }
+    }
+
+    // 고양이 눈 질환
+    if (modelType == DiagnosisModelType.catEyes) {
+      switch (disease) {
+        case 'Blepharitis':
+          return ['눈꺼풀 부종', '눈꺼풀 발적', '눈곱 증가', '눈 주변 가려움'];
+        case 'Conjunctivitis':
+          return ['눈 충혈', '눈물 과다 분비', '눈곱 증가', '눈 부종'];
+        case 'Corneal Sequestrum':
+          return ['각막에 갈색/검은색 반점', '눈물 흘림', '눈 깜빡임 증가', '눈 불편감'];
+        case 'Corneal Ulcer':
+          return ['각막 혼탁', '눈물 과다', '눈 통증', '빛에 민감'];
+        case 'Health':
+          return ['정상적인 눈 상태', '건강한 눈'];
+        case 'Non-ulcerative':
+          return ['각막 표면 이상', '눈 불편감', '눈물 분비 변화', '가벼운 충혈'];
       }
     }
 
@@ -365,6 +385,49 @@ class AIDiagnosisService {
       }
     }
 
+    // 고양이 눈 질환
+    if (modelType == DiagnosisModelType.catEyes) {
+      switch (disease) {
+        case 'Blepharitis':
+          return [
+            '동물병원에서 항생제 또는 항염증제 처방 받기',
+            '눈 주변 청결 유지',
+            '온찜질로 증상 완화',
+            '알레르기 원인 파악 및 제거',
+          ];
+        case 'Conjunctivitis':
+          return [
+            '동물병원 방문하여 원인 진단',
+            '항생제 또는 항바이러스 안약 처방',
+            '눈 주변 청결 유지',
+            '다른 고양이와 접촉 제한',
+          ];
+        case 'Corneal Sequestrum':
+          return [
+            '즉시 안과 전문 수의사 진료 필요',
+            '수술적 제거가 필요할 수 있음',
+            '통증 관리를 위한 처방',
+            '정기적인 추적 관찰',
+          ];
+        case 'Corneal Ulcer':
+          return [
+            '즉시 동물병원 방문 필요 (응급)',
+            '항생제 안약 처방',
+            '엘리자베스 칼라 착용',
+            '눈 비비지 않도록 주의',
+          ];
+        case 'Health':
+          return ['현재 눈 상태가 건강합니다', '정기적인 건강 검진 유지', '눈 주변 청결 유지'];
+        case 'Non-ulcerative':
+          return [
+            '수의사 상담 권장',
+            '인공눈물 사용 고려',
+            '눈 자극 요인 제거',
+            '정기적인 관찰',
+          ];
+      }
+    }
+
     return ['가까운 동물병원 방문 권장', '정기적인 건강 검진'];
   }
 
@@ -384,9 +447,9 @@ class AIDiagnosisService {
     final healthyLabels = {
       DiagnosisModelType.dogSkin: ['healthy'],
       DiagnosisModelType.catSkin: ['Health'],
-      // 눈 모델은 정상 라벨이 없음 (모든 결과가 질병)
+      DiagnosisModelType.catEyes: ['Health'],
+      // 강아지 눈 모델은 정상 라벨이 없음 (모든 결과가 질병)
       DiagnosisModelType.dogEyes: <String>[],
-      DiagnosisModelType.catEyes: <String>[],
     };
 
     return healthyLabels[modelType]?.contains(rawLabel) ?? false;

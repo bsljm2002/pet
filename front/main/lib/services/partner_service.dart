@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/partner_profile_model.dart';
 
 class PartnerService {
-  static const String baseUrl = 'http://10.0.2.2:9075/api/v1/partners';
+  static const String baseUrl = 'http://223.130.130.225:9075/api/v1/partners';
 
   /// 파트너 프로필 생성
   Future<int?> createPartner(PartnerProfileModel profile) async {
@@ -39,7 +39,9 @@ class PartnerService {
 
   /// 파트너 프로필 수정
   Future<PartnerProfileModel?> updatePartner(
-      int partnerId, PartnerProfileModel profile) async {
+    int partnerId,
+    PartnerProfileModel profile,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/$partnerId/profile'),

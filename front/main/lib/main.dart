@@ -36,7 +36,7 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    
+
     // FCM 백그라운드 메시지 핸들러 등록
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 

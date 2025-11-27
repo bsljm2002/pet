@@ -8,7 +8,7 @@ class PetService {
   factory PetService() => _instance;
   PetService._internal();
 
-  static const String baseUrl = "http://10.0.2.2:9075/api/v1/pets";
+  static const String baseUrl = "http://223.130.130.225:9075/api/v1/pets";
 
   /// 펫 프로필 등록 API 호출
   Future<Map<String, dynamic>> createPet({
@@ -91,12 +91,12 @@ class PetService {
   }
 
   /// 펫 이미지 업로드
-  Future<Map<String, dynamic>> uploadPetImage(String ownerId, File imageFile) async {
+  Future<Map<String, dynamic>> uploadPetImage(
+    String ownerId,
+    File imageFile,
+  ) async {
     try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/image'),
-      );
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/image'));
 
       // ownerId 파라미터 추가
       request.fields['ownerId'] = ownerId;
@@ -131,10 +131,7 @@ class PetService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["ok"] == true) {
-          return {
-            "success": true,
-            "imageUrl": data["data"]["imageUrl"],
-          };
+          return {"success": true, "imageUrl": data["data"]["imageUrl"]};
         } else {
           return {"success": false, "message": data["message"]};
         }

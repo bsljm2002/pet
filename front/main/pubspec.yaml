@@ -72,7 +72,7 @@ dependencies:
   webview_flutter: ^4.5.0
 
   # 카카오맵 Flutter 플러그인
-  kakao_map_plugin: ^0.2.1
+  kakao_map_plugin: ^0.3.7
 
   # URL 실행 패키지 (길 안내용)
   url_launcher: ^6.2.5

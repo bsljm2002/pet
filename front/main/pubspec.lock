@@ -457,10 +457,10 @@ packages:
     dependency: "direct main"
     description:
       name: kakao_map_plugin
-      sha256: "5c8dfbd48e2b6371902b39ee1f6a8e7d0c2ea577ecf7ea9569ba1e3dd5e0b355"
+      sha256: "45ade447fd8423aab32476ff1a482cd33c51273afde3a7fd8a97eeb91735192c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.6"
+    version: "0.3.7"
   kpostal:
     dependency: "direct main"
     description:
@@ -878,18 +878,18 @@ packages:
     dependency: "direct main"
     description:
       name: webview_flutter
-      sha256: ec81f57aa1611f8ebecf1d2259da4ef052281cb5ad624131c93546c79ccc7736
+      sha256: c3e4fe614b1c814950ad07186007eff2f2e5dd2935eba7b9a9a1af8e5885f1ba
       url: "https://pub.dev"
     source: hosted
-    version: "4.9.0"
+    version: "4.13.0"
   webview_flutter_android:
     dependency: transitive
     description:
       name: webview_flutter_android
-      sha256: "47a8da40d02befda5b151a26dba71f47df471cddd91dfdb7802d0a87c5442558"
+      sha256: "3fcca88ee2ae568807ebd42deed235bb8dd8e62b3e4d5caff67daa6bce062cca"
       url: "https://pub.dev"
     source: hosted
-    version: "3.16.9"
+    version: "4.10.9"
   webview_flutter_platform_interface:
     dependency: transitive
     description:

@@ -6,7 +6,7 @@ import '../models/reservation_model.dart';
 
 class ApiService {
   // 백엔드 서버 URL
-  static const String baseUrl = 'http://10.0.2.2:9075/api/v1';
+  static const String baseUrl = 'http://223.130.130.225:9075/api/v1';
 
   // 수의사 목록 조회
   static Future<List<VetModel>> getVets({
@@ -21,7 +21,9 @@ class ApiService {
         queryParams['specialty'] = specialty;
       }
 
-      Uri uri = Uri.parse('$baseUrl/partners').replace(queryParameters: queryParams);
+      Uri uri = Uri.parse(
+        '$baseUrl/partners',
+      ).replace(queryParameters: queryParams);
 
       print('수의사 목록 조회 - URL: $uri');
 
@@ -98,7 +100,9 @@ class ApiService {
         queryParams['specialty'] = service;
       }
 
-      Uri uri = Uri.parse('$baseUrl/partners').replace(queryParameters: queryParams);
+      Uri uri = Uri.parse(
+        '$baseUrl/partners',
+      ).replace(queryParameters: queryParams);
 
       print('펫시터 목록 조회 - URL: $uri');
 
@@ -114,7 +118,9 @@ class ApiService {
         final data = json.decode(response.body);
         if (data['ok'] == true) {
           final List<dynamic> jsonData = data['data'] as List;
-          final sitters = jsonData.map((json) => SitterModel.fromJson(json)).toList();
+          final sitters = jsonData
+              .map((json) => SitterModel.fromJson(json))
+              .toList();
           print('펫시터 ${sitters.length}개 로드 성공');
           return sitters;
         }
