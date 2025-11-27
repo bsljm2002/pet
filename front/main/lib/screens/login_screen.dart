@@ -4,7 +4,6 @@ import '../services/auth_service.dart';
 import '../models/user.dart';
 import 'partner/hospital_home_screen.dart';
 import 'partner/sitter_home_screen.dart';
-import 'partner/seller_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -175,15 +174,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 context,
                 MaterialPageRoute(
                   builder: (context) => const SitterHomeScreen(),
-                ),
-              );
-              break;
-            case UserType.seller:
-              // 펫샵 (판매자) 전용 화면
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SellerHomeScreen(),
                 ),
               );
               break;
