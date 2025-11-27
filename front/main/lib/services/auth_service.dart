@@ -27,6 +27,7 @@ class AuthService {
     String? addressNote,
     String? companyName,
     String? businessNumber,
+    String? fcmToken,
   }) async {
     // 백엔드 엔드포인트: POST /api/v1/users
     final url = Uri.parse(baseUrl);
@@ -53,6 +54,8 @@ class AuthService {
       "workingDays": null,
       "workingStartHours": null,
       "workingEndHours": null,
+      // FCM 토큰
+      "fcmToken": fcmToken,
     });
 
     try {

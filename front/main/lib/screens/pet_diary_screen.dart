@@ -29,6 +29,17 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
   String? _errorMessage; // 에러 메시지
   PetDiary? _currentDiary; // 현재 선택된 날짜의 일기
 
+  // 이미지 URL을 완전한 URL로 변환하는 헬퍼 함수
+  String _getFullImageUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return '';
+    // 이미 완전한 URL인 경우 그대로 반환
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    // 상대 경로인 경우 백엔드 서버 주소를 붙여서 반환
+    return 'http://10.0.2.2:9075$imageUrl';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +73,11 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
             .map((json) => PetProfile.fromJson(json as Map<String, dynamic>))
             .toList();
 
+        // 디버깅: 이미지 URL 확인
+        for (var profile in profiles) {
+          print('Pet: ${profile.name}, ImageURL: ${profile.imageUrl}');
+        }
+
         setState(() {
           _petProfiles = profiles;
           _isLoading = false;
@@ -86,13 +102,23 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
 
   /// 일기 불러오기
   Future<void> _loadDiary() async {
-    if (_petProfiles.isEmpty) return;
-    if (_petProfiles[_selectedPetIndex].id == null) return;
+    if (_petProfiles.isEmpty) {
+      print('📋 일기 불러오기 실패: 펫 프로필이 없음');
+      return;
+    }
+    if (_petProfiles[_selectedPetIndex].id == null) {
+      print('📋 일기 불러오기 실패: 펫 ID가 없음');
+      return;
+    }
+
+    print('📋 일기 불러오기 시작: petId=${_petProfiles[_selectedPetIndex].id}, date=${_selectedDate.toString().split(' ')[0]}');
 
     final diary = await DiaryService().getDiary(
       _petProfiles[_selectedPetIndex].id!,
       _selectedDate,
     );
+
+    print('📋 일기 조회 결과: ${diary != null ? "일기 있음 (${diary.content?.length ?? 0}자)" : "일기 없음"}');
 
     setState(() {
       _currentDiary = diary;
@@ -244,28 +270,73 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
               child: Column(
                 children: [
                   // 프로필 이미지
-                  Container(
+                  SizedBox(
                     width: 70,
                     height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? Color(0xFF00B27A)
-                            : Colors.transparent,
-                        width: 2,
+                    child: PhysicalShape(
+                      clipper: _SvgMaskClipper(profile.species),
+                      color: Colors.transparent,
+                      shadowColor: isSelected
+                          ? Color(0xFF00B27A)
+                          : Colors.black,
+                      elevation: isSelected ? 3 : 1,
+                      child: ClipPath(
+                        clipper: _SvgMaskClipper(profile.species),
+                        child: Container(
+                          width: 70,
+                          height: 70,
+                          color: Colors.grey[300],
+                          child:
+                              (profile.imageUrl != null &&
+                                  profile.imageUrl!.isNotEmpty)
+                              ? Image.network(
+                                  _getFullImageUrl(profile.imageUrl),
+                                  width: 70,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print(
+                                      'Image load error for ${profile.name}: $error',
+                                    );
+                                    return Center(
+                                      child: Icon(
+                                        Icons.pets,
+                                        size: 35,
+                                        color: Colors.grey[600],
+                                      ),
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return Center(
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                : null,
+                                            color: Color(0xFF00B27A),
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      },
+                                )
+                              : Center(
+                                  child: Icon(
+                                    Icons.pets,
+                                    size: 35,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                        ),
                       ),
-                      image: profile.imageUrl != null
-                          ? DecorationImage(
-                              image: NetworkImage(profile.imageUrl!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                      color: Colors.grey[300],
                     ),
-                    child: profile.imageUrl == null
-                        ? Icon(Icons.pets, size: 35, color: Colors.grey[600])
-                        : null,
                   ),
                   SizedBox(height: 1),
                   // 반려동물 이름
@@ -313,6 +384,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                     final weekDates = _getWeekDates();
                     _selectedDate = weekDates[3]; // 수요일을 기준으로 설정
                   });
+                  _loadDiary(); // 주 변경 시 일기 다시 불러오기
                 },
               ),
               Text(
@@ -332,6 +404,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                     final weekDates = _getWeekDates();
                     _selectedDate = weekDates[3]; // 수요일을 기준으로 설정
                   });
+                  _loadDiary(); // 주 변경 시 일기 다시 불러오기
                 },
               ),
             ],
@@ -374,27 +447,36 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
                     ),
                     SizedBox(height: 8),
                     // 날짜
-                    Container(
+                    SizedBox(
                       width: 40,
                       height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected
-                            ? Color(0xFF00B27A)
-                            : isToday
-                            ? Color(0xFF8ED4BD)
-                            : Colors.transparent,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${date.day}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: isSelected || isToday
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected ? Colors.white : Colors.black87,
-                        ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 배경 (선택된 날짜 또는 오늘 날짜인 경우 발바닥 모양)
+                          if (isSelected || isToday)
+                            CustomPaint(
+                              size: Size(40, 40),
+                              painter: _PawMarkPainter(
+                                color: isSelected
+                                    ? Color(0xFF00B27A)
+                                    : Color(0xFF8ED4BD),
+                              ),
+                            ),
+                          // 날짜 텍스트
+                          Text(
+                            '${date.day}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: isSelected || isToday
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected || isToday
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -892,4 +974,578 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
       ),
     );
   }
+}
+
+/// SVG 모양으로 이미지를 마스킹하는 CustomClipper
+class _SvgMaskClipper extends CustomClipper<Path> {
+  final String species;
+
+  _SvgMaskClipper(this.species);
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final speciesLower = species.toLowerCase();
+
+    // 크기에 맞게 스케일 조정
+    final scaleX = size.width / 302;
+    final scaleY = size.height / 325;
+
+    if (speciesLower.contains('dog') || speciesLower.contains('개')) {
+      // 개 프레임 경로 (dog_i.svg의 path)
+      path.moveTo(111 * scaleX, 30.1659 * scaleY);
+      path.cubicTo(
+        123.333 * scaleX,
+        25.8325 * scaleY,
+        156.6 * scaleX,
+        19.7659 * scaleY,
+        191 * scaleX,
+        30.1659 * scaleY,
+      );
+      path.cubicTo(
+        193.833 * scaleX,
+        22.1659 * scaleY,
+        204.5 * scaleX,
+        5.16587 * scaleY,
+        224.5 * scaleX,
+        1.16587 * scaleY,
+      );
+      path.cubicTo(
+        244.5 * scaleX,
+        -2.83413 * scaleY,
+        260.833 * scaleX,
+        12.1659 * scaleY,
+        266.5 * scaleX,
+        20.1659 * scaleY,
+      );
+      path.cubicTo(
+        274.667 * scaleX,
+        30.9992 * scaleY,
+        287.3 * scaleX,
+        59.3659 * scaleY,
+        272.5 * scaleX,
+        86.1659 * scaleY,
+      );
+      path.cubicTo(
+        282.833 * scaleX,
+        99.4992 * scaleY,
+        303 * scaleX,
+        136.666 * scaleY,
+        301 * scaleX,
+        178.666 * scaleY,
+      );
+      path.cubicTo(
+        299.333 * scaleX,
+        197.499 * scaleY,
+        291.3 * scaleX,
+        240.766 * scaleY,
+        272.5 * scaleX,
+        263.166 * scaleY,
+      );
+      path.cubicTo(
+        261 * scaleX,
+        277.499 * scaleY,
+        228.6 * scaleX,
+        308.766 * scaleY,
+        191 * scaleX,
+        319.166 * scaleY,
+      );
+      path.cubicTo(
+        177.667 * scaleX,
+        322.833 * scaleY,
+        143 * scaleX,
+        327.966 * scaleY,
+        111 * scaleX,
+        319.166 * scaleY,
+      );
+      path.cubicTo(
+        94.6667 * scaleX,
+        314.999 * scaleY,
+        55.6 * scaleX,
+        297.966 * scaleY,
+        30 * scaleX,
+        263.166 * scaleY,
+      );
+      path.cubicTo(
+        20.3333 * scaleX,
+        252.333 * scaleY,
+        0.9 * scaleX,
+        220.266 * scaleY,
+        0.5 * scaleX,
+        178.666 * scaleY,
+      );
+      path.cubicTo(
+        0.833333 * scaleX,
+        159.666 * scaleY,
+        7.2 * scaleX,
+        114.566 * scaleY,
+        30 * scaleX,
+        86.1659 * scaleY,
+      );
+      path.cubicTo(
+        23.5 * scaleX,
+        76.1659 * scaleY,
+        15.5 * scaleX,
+        48.9659 * scaleY,
+        35.5 * scaleX,
+        20.1659 * scaleY,
+      );
+      path.cubicTo(
+        40 * scaleX,
+        12.6659 * scaleY,
+        54.7 * scaleX,
+        -1.63412 * scaleY,
+        77.5 * scaleX,
+        1.16587 * scaleY,
+      );
+      path.cubicTo(
+        85.6667 * scaleX,
+        2.49921 * scaleY,
+        103.8 * scaleX,
+        10.1659 * scaleY,
+        111 * scaleX,
+        30.1659 * scaleY,
+      );
+    } else {
+      // 고양이 프레임 경로 (cat_i.svg의 path)
+      final catScaleY = size.height / 331;
+      path.moveTo(186.347 * scaleX, 35.1901 * catScaleY);
+      path.cubicTo(
+        172.847 * scaleX,
+        32.0235 * catScaleY,
+        139.547 * scaleX,
+        27.5901 * catScaleY,
+        114.347 * scaleX,
+        35.1901 * catScaleY,
+      );
+      path.cubicTo(
+        108.18 * scaleX,
+        26.0235 * catScaleY,
+        94.047 * scaleX,
+        6.29012 * catScaleY,
+        86.847 * scaleX,
+        0.690125 * catScaleY,
+      );
+      path.cubicTo(
+        76.1803 * scaleX,
+        9.52346 * catScaleY,
+        52.547 * scaleX,
+        36.8901 * catScaleY,
+        43.347 * scaleX,
+        75.6901 * catScaleY,
+      );
+      path.cubicTo(
+        11.0136 * scaleX,
+        109.19 * catScaleY,
+        -34.253 * scaleX,
+        198.09 * catScaleY,
+        43.347 * scaleX,
+        285.69 * catScaleY,
+      );
+      path.cubicTo(
+        56.347 * scaleX,
+        300.023 * catScaleY,
+        94.5469 * scaleX,
+        328.99 * catScaleY,
+        143.347 * scaleX,
+        330.19 * catScaleY,
+      );
+      path.cubicTo(
+        167.014 * scaleX,
+        331.19 * catScaleY,
+        223.047 * scaleX,
+        323.69 * catScaleY,
+        257.847 * scaleX,
+        285.69 * catScaleY,
+      );
+      path.cubicTo(
+        290.18 * scaleX,
+        254.523 * catScaleY,
+        335.447 * scaleX,
+        168.89 * catScaleY,
+        257.847 * scaleX,
+        75.6901 * catScaleY,
+      );
+      path.cubicTo(
+        252.347 * scaleX,
+        58.5235 * catScaleY,
+        235.847 * scaleX,
+        19.4901 * catScaleY,
+        213.847 * scaleX,
+        0.690125 * catScaleY,
+      );
+      path.cubicTo(
+        206.18 * scaleX,
+        8.85679 * catScaleY,
+        189.947 * scaleX,
+        27.1901 * catScaleY,
+        186.347 * scaleX,
+        35.1901 * catScaleY,
+      );
+    }
+
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+/// 발바닥 모양을 그리는 CustomPainter
+class _PawMarkPainter extends CustomPainter {
+  final Color color;
+
+  _PawMarkPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+
+    // mark.svg의 path를 40x40 크기에 맞게 스케일 조정
+    final scaleX = size.width / 353;
+    final scaleY = size.height / 342;
+    final offsetY = -size.height * 0.2; // 위로 8% 이동
+
+    // 첫 번째 path (우측 상단 발가락)
+    path.moveTo(350.751 * scaleX, 110.68 * scaleY + offsetY);
+    path.cubicTo(
+      348.418 * scaleX,
+      98.5128 * scaleY + offsetY,
+      335.951 * scaleX,
+      77.4795 * scaleY + offsetY,
+      304.751 * scaleX,
+      90.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      273.551 * scaleX,
+      103.88 * scaleY + offsetY,
+      266.751 * scaleX,
+      137.18 * scaleY + offsetY,
+      267.251 * scaleX,
+      152.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      267.084 * scaleX,
+      163.513 * scaleY + offsetY,
+      271.951 * scaleX,
+      186.88 * scaleY + offsetY,
+      292.751 * scaleX,
+      189.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      318.751 * scaleX,
+      193.18 * scaleY + offsetY,
+      333.751 * scaleX,
+      175.18 * scaleY + offsetY,
+      342.251 * scaleX,
+      161.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      349.051 * scaleX,
+      149.98 * scaleY + offsetY,
+      350.751 * scaleX,
+      140.513 * scaleY + offsetY,
+      350.751 * scaleX,
+      137.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      351.81 * scaleX,
+      131.346 * scaleY + offsetY,
+      353.292 * scaleX,
+      117.88 * scaleY + offsetY,
+      350.751 * scaleX,
+      110.68 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 두 번째 path (중앙 상단 발가락)
+    path.moveTo(256.751 * scaleX, 7.17951 * scaleY + offsetY);
+    path.cubicTo(
+      247.584 * scaleX,
+      -0.487154 * scaleY + offsetY,
+      224.051 * scaleX,
+      -7.92049 * scaleY + offsetY,
+      203.251 * scaleX,
+      23.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      182.451 * scaleX,
+      55.2795 * scaleY + offsetY,
+      189.584 * scaleX,
+      87.5128 * scaleY + offsetY,
+      195.751 * scaleX,
+      99.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      201.251 * scaleX,
+      112.346 * scaleY + offsetY,
+      217.551 * scaleX,
+      134.68 * scaleY + offsetY,
+      238.751 * scaleX,
+      122.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      259.951 * scaleX,
+      110.68 * scaleY + offsetY,
+      271.584 * scaleX,
+      86.0128 * scaleY + offsetY,
+      274.751 * scaleX,
+      75.1795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      276.918 * scaleX,
+      67.3462 * scaleY + offsetY,
+      279.951 * scaleX,
+      48.2795 * scaleY + offsetY,
+      274.751 * scaleX,
+      34.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      269.551 * scaleX,
+      21.0795 * scaleY + offsetY,
+      260.584 * scaleX,
+      10.6795 * scaleY + offsetY,
+      256.751 * scaleX,
+      7.17951 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 세 번째 path (좌측 상단 발가락)
+    path.moveTo(125.751 * scaleX, 1.67951 * scaleY + offsetY);
+    path.cubicTo(
+      114.251 * scaleX,
+      -1.32049 * scaleY + offsetY,
+      88.951 * scaleX,
+      1.07951 * scaleY + offsetY,
+      79.751 * scaleX,
+      34.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      70.551 * scaleX,
+      68.2795 * scaleY + offsetY,
+      88.9177 * scaleX,
+      99.3462 * scaleY + offsetY,
+      99.251 * scaleX,
+      110.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      105.584 * scaleX,
+      118.68 * scaleY + offsetY,
+      122.751 * scaleX,
+      132.28 * scaleY + offsetY,
+      140.751 * scaleX,
+      122.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      158.751 * scaleX,
+      113.08 * scaleY + offsetY,
+      165.584 * scaleX,
+      84.6795 * scaleY + offsetY,
+      166.751 * scaleX,
+      71.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      166.751 * scaleX,
+      59.0128 * scaleY + offsetY,
+      163.451 * scaleX,
+      30.4795 * scaleY + offsetY,
+      150.251 * scaleX,
+      17.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      137.051 * scaleX,
+      4.87951 * scaleY + offsetY,
+      128.418 * scaleX,
+      1.67951 * scaleY + offsetY,
+      125.751 * scaleX,
+      1.67951 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 네 번째 path (좌측 발가락)
+    path.moveTo(21.751 * scaleX, 87.1795 * scaleY + offsetY);
+    path.cubicTo(
+      13.751 * scaleX,
+      89.0128 * scaleY + offsetY,
+      -1.64897 * scaleX,
+      99.1795 * scaleY + offsetY,
+      0.75103 * scaleX,
+      125.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      3.15103 * scaleX,
+      151.18 * scaleY + offsetY,
+      12.4177 * scaleX,
+      164.68 * scaleY + offsetY,
+      16.751 * scaleX,
+      168.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      26.0844 * scaleX,
+      178.513 * scaleY + offsetY,
+      49.951 * scaleX,
+      196.38 * scaleY + offsetY,
+      70.751 * scaleX,
+      185.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      91.551 * scaleX,
+      173.98 * scaleY + offsetY,
+      87.0844 * scaleX,
+      140.513 * scaleY + offsetY,
+      82.251 * scaleX,
+      125.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      78.751 * scaleX,
+      116.346 * scaleY + offsetY,
+      67.651 * scaleX,
+      97.0795 * scaleY + offsetY,
+      51.251 * scaleX,
+      90.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      34.851 * scaleX,
+      84.2795 * scaleY + offsetY,
+      24.751 * scaleX,
+      85.6795 * scaleY + offsetY,
+      21.751 * scaleX,
+      87.1795 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 다섯 번째 path (메인 발바닥)
+    path.moveTo(245.751 * scaleX, 174.68 * scaleY + offsetY);
+    path.cubicTo(
+      239.918 * scaleX,
+      166.18 * scaleY + offsetY,
+      220.651 * scaleX,
+      147.98 * scaleY + offsetY,
+      190.251 * scaleX,
+      143.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      180.418 * scaleX,
+      142.513 * scaleY + offsetY,
+      158.751 * scaleX,
+      142.28 * scaleY + offsetY,
+      150.751 * scaleX,
+      146.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      140.751 * scaleX,
+      152.18 * scaleY + offsetY,
+      133.251 * scaleX,
+      150.18 * scaleY + offsetY,
+      112.251 * scaleX,
+      171.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      110.251 * scaleX,
+      174.68 * scaleY + offsetY,
+      105.951 * scaleX,
+      181.58 * scaleY + offsetY,
+      104.751 * scaleX,
+      185.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      103.551 * scaleX,
+      188.78 * scaleY + offsetY,
+      89.251 * scaleX,
+      203.013 * scaleY + offsetY,
+      82.251 * scaleX,
+      209.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      73.9177 * scaleX,
+      216.513 * scaleY + offsetY,
+      56.651 * scaleX,
+      236.18 * scaleY + offsetY,
+      54.251 * scaleX,
+      260.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      51.851 * scaleX,
+      284.18 * scaleY + offsetY,
+      64.251 * scaleX,
+      306.18 * scaleY + offsetY,
+      70.751 * scaleX,
+      314.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      77.751 * scaleX,
+      324.013 * scaleY + offsetY,
+      99.751 * scaleX,
+      343.08 * scaleY + offsetY,
+      131.751 * scaleX,
+      340.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      137.251 * scaleX,
+      340.013 * scaleY + offsetY,
+      150.951 * scaleX,
+      337.98 * scaleY + offsetY,
+      161.751 * scaleX,
+      335.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      172.551 * scaleX,
+      332.38 * scaleY + offsetY,
+      188.918 * scaleX,
+      334.013 * scaleY + offsetY,
+      195.751 * scaleX,
+      335.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      202.584 * scaleX,
+      337.013 * scaleY + offsetY,
+      219.551 * scaleX,
+      340.68 * scaleY + offsetY,
+      232.751 * scaleX,
+      340.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      249.251 * scaleX,
+      340.68 * scaleY + offsetY,
+      272.751 * scaleX,
+      332.68 * scaleY + offsetY,
+      288.751 * scaleX,
+      307.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      304.751 * scaleX,
+      281.68 * scaleY + offsetY,
+      299.751 * scaleX,
+      254.18 * scaleY + offsetY,
+      296.251 * scaleX,
+      239.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      293.451 * scaleX,
+      228.08 * scaleY + offsetY,
+      275.751 * scaleX,
+      209.846 * scaleY + offsetY,
+      267.251 * scaleX,
+      202.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      262.418 * scaleX,
+      198.18 * scaleY + offsetY,
+      251.351 * scaleX,
+      187.08 * scaleY + offsetY,
+      245.751 * scaleX,
+      174.68 * scaleY + offsetY,
+    );
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

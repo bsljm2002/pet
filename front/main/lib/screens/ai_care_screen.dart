@@ -664,10 +664,10 @@ class _AiCareScreenState extends State<AiCareScreen> {
     }
 
     final profiles = PetProfileManager().getAllProfiles();
-    if (profiles.isEmpty) {
-      _showErrorDialog('등록된 반려동물이 없습니다.');
-      return;
-    }
+
+    // 등록된 반려동물 정보 (없으면 기본값 사용)
+    final petName = profiles.isNotEmpty ? profiles.first.name : '반려동물';
+    final petId = profiles.isNotEmpty ? profiles.first.id?.toString() : null;
 
     setState(() {
       _isAnalyzing = true;
@@ -676,8 +676,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
     try {
       final diagnosis = await _diagnosisService.performDiagnosis(
         imagePath: _selectedImage!.path,
-        petName: profiles.first.name,
-        petId: profiles.first.id?.toString(),
+        petName: petName,
+        petId: petId,
       );
 
       setState(() {

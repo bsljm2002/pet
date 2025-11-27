@@ -70,7 +70,11 @@ public record UserSignupReq(
     String workingStartHours,
 
     @Pattern(regexp = "^\\d{2}:\\d{2}(:\\d{2})?$", message = "working_end_hours는 HH:mm 또는 HH:mm:ss 형식")
-    String workingEndHours
+    String workingEndHours,
+
+    // FCM 토큰 (선택적)
+    @Size(max = 255, message = "fcmToken은 최대 255자입니다.")
+    String fcmToken
 
 ) {
 //     @AssertTrue(message = "HOSPITAL은 tin, ca_categorical, vet_specialty가 필수입니다.")

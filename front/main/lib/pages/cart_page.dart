@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/product_provider.dart';
+import 'checkout_page.dart';
 import 'order_history_page.dart';
 
 class CartPage extends StatelessWidget {
@@ -54,25 +55,13 @@ class CartPage extends StatelessWidget {
           ? null
           : _CartSummary(
               total: cartProvider.calculateTotal(productProvider),
-              onCheckout: () async {
-                await context.read<CartProvider>().checkout(productProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('구매가 완료되었습니다.'),
-                      action: SnackBarAction(
-                        label: '구매내역',
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const OrderHistoryPage(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  );
-                }
+              onCheckout: () {
+                // 결제 페이지로 이동
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CheckoutPage(),
+                  ),
+                );
               },
             ),
     );

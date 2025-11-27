@@ -176,6 +176,62 @@ class PetService {
     }
   }
 
+  /// 펫 프로필 수정
+  Future<Map<String, dynamic>> updatePet({
+    required int petId,
+    required String name,
+    required String species, // "DOG" or "CAT"
+    required String birthdate, // "yyyy-MM-dd"
+    required double weight, // 몸무게 (kg)
+    required String abitTypeCode, // ABTI코드
+    required String gender, // 성별
+    String? speciesDetail, // 품종
+    String? imageUrl, // 이미지 URL
+  }) async {
+    final url = Uri.parse('$baseUrl/$petId');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": name,
+          "species": species,
+          "birthdate": birthdate,
+          "weight": weight,
+          "abitTypeCode": abitTypeCode,
+          "gender": gender,
+          "speciesDetail": speciesDetail,
+          "imageUrl": imageUrl,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["ok"] == true) {
+          return {
+            "success": true,
+            "message": "펫 프로필이 수정되었습니다.",
+            "petId": data["data"]["id"],
+          };
+        } else {
+          return {
+            "success": false,
+            "message": data["message"] ?? "펫 프로필 수정 실패",
+          };
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          "success": false,
+          "message": errorData["message"] ?? "서버 오류 (${response.statusCode})",
+        };
+      }
+    } catch (e) {
+      return {"success": false, "message": "네트워크 오류: $e"};
+    }
+  }
+
   /// 펫 프로필 삭제
   Future<Map<String, dynamic>> deletePet(int petId) async {
     try {

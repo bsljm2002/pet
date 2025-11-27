@@ -40,7 +40,7 @@ class CustomBottomNav extends StatelessWidget {
         // 0번: 홈 (SVG 아이콘 사용)
         BottomNavigationBarItem(
           icon: SvgPicture.asset(
-            'assets/icons/pethome.svg',
+            'assets/icons/home.svg',
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
@@ -50,22 +50,58 @@ class CustomBottomNav extends StatelessWidget {
           ),
           label: '펫홈',
         ),
+        // 1번: AI케어 (SVG 아이콘 사용)
         BottomNavigationBarItem(
-          icon: Icon(Icons.psychology),
+          icon: SvgPicture.asset(
+            'assets/icons/aicare.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              currentIndex == 1 ? Colors.white : Colors.grey,
+              BlendMode.srcIn,
+            ),
+          ),
           label: 'AI케어',
-        ), // 1번: AI케어 (케이지/AI진단)
-        BottomNavigationBarItem(
-          icon: Icon(Icons.medical_services),
-          label: '의사/시터', // 2번: 동물병원
         ),
+        // 2번: 동물병원 (SVG 아이콘 사용)
         BottomNavigationBarItem(
-          icon: Icon(Icons.shopping_bag),
+          icon: SvgPicture.asset(
+            'assets/icons/hospital.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              currentIndex == 2 ? Colors.white : Colors.grey,
+              BlendMode.srcIn,
+            ),
+          ),
+          label: '의사/시터',
+        ),
+        // 3번: 펫샵 (SVG 아이콘 사용)
+        BottomNavigationBarItem(
+          icon: SvgPicture.asset(
+            'assets/icons/petshop.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              currentIndex == 3 ? Colors.white : Colors.grey,
+              BlendMode.srcIn,
+            ),
+          ),
           label: '펫샵',
-        ), // 3번: 펫샵
+        ),
+        // 4번: 설정 (SVG 아이콘 사용)
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
+          icon: SvgPicture.asset(
+            'assets/icons/settings.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              currentIndex == 4 ? Colors.white : Colors.grey,
+              BlendMode.srcIn,
+            ),
+          ),
           label: '설정',
-        ), // 4번: 설정
+        ),
       ],
     );
   }

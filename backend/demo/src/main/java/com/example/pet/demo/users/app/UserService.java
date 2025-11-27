@@ -83,13 +83,14 @@ public class UserService {
                 .address(req.address())
                 .userType(type)                  // 기본값 GENERAL이지만 DTO에 맞춰 설정
                 .status(UserStatus.ACTIVE)       // 기본 활성
-                .tin(tin)        
+                .tin(tin)
                 .caCategorical(caCat)
                 .vetSpecialty(vet)
                 .petsitterWork(sitterWork)
                 .workingDays(workingDaysCsv)
                 .workingStartHours(req.workingStartHours())
                 .workingEndHours(req.workingEndHours())
+                .fcmToken(req.fcmToken())        // FCM 토큰 저장
                 .build();
 
         // (선택) 근무시간 논리 검증이 필요하면 여기서 수행(HH:mm[:ss] 비교)
@@ -148,5 +149,19 @@ public class UserService {
     @Transactional
     public void updateProfileUrl(Long userId, String imageUrl) {
         users.updateProfileUrl(userId, imageUrl);
+    }
+
+    @Transactional
+    public void updateWorkingHours(Long userId, List<String> workingDays, String workingStartHours, String workingEndHours) {
+        User user = users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+
+        // User 엔티티의 working hours 필드 업데이트
+        String workingDaysCsv = toCsv(workingDays);
+        user.setWorkingDays(workingDaysCsv);
+        user.setWorkingStartHours(workingStartHours);
+        user.setWorkingEndHours(workingEndHours);
+
+        users.save(user);
     }
 }
