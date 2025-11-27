@@ -115,6 +115,43 @@ class PartnerReservationService {
     }
   }
 
+  /// 작업 시작 (체크인)
+  Future<bool> checkinReservation(
+    int reservationId,
+    int partnerId,
+  ) async {
+    try {
+      final url = Uri.parse(
+        '${ApiService.baseUrl}/reservations/$reservationId/checkin?partnerId=$partnerId',
+      );
+
+      print('📡 [DEBUG] 체크인 API 호출: $url');
+      print('📡 [DEBUG] reservationId: $reservationId, partnerId: $partnerId');
+
+      final response = await http.patch(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📡 [DEBUG] 응답 상태 코드: ${response.statusCode}');
+      print('📡 [DEBUG] 응답 본문: ${utf8.decode(response.bodyBytes)}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonData = json.decode(
+          utf8.decode(response.bodyBytes),
+        );
+        print('📡 [DEBUG] 파싱된 JSON: $jsonData');
+        return jsonData['ok'] == true;
+      }
+
+      print('❌ [DEBUG] 응답 코드가 200이 아님');
+      return false;
+    } catch (e) {
+      print('❌ 체크인 오류: $e');
+      return false;
+    }
+  }
+
   /// 진료/서비스 완료
   Future<bool> completeReservation(
     int reservationId,

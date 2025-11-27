@@ -3,6 +3,8 @@ import '../models/chat_room_model.dart';
 import '../models/chat_message_model.dart';
 import '../services/chat_service.dart';
 import '../services/auth_service.dart';
+import '../services/partner_service.dart';
+import '../services/partner_reservation_service.dart';
 import 'package:intl/intl.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -20,15 +22,19 @@ class ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final ChatService _chatService = ChatService();
   final AuthService _authService = AuthService();
+  final PartnerService _partnerService = PartnerService();
+  final PartnerReservationService _reservationService = PartnerReservationService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   int? _currentUserId;
   String _currentUserType = 'USER';
+  String? _currentReservationStatus; // 로컬 상태 추적용
 
   @override
   void initState() {
     super.initState();
+    _currentReservationStatus = widget.chatRoom.reservationStatus;
     _loadCurrentUser();
   }
 
@@ -183,6 +189,24 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
 
+          // 1단계: 예약 확정 버튼 (WAITING → CONFIRMED)
+          if (_currentUserType == 'PARTNER' &&
+              widget.chatRoom.serviceType == 'SITTER' &&
+              _currentReservationStatus == 'WAITING')
+            _buildConfirmReservationButton(),
+
+          // 2단계: 의뢰 수락 버튼 (CONFIRMED → CHECKED_IN)
+          if (_currentUserType == 'PARTNER' &&
+              widget.chatRoom.serviceType == 'SITTER' &&
+              _currentReservationStatus == 'CONFIRMED')
+            _buildAcceptWorkButton(),
+
+          // 3단계: 작업 완료 버튼 (CHECKED_IN → COMPLETED)
+          if (_currentUserType == 'PARTNER' &&
+              widget.chatRoom.serviceType == 'SITTER' &&
+              _currentReservationStatus == 'CHECKED_IN')
+            _buildCompleteWorkButton(),
+
           // 메시지 입력 영역
           Container(
             decoration: BoxDecoration(
@@ -335,6 +359,433 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     } else {
       // 그 외: 전체 날짜
       return DateFormat('M월 d일 HH:mm').format(dateTime);
+    }
+  }
+
+  /// 1단계: 예약 확정 버튼 (WAITING → CONFIRMED)
+  /// 파트너가 예약을 수락하고 채팅방을 활성화
+  Widget _buildConfirmReservationButton() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!),
+          bottom: BorderSide(color: Colors.grey[300]!),
+        ),
+      ),
+      child: ElevatedButton(
+        onPressed: _confirmReservation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2196F3),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 2,
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.chat_bubble_outline, size: 22),
+            SizedBox(width: 8),
+            Text(
+              '예약 확정 (채팅 시작)',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 2단계: 의뢰 수락 버튼 (CONFIRMED → CHECKED_IN)
+  /// 사용자가 요청한 실제 일을 받아들이고 작업 시작
+  Widget _buildAcceptWorkButton() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!),
+          bottom: BorderSide(color: Colors.grey[300]!),
+        ),
+      ),
+      child: ElevatedButton(
+        onPressed: _acceptWork,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4CAF50),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 2,
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.play_arrow, size: 22),
+            SizedBox(width: 8),
+            Text(
+              '의뢰 수락 (작업 시작)',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 3단계: 작업 완료 버튼 (CHECKED_IN → COMPLETED)
+  /// 작업을 완료하고 예약을 종료
+  Widget _buildCompleteWorkButton() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!),
+          bottom: BorderSide(color: Colors.grey[300]!),
+        ),
+      ),
+      child: ElevatedButton(
+        onPressed: _completeWork,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF9800),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          elevation: 2,
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle, size: 22),
+            SizedBox(width: 8),
+            Text(
+              '작업 완료',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 예약 확정 처리 (WAITING → CONFIRMED)
+  Future<void> _confirmReservation() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            '예약 확정',
+            style: TextStyle(
+              color: Color(0xFF2D3E3F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text('이 예약을 확정하고 채팅을 시작하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('취소', style: TextStyle(color: Colors.grey[600])),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                '확정',
+                style: TextStyle(
+                  color: Color(0xFF2196F3),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // 파트너 ID 가져오기
+      final partners = await _partnerService.getMyPartners(_currentUserId!);
+      if (partners.isEmpty || partners.first.id == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('파트너 정보를 찾을 수 없습니다.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final partnerId = partners.first.id!;
+
+      // 백엔드 API 호출하여 예약 확정 처리 (WAITING → CONFIRMED)
+      final success = await _reservationService.acceptReservation(
+        widget.chatRoom.reservationId,
+        partnerId,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('예약이 확정되었습니다. 사용자와 채팅을 시작할 수 있습니다.'),
+            backgroundColor: Color(0xFF2196F3),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // 상태 업데이트 (WAITING → CONFIRMED)
+        setState(() {
+          _currentReservationStatus = 'CONFIRMED';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('예약 확정에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('예약 확정 실패: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 의뢰 수락 처리 (CONFIRMED → CHECKED_IN)
+  Future<void> _acceptWork() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            '의뢰 수락',
+            style: TextStyle(
+              color: Color(0xFF2D3E3F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text('사용자가 요청한 작업을 수락하고 시작하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('취소', style: TextStyle(color: Colors.grey[600])),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                '수락',
+                style: TextStyle(
+                  color: Color(0xFF4CAF50),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // 파트너 ID 가져오기
+      final partners = await _partnerService.getMyPartners(_currentUserId!);
+      if (partners.isEmpty || partners.first.id == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('파트너 정보를 찾을 수 없습니다.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final partnerId = partners.first.id!;
+
+      // 백엔드 API 호출하여 작업 수락 처리 (CONFIRMED → CHECKED_IN)
+      final success = await _reservationService.checkinReservation(
+        widget.chatRoom.reservationId,
+        partnerId,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('의뢰를 수락했습니다. 작업을 진행해주세요.'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // 채팅방에서 나가지 않고 상태만 업데이트 (CONFIRMED → CHECKED_IN)
+        setState(() {
+          _currentReservationStatus = 'CHECKED_IN';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('의뢰 수락에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('의뢰 수락 실패: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 작업 완료 처리 (CHECKED_IN → COMPLETED)
+  Future<void> _completeWork() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            '작업 완료',
+            style: TextStyle(
+              color: Color(0xFF2D3E3F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text('작업을 완료하시겠습니까?\n완료 후 예약 관리에서 확인할 수 있습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('취소', style: TextStyle(color: Colors.grey[600])),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                '완료',
+                style: TextStyle(
+                  color: Color(0xFFFF9800),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // 파트너 ID 가져오기
+      final partners = await _partnerService.getMyPartners(_currentUserId!);
+      if (partners.isEmpty || partners.first.id == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('파트너 정보를 찾을 수 없습니다.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final partnerId = partners.first.id!;
+
+      // 백엔드 API 호출하여 작업 완료 처리 (CHECKED_IN → COMPLETED)
+      final success = await _reservationService.completeReservation(
+        widget.chatRoom.reservationId,
+        partnerId,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('작업이 완료되었습니다. 예약 관리에서 확인하실 수 있습니다.'),
+            backgroundColor: Color(0xFFFF9800),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // 상태 업데이트 후 채팅방 목록으로 돌아가기 (CHECKED_IN → COMPLETED)
+        setState(() {
+          _currentReservationStatus = 'COMPLETED';
+        });
+
+        // 잠시 후 채팅방 목록으로 이동
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('작업 완료 처리에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('작업 완료 실패: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 }

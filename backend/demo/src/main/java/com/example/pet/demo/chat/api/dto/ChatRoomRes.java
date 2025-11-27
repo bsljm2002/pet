@@ -13,5 +13,6 @@ public record ChatRoomRes(
     OffsetDateTime lastMessageTime,
     Integer unreadCount,
     String serviceType,
-    OffsetDateTime createdAt
+    OffsetDateTime createdAt,
+    String reservationStatus  // WAITING, CONFIRMED, COMPLETED 등
 ) {}

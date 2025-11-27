@@ -73,7 +73,20 @@ public class ReservationService {
             .petsitterWorkCsv(toCsv(req.petsitterWorks()))
             .build();
 
-        return reservations.save(reservation).getId();
+        Reservation savedReservation = reservations.save(reservation);
+
+        // 채팅방 즉시 생성 (펫시터 예약인 경우)
+        if (req.userType() == com.example.pet.demo.users.domain.User.UserType.SITTER) {
+            try {
+                createChatRoomForReservation(savedReservation);
+                System.out.println("✅ 예약 생성과 함께 채팅방 생성 완료: reservationId=" + savedReservation.getId());
+            } catch (Exception e) {
+                System.out.println("⚠️ 채팅방 생성 실패 (테이블 미생성 가능성): " + e.getMessage());
+                // 채팅방 생성 실패해도 예약 생성은 계속 진행
+            }
+        }
+
+        return savedReservation.getId();
     }
 
     public void updateReservationImage(Long reservationId, String imageUrl) {
@@ -443,7 +456,41 @@ public class ReservationService {
     }
 
     /**
+     * 작업 시작 (체크인)
+     * CONFIRMED → CHECKED_IN
+     */
+    public void checkin(Long reservationId, Long partnerId) {
+        Reservation reservation = get(reservationId);
+
+        // Partner ID로부터 User ID 조회
+        Partner partner = partnerRepository.findById(partnerId)
+            .orElseThrow(() -> new IllegalArgumentException("PARTNER_NOT_FOUND"));
+
+        Long partnerUserId = partner.getUserId();
+        if (partnerUserId == null) {
+            throw new IllegalArgumentException("PARTNER_USER_ID_NOT_FOUND");
+        }
+
+        // 파트너 검증 (User ID 비교)
+        if (!reservation.getPartnerId().equals(partnerUserId)) {
+            throw new IllegalArgumentException("PARTNER_NOT_MATCHED");
+        }
+
+        // 상태가 CONFIRMED인 경우만 체크인 가능
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new IllegalArgumentException("RESERVATION_NOT_CONFIRMED");
+        }
+
+        // 상태 변경
+        reservation.setStatus(ReservationStatus.CHECKED_IN);
+        reservations.save(reservation);
+
+        System.out.println("✅ 예약 체크인 완료: reservationId=" + reservationId);
+    }
+
+    /**
      * 진료/서비스 완료
+     * CHECKED_IN → COMPLETED
      */
     public void complete(Long reservationId, Long partnerId) {
         Reservation reservation = get(reservationId);
@@ -462,9 +509,9 @@ public class ReservationService {
             throw new IllegalArgumentException("PARTNER_NOT_MATCHED");
         }
 
-        // 상태가 CONFIRMED인 경우만 완료 가능
-        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
-            throw new IllegalArgumentException("RESERVATION_NOT_CONFIRMED");
+        // 상태가 CHECKED_IN인 경우만 완료 가능
+        if (reservation.getStatus() != ReservationStatus.CHECKED_IN) {
+            throw new IllegalArgumentException("RESERVATION_NOT_CHECKED_IN");
         }
 
         // 상태 변경
