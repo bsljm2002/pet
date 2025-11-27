@@ -3,6 +3,7 @@ import 'package:kpostal/kpostal.dart';
 import 'login_screen.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -30,6 +31,7 @@ class _SignupScreenState extends State<SignupScreen>
   final TextEditingController _addressNoteController = TextEditingController();
 
   final AuthService _authService = AuthService();
+  final FCMService _fcmService = FCMService();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -42,6 +44,7 @@ class _SignupScreenState extends State<SignupScreen>
   String? _selectedDay;
   String? _selectedEmailDomain;
   String? _selectedGender;
+  String? _selectedPartnerType; // 파트너 타입 (HOSPITAL/SITTER/SELLER)
 
   // 회원가입 단계 관리
   // 0: 회원 유형 선택
@@ -49,7 +52,10 @@ class _SignupScreenState extends State<SignupScreen>
   // 2: 비밀번호 입력
   // 3: 비밀번호 확인
   // 4: 성명 입력
-  // 5: 추가 정보 입력 (생년월일/법인정보, 주소 등)
+  // 5: 생년월일 입력
+  // 6: 성별 선택
+  // 7: 파트너 유형 선택 (파트너만)
+  // 8: 추가 정보 입력 (닉네임, 법인정보, 주소 등)
   int _signupStep = 0;
 
   // 애니메이션 컨트롤러
@@ -383,40 +389,51 @@ class _SignupScreenState extends State<SignupScreen>
       return;
     }
 
-    // 생년월일 또는 법인 정보 확인
-    DateTime? birthdate;
+    // 생년월일 확인 (모든 사용자 필수)
+    if (_selectedYear == null ||
+        _selectedMonth == null ||
+        _selectedDay == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('생년월일을 입력해주세요.')),
+      );
+      return;
+    }
+
+    DateTime birthdate = DateTime(
+      int.parse(_selectedYear!),
+      int.parse(_selectedMonth!),
+      int.parse(_selectedDay!),
+    );
+
+    // 파트너: 파트너 타입, 법인명, 사업자번호 확인
     String? companyName;
     String? businessNumber;
 
-    if (!_isPartnerSignup) {
-      // 일반 사용자: 생년월일 확인
-      if (_selectedYear == null ||
-          _selectedMonth == null ||
-          _selectedDay == null) {
+    if (_isPartnerSignup) {
+      // 파트너 타입 확인
+      if (_selectedPartnerType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('생년월일을 입력해주세요.')),
+          const SnackBar(content: Text('파트너 유형을 선택해주세요.')),
         );
         return;
       }
-      birthdate = DateTime(
-        int.parse(_selectedYear!),
-        int.parse(_selectedMonth!),
-        int.parse(_selectedDay!),
-      );
-    } else {
-      // 파트너: 법인명과 사업자번호 확인
+
+      // 법인명 확인
       if (_companyNameController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('법인명을 입력해주세요.')),
         );
         return;
       }
+
+      // 사업자번호 확인
       if (_businessNumberController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('사업자번호를 입력해주세요.')),
         );
         return;
       }
+
       companyName = _companyNameController.text.trim();
       businessNumber = _businessNumberController.text.trim();
     }
@@ -426,13 +443,42 @@ class _SignupScreenState extends State<SignupScreen>
     print('- nickname: ${_nicknameController.text.trim()}');
     print('- gender: $_selectedGender');
     print('- birthdate: $birthdate');
+    print('- partnerType: $_selectedPartnerType');
+
+    // 파트너 타입에 따라 UserType 결정
+    UserType userType = UserType.general;
+    if (_isPartnerSignup && _selectedPartnerType != null) {
+      switch (_selectedPartnerType!) {
+        case 'HOSPITAL':
+          userType = UserType.hospital;
+          break;
+        case 'SITTER':
+          userType = UserType.sitter;
+          break;
+        case 'SELLER':
+          userType = UserType.seller;
+          break;
+        default:
+          userType = UserType.seller;
+      }
+    }
+
+    // FCM 토큰 가져오기
+    String? fcmToken;
+    try {
+      fcmToken = await _fcmService.getToken();
+      print('📱 회원가입 시 FCM 토큰: $fcmToken');
+    } catch (e) {
+      print('⚠️ FCM 토큰 가져오기 실패: $e');
+      // FCM 토큰 없이도 회원가입 진행
+    }
 
     // 회원가입 처리
     final result = await _authService.signUp(
       username: _nameController.text.trim(),
       email: fullEmail,
       password: _passwordController.text,
-      userType: _isPartnerSignup ? UserType.seller : UserType.general,
+      userType: userType,
       nickname: _nicknameController.text.trim(),
       gender: _selectedGender!,
       birthdate: birthdate,
@@ -447,6 +493,7 @@ class _SignupScreenState extends State<SignupScreen>
           : null,
       companyName: companyName,
       businessNumber: businessNumber,
+      fcmToken: fcmToken,
     );
 
     if (result['success']) {
@@ -564,7 +611,13 @@ class _SignupScreenState extends State<SignupScreen>
       case 4:
         return _buildNameInput(); // 성명 입력
       case 5:
-        return _buildAdditionalInfo();
+        return _buildBirthdateInput(); // 생년월일 입력
+      case 6:
+        return _buildGenderInput(); // 성별 선택
+      case 7:
+        return _buildPartnerTypeInput(); // 파트너 유형 선택 (파트너만)
+      case 8:
+        return _buildAdditionalInfo(); // 추가 정보 입력
       default:
         return const SizedBox.shrink();
     }
@@ -727,7 +780,7 @@ class _SignupScreenState extends State<SignupScreen>
                 );
                 return;
               }
-              _changeStep(5); // 추가 정보 입력 단계로
+              _changeStep(5); // 생년월일 입력 단계로
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3BA688),
@@ -1097,7 +1150,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // 단계 5: 추가 정보 입력 (생년월일/법인정보, 주소, 닉네임)
+  // 단계 8: 추가 정보 입력 (닉네임, 법인정보, 주소)
   Widget _buildAdditionalInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,157 +1197,10 @@ class _SignupScreenState extends State<SignupScreen>
 
         const SizedBox(height: 24),
 
-        // 성별 선택 (필수)
-        const Text(
-          '성별 *',
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF5A6C6D),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedGender,
-              hint: const Text(
-                '성별을 선택하세요',
-                style: TextStyle(color: Color(0xFFB0B8B8)),
-              ),
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(value: 'MALE', child: Text('남성')),
-                DropdownMenuItem(value: 'FEMALE', child: Text('여성')),
-                DropdownMenuItem(value: 'OTHER', child: Text('기타')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedGender = value;
-                });
-              },
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // 생년월일 또는 법인정보
-        if (!_isPartnerSignup) ...[
+        // 법인정보 (파트너만)
+        if (_isPartnerSignup) ...[
           const Text(
-            '생년월일',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF5A6C6D),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  value: _selectedYear,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: '년',
-                    hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  items: List.generate(100, (index) {
-                    final year = (DateTime.now().year - index).toString();
-                    return DropdownMenuItem(
-                      value: year,
-                      child: Text(year),
-                    );
-                  }),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedYear = value;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedMonth,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: '월',
-                    hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  items: List.generate(12, (index) {
-                    final month = (index + 1).toString().padLeft(2, '0');
-                    return DropdownMenuItem(
-                      value: month,
-                      child: Text(month),
-                    );
-                  }),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedMonth = value;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedDay,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    hintText: '일',
-                    hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                  items: List.generate(31, (index) {
-                    final day = (index + 1).toString().padLeft(2, '0');
-                    return DropdownMenuItem(value: day, child: Text(day));
-                  }),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDay = value;
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-        ] else ...[
-          const Text(
-            '법인명',
+            '법인명 *',
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF5A6C6D),
@@ -1321,7 +1227,7 @@ class _SignupScreenState extends State<SignupScreen>
           ),
           const SizedBox(height: 24),
           const Text(
-            '사업자번호',
+            '사업자번호 *',
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF5A6C6D),
@@ -1347,11 +1253,10 @@ class _SignupScreenState extends State<SignupScreen>
             ),
             keyboardType: TextInputType.number,
           ),
+          const SizedBox(height: 24),
         ],
 
-        const SizedBox(height: 24),
-
-        // 주소 (선택사항)
+        // 주소 (선택)
         const Text(
           '주소 (선택)',
           style: TextStyle(
@@ -1484,6 +1389,344 @@ class _SignupScreenState extends State<SignupScreen>
             ),
             child: const Text(
               '회원가입',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 단계 5: 생년월일 입력
+  Widget _buildBirthdateInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Center(
+          child: Text(
+            '생년월일을 입력하세요',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3E3F),
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+        const Text(
+          '생년월일 *',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF5A6C6D),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: DropdownButtonFormField<String>(
+                value: _selectedYear,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: '년',
+                  hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                items: List.generate(100, (index) {
+                  final year = (DateTime.now().year - index).toString();
+                  return DropdownMenuItem(
+                    value: year,
+                    child: Text(year),
+                  );
+                }),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedYear = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedMonth,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: '월',
+                  hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                items: List.generate(12, (index) {
+                  final month = (index + 1).toString().padLeft(2, '0');
+                  return DropdownMenuItem(
+                    value: month,
+                    child: Text(month),
+                  );
+                }),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMonth = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedDay,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: '일',
+                  hintStyle: const TextStyle(color: Color(0xFFB0B8B8)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                items: List.generate(31, (index) {
+                  final day = (index + 1).toString().padLeft(2, '0');
+                  return DropdownMenuItem(value: day, child: Text(day));
+                }),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedDay = value;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              if (_selectedYear == null ||
+                  _selectedMonth == null ||
+                  _selectedDay == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('생년월일을 선택해주세요.')),
+                );
+                return;
+              }
+              _changeStep(6); // 성별 선택 단계로
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3BA688),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              '다음',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 단계 6: 성별 선택
+  Widget _buildGenderInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Center(
+          child: Text(
+            '성별을 선택하세요',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3E3F),
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+        const Text(
+          '성별 *',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF5A6C6D),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedGender,
+              hint: const Text(
+                '성별을 선택하세요',
+                style: TextStyle(color: Color(0xFFB0B8B8)),
+              ),
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'MALE', child: Text('남성')),
+                DropdownMenuItem(value: 'FEMALE', child: Text('여성')),
+                DropdownMenuItem(value: 'OTHER', child: Text('기타')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedGender = value;
+                });
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              if (_selectedGender == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('성별을 선택해주세요.')),
+                );
+                return;
+              }
+              // 파트너인 경우 파트너 유형 선택 단계로, 일반 사용자는 추가 정보 입력 단계로
+              if (_isPartnerSignup) {
+                _changeStep(7); // 파트너 유형 선택 단계로
+              } else {
+                _changeStep(8); // 추가 정보 입력 단계로
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3BA688),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              '다음',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 단계 7: 파트너 유형 선택 (파트너만)
+  Widget _buildPartnerTypeInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Center(
+          child: Text(
+            '파트너 유형을 선택하세요',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3E3F),
+            ),
+          ),
+        ),
+        const SizedBox(height: 40),
+        const Text(
+          '파트너 유형 *',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF5A6C6D),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedPartnerType,
+              hint: const Text(
+                '파트너 유형을 선택하세요',
+                style: TextStyle(color: Color(0xFFB0B8B8)),
+              ),
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'HOSPITAL', child: Text('펫닥터 (동물병원)')),
+                DropdownMenuItem(value: 'SITTER', child: Text('펫시터')),
+                DropdownMenuItem(value: 'SELLER', child: Text('펫샵 (판매자)')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedPartnerType = value;
+                });
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: () {
+              if (_selectedPartnerType == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('파트너 유형을 선택해주세요.')),
+                );
+                return;
+              }
+              _changeStep(8); // 추가 정보 입력 단계로
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3BA688),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              '다음',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

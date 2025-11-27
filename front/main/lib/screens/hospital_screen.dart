@@ -3,7 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../pages/my_reservation.dart';
-import '../pages/my_contacts.dart';
+import '../pages/my_consultations_page.dart';
+import '../pages/chat_rooms_page.dart';
 import '../widgets/hospital_screen_widgets.dart';
 import '../providers/hospital_provider.dart';
 
@@ -23,6 +24,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
     // 화면 로드 시 데이터 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HospitalProvider>().loadVets();
+      context.read<HospitalProvider>().loadSitters();
       context.read<HospitalProvider>().loadReservations();
     });
   }
@@ -31,24 +33,25 @@ class _HospitalScreenState extends State<HospitalScreen> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      child: Column(
-        children: [
-          // 상단 탭바
-          Container(
-            color: const Color(0xFFD4F4E4),
-            child: const TabBar(
-              tabs: [
-                Tab(text: '수의사 찾기'),
-                Tab(text: '펫시터 찾기'),
-              ],
+      child: Scaffold(
+        body: Column(
+          children: [
+            // 상단 탭바
+            Container(
+              color: const Color(0xFFD4F4E4),
+              child: const TabBar(
+                tabs: [
+                  Tab(text: '수의사 찾기'),
+                  Tab(text: '펫시터 찾기'),
+                ],
+              ),
             ),
-          ),
-          // 각 탭에 맞는 화면
-          Expanded(
-            child: TabBarView(
-              children: [
-                // 1️⃣ 수의사 찾기 탭
-                ListView(
+            // 각 탭에 맞는 화면
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // 1️⃣ 수의사 찾기 탭
+                  ListView(
                   padding: EdgeInsets.zero,
                   children: [
                     // 상단 메뉴 버튼들
@@ -96,7 +99,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const MyContacts(),
+                                    builder: (_) => const MyConsultationsPage(),
                                   ),
                                 );
                               },
@@ -158,13 +161,13 @@ class _HospitalScreenState extends State<HospitalScreen> {
                           Expanded(
                             child: HospitalScreenWidgets.buildMenuButton(
                               context,
-                              icon: Icons.contacts,
-                              label: '내 상담',
+                              icon: Icons.chat_bubble_outline,
+                              label: '채팅',
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const MyContacts(),
+                                    builder: (_) => const ChatRoomsPage(),
                                   ),
                                 );
                               },
@@ -186,6 +189,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

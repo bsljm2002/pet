@@ -20,7 +20,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: showBackButton && canPop,
       // 앱 타이틀 표시
       title: Text(
-        '숨숨루나', // 앱 이름
+        '피터펫', // 앱 이름
         style: TextStyle(
           color: Color.fromARGB(255, 0, 56, 41), // 짙은 녹색 텍스트
           fontSize: 20,

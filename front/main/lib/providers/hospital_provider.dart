@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vet_model.dart';
+import '../models/sitter_model.dart';
 import '../models/reservation_model.dart';
 import '../services/api_service.dart';
 
@@ -12,6 +13,11 @@ class HospitalProvider with ChangeNotifier {
   List<VetModel> _vets = [];
   bool _isLoadingVets = false;
   String? _vetsError;
+
+  // 펫시터 목록 관련
+  List<SitterModel> _sitters = [];
+  bool _isLoadingSitters = false;
+  String? _sittersError;
 
   // 예약 목록 관련
   List<ReservationModel> _reservations = [];
@@ -27,6 +33,10 @@ class HospitalProvider with ChangeNotifier {
   List<VetModel> get vets => _vets;
   bool get isLoadingVets => _isLoadingVets;
   String? get vetsError => _vetsError;
+
+  List<SitterModel> get sitters => _sitters;
+  bool get isLoadingSitters => _isLoadingSitters;
+  String? get sittersError => _sittersError;
 
   List<ReservationModel> get reservations => _reservations;
   bool get isLoadingReservations => _isLoadingReservations;
@@ -123,6 +133,29 @@ class HospitalProvider with ChangeNotifier {
       _vets = [];
     } finally {
       _isLoadingVets = false;
+      notifyListeners();
+    }
+  }
+
+  /// 펫시터 목록 로드
+  ///
+  /// API에서 펫시터 목록을 가져와서 필터링 조건에 맞게 표시합니다.
+  Future<void> loadSitters() async {
+    _isLoadingSitters = true;
+    _sittersError = null;
+    notifyListeners();
+
+    try {
+      _sitters = await ApiService.getSitters(
+        petType: _selectedPetType,
+        service: _selectedSpecialty,
+        timeSlot: _selectedTimeSlot,
+      );
+    } catch (e) {
+      _sittersError = e.toString();
+      _sitters = [];
+    } finally {
+      _isLoadingSitters = false;
       notifyListeners();
     }
   }

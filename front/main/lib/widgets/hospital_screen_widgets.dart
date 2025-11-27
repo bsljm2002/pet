@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/hospital_provider.dart';
 import '../models/vet_model.dart';
-import '../pages/reservation_request_page.dart';
-import '../pages/consultation_request_page.dart';
+import '../models/sitter_model.dart';
 import '../pages/vet_profile_page.dart';
+import '../pages/sitter_profile_page.dart';
 
 /// 동물병원 화면에서 사용되는 위젯들을 모아둔 클래스
 ///
@@ -459,7 +459,7 @@ class HospitalScreenWidgets {
               const SizedBox(height: 16),
               // 펫시터 검색 버튼
               ElevatedButton(
-                onPressed: () => provider.loadVets(),
+                onPressed: () => provider.loadSitters(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF4FC59E),
                   foregroundColor: Colors.white,
@@ -468,7 +468,7 @@ class HospitalScreenWidgets {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: provider.isLoadingVets
+                child: provider.isLoadingSitters
                     ? const SizedBox(
                         height: 20,
                         width: 20,
@@ -558,14 +558,14 @@ class HospitalScreenWidgets {
   static Widget buildSitterList() {
     return Consumer<HospitalProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoadingVets) {
+        if (provider.isLoadingSitters) {
           return const Padding(
             padding: EdgeInsets.all(32),
             child: Center(child: CircularProgressIndicator()),
           );
         }
 
-        if (provider.vetsError != null) {
+        if (provider.sittersError != null) {
           return Padding(
             padding: const EdgeInsets.all(32),
             child: Center(
@@ -575,12 +575,12 @@ class HospitalScreenWidgets {
                   const Icon(Icons.error, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    '오류: ${provider.vetsError}',
+                    '오류: ${provider.sittersError}',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => provider.loadVets(),
+                    onPressed: () => provider.loadSitters(),
                     child: const Text('다시 시도'),
                   ),
                 ],
@@ -589,7 +589,7 @@ class HospitalScreenWidgets {
           );
         }
 
-        if (provider.vets.isEmpty) {
+        if (provider.sitters.isEmpty) {
           return const Padding(
             padding: EdgeInsets.all(32),
             child: Center(
@@ -611,7 +611,7 @@ class HospitalScreenWidgets {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: _SitterStackedList(vets: provider.vets),
+          child: _SitterStackedList(sitters: provider.sitters),
         );
       },
     );
@@ -661,9 +661,9 @@ class HospitalScreenWidgets {
 }
 
 class _SitterStackedList extends StatefulWidget {
-  final List<VetModel> vets;
+  final List<SitterModel> sitters;
 
-  const _SitterStackedList({required this.vets});
+  const _SitterStackedList({required this.sitters});
 
   @override
   State<_SitterStackedList> createState() => _SitterStackedListState();
@@ -676,23 +676,15 @@ class _SitterStackedListState extends State<_SitterStackedList>
   @override
   void initState() {
     super.initState();
-    _expandedIndex = widget.vets.isNotEmpty ? 0 : -1;
+    _expandedIndex = widget.sitters.isNotEmpty ? 0 : -1;
   }
 
   @override
   void didUpdateWidget(covariant _SitterStackedList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_expandedIndex >= widget.vets.length) {
-      _expandedIndex = widget.vets.isNotEmpty ? widget.vets.length - 1 : -1;
+    if (_expandedIndex >= widget.sitters.length) {
+      _expandedIndex = widget.sitters.isNotEmpty ? widget.sitters.length - 1 : -1;
     }
-  }
-
-  void _openVetProfile(BuildContext context, VetModel vet) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VetProfilePage(vet: vet),
-      ),
-    );
   }
 
   @override
@@ -701,9 +693,9 @@ class _SitterStackedListState extends State<_SitterStackedList>
       padding: const EdgeInsets.only(bottom: 32),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: widget.vets.length,
+      itemCount: widget.sitters.length,
       itemBuilder: (context, index) {
-        final vet = widget.vets[index];
+        final sitter = widget.sitters[index];
         final bool isExpanded = index == _expandedIndex;
 
         return GestureDetector(
@@ -737,56 +729,48 @@ class _SitterStackedListState extends State<_SitterStackedList>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () => _openVetProfile(context, vet),
-                        child: CircleAvatar(
-                          radius: isExpanded ? 28 : 24,
-                          backgroundColor: const Color(0xFFE6F7F1),
-                          backgroundImage: (vet.imageUrl.isNotEmpty)
-                              ? NetworkImage(vet.imageUrl) as ImageProvider
-                              : null,
-                          onBackgroundImageError: (vet.imageUrl.isNotEmpty)
-                              ? (exception, stackTrace) {
-                                  // 이미지 로드 실패 시 기본 아이콘 표시
-                                }
-                              : null,
-                          child: vet.imageUrl.isEmpty
-                              ? Icon(
-                                  Icons.person_outline,
-                                  color: const Color(0xFF4FC59E),
-                                  size: isExpanded ? 26 : 22,
-                                )
-                              : null,
-                        ),
+                      CircleAvatar(
+                        radius: isExpanded ? 28 : 24,
+                        backgroundColor: const Color(0xFFE6F7F1),
+                        backgroundImage: (sitter.imageUrl.isNotEmpty)
+                            ? NetworkImage(sitter.imageUrl) as ImageProvider
+                            : null,
+                        onBackgroundImageError: (sitter.imageUrl.isNotEmpty)
+                            ? (exception, stackTrace) {
+                                // 이미지 로드 실패 시 기본 아이콘 표시
+                              }
+                            : null,
+                        child: sitter.imageUrl.isEmpty
+                            ? Icon(
+                                Icons.person_outline,
+                                color: const Color(0xFF4FC59E),
+                                size: isExpanded ? 26 : 22,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 18),
                       Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onTap: () => _openVetProfile(context, vet),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                vet.name,
-                                style: TextStyle(
-                                  fontSize: isExpanded ? 21 : 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF003829),
-                                ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sitter.name,
+                              style: TextStyle(
+                                fontSize: isExpanded ? 21 : 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF003829),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                vet.doctorName ?? '펫시터',
-                                style: TextStyle(
-                                  fontSize: isExpanded ? 16 : 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF4FC59E),
-                                ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${sitter.sitterName} 펫시터',
+                              style: TextStyle(
+                                fontSize: isExpanded ? 16 : 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4FC59E),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       AnimatedOpacity(
@@ -799,16 +783,16 @@ class _SitterStackedListState extends State<_SitterStackedList>
                           ),
                           decoration: BoxDecoration(
                             color:
-                                (vet.isOpen
+                                (sitter.isAvailable
                                         ? const Color(0xFF4FC59E)
                                         : Colors.redAccent)
                                     .withOpacity(0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            vet.isOpen ? '예약가능' : '휴무',
+                            sitter.isAvailable ? '예약가능' : '휴무',
                             style: TextStyle(
-                              color: vet.isOpen
+                              color: sitter.isAvailable
                                   ? const Color(0xFF2B8C6C)
                                   : Colors.redAccent,
                               fontWeight: FontWeight.bold,
@@ -827,7 +811,7 @@ class _SitterStackedListState extends State<_SitterStackedList>
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            vet.address,
+                            sitter.address,
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black87,
@@ -842,7 +826,21 @@ class _SitterStackedListState extends State<_SitterStackedList>
                         const Icon(Icons.phone, size: 18, color: Colors.grey),
                         const SizedBox(width: 8),
                         Text(
-                          vet.phone,
+                          sitter.phone,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, size: 18, color: Colors.amber),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${sitter.rating} | 경력 ${sitter.experience}',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.black87,
@@ -854,7 +852,7 @@ class _SitterStackedListState extends State<_SitterStackedList>
                     Wrap(
                       spacing: 10,
                       runSpacing: 8,
-                      children: vet.specialties.map((specialty) {
+                      children: sitter.services.map((service) {
                         return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -865,7 +863,7 @@ class _SitterStackedListState extends State<_SitterStackedList>
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Text(
-                            specialty,
+                            service,
                             style: const TextStyle(
                               color: Color(0xFF4FC59E),
                               fontSize: 12,
@@ -874,20 +872,32 @@ class _SitterStackedListState extends State<_SitterStackedList>
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        sitter.description,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: vet.isOpen
-                            ? () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ReservationRequestPage(vet: vet),
-                                  ),
-                                );
-                              }
-                            : null,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SitterProfilePage(sitter: sitter),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4FC59E),
                           foregroundColor: Colors.white,
@@ -896,31 +906,8 @@ class _SitterStackedListState extends State<_SitterStackedList>
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        icon: const Icon(Icons.calendar_month, size: 18),
-                        label: const Text('예약하기'),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ConsultationRequestPage(vet: vet),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF4FC59E),
-                          minimumSize: const Size(double.infinity, 46),
-                          side: const BorderSide(color: Color(0xFF4FC59E)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: const Text('상담하기'),
+                        icon: const Icon(Icons.info_outline, size: 18),
+                        label: const Text('상세보기'),
                       ),
                     ),
                   ],
@@ -961,14 +948,6 @@ class _VetStackedListState extends State<_VetStackedList>
     }
   }
 
-  void _openVetProfile(BuildContext context, VetModel vet) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => VetProfilePage(vet: vet),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -1011,56 +990,48 @@ class _VetStackedListState extends State<_VetStackedList>
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: () => _openVetProfile(context, vet),
-                        child: CircleAvatar(
-                          radius: isExpanded ? 28 : 24,
-                          backgroundColor: const Color(0xFFE6F7F1),
-                          backgroundImage: (vet.imageUrl.isNotEmpty)
-                              ? NetworkImage(vet.imageUrl) as ImageProvider
-                              : null,
-                          onBackgroundImageError: (vet.imageUrl.isNotEmpty)
-                              ? (exception, stackTrace) {
-                                  // 이미지 로드 실패 시 기본 아이콘 표시
-                                }
-                              : null,
-                          child: vet.imageUrl.isEmpty
-                              ? Icon(
-                                  Icons.local_hospital_outlined,
-                                  color: const Color(0xFF4FC59E),
-                                  size: isExpanded ? 26 : 22,
-                                )
-                              : null,
-                        ),
+                      CircleAvatar(
+                        radius: isExpanded ? 28 : 24,
+                        backgroundColor: const Color(0xFFE6F7F1),
+                        backgroundImage: (vet.imageUrl.isNotEmpty)
+                            ? NetworkImage(vet.imageUrl) as ImageProvider
+                            : null,
+                        onBackgroundImageError: (vet.imageUrl.isNotEmpty)
+                            ? (exception, stackTrace) {
+                                // 이미지 로드 실패 시 기본 아이콘 표시
+                              }
+                            : null,
+                        child: vet.imageUrl.isEmpty
+                            ? Icon(
+                                Icons.local_hospital_outlined,
+                                color: const Color(0xFF4FC59E),
+                                size: isExpanded ? 26 : 22,
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 18),
                       Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onTap: () => _openVetProfile(context, vet),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                vet.name,
-                                style: TextStyle(
-                                  fontSize: isExpanded ? 21 : 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF003829),
-                                ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              vet.name,
+                              style: TextStyle(
+                                fontSize: isExpanded ? 21 : 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF003829),
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                vet.doctorName ?? '담당 수의사 미정',
-                                style: TextStyle(
-                                  fontSize: isExpanded ? 16 : 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF4FC59E),
-                                ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              vet.doctorName ?? '담당 수의사 미정',
+                              style: TextStyle(
+                                fontSize: isExpanded ? 16 : 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF4FC59E),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       AnimatedOpacity(
@@ -1152,16 +1123,13 @@ class _VetStackedListState extends State<_VetStackedList>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: vet.isOpen
-                            ? () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ReservationRequestPage(vet: vet),
-                                  ),
-                                );
-                              }
-                            : null,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => VetProfilePage(vet: vet),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4FC59E),
                           foregroundColor: Colors.white,
@@ -1170,31 +1138,8 @@ class _VetStackedListState extends State<_VetStackedList>
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        icon: const Icon(Icons.calendar_month, size: 18),
-                        label: const Text('예약하기'),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ConsultationRequestPage(vet: vet),
-                            ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF4FC59E),
-                          minimumSize: const Size(double.infinity, 46),
-                          side: const BorderSide(color: Color(0xFF4FC59E)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: const Text('상담하기'),
+                        icon: const Icon(Icons.info_outline, size: 18),
+                        label: const Text('상세보기'),
                       ),
                     ),
                   ],

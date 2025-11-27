@@ -1,8 +1,13 @@
 // Flutter 앱의 메인 진입점 파일
-// '숨숨루나' 반려동물 케어 애플리케이션의 루트 구성을 담당
+// '피터펫' 반려동물 케어 애플리케이션의 루트 구성을 담당
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:kakao_map_plugin/kakao_map_plugin.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
@@ -15,14 +20,39 @@ import 'providers/hospital_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/llm_emoticon_provider.dart';
+import 'services/fcm_service.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
 Future<void> main() async {
+  // Flutter 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
   // .env 파일 로드
   await dotenv.load(fileName: ".env");
+
+  // Firebase 초기화 (중복 방지)
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // FCM 백그라운드 메시지 핸들러 등록
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // FCM 서비스 초기화
+    await FCMService().initialize();
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      print('⚠️ Firebase already initialized');
+    } else {
+      print('⚠️ Firebase initialization failed: $e');
+      // Firebase 없이도 앱 실행 가능하도록 에러 무시
+    }
+  }
+
+  // 카카오맵 초기화 (네이티브 앱 키 사용)
+  AuthRepository.initialize(appKey: '5438432f98436b9d8fef0aad2aa7ee7c');
 
   runApp(
     MultiProvider(
@@ -45,10 +75,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '숨숨루나', // 앱 타이틀
+      title: '피터펫', // 앱 타이틀
       theme: ThemeData(
         primaryColor: Color.fromARGB(255, 0, 56, 41),
       ), // 앱 전체 테마 색상 (짙은 녹색)
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko', 'KR'), // 한국어
+        Locale('en', 'US'), // 영어
+      ],
+      locale: const Locale('ko', 'KR'), // 기본 언어를 한국어로 설정
       home: const SplashScreen(), // 앱의 시작 화면을 스플래시 화면으로 변경
       routes: {'/main': (context) => const MainScreen()},
     );

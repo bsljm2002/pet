@@ -141,7 +141,11 @@ public class User {
         OPHTHALMOLOGY,        // 안과
         DENTISTRY,            // 치과
         DERMATOLOGY,          // 피부과
+        NEUROLOGY,            // 신경과
+        ONCOLOGY,             // 종양학
+        CARDIOLOGY,           // 심장학
         EMERGENCY_MEDICINE,   // 응급의학과
+        VACCINATION,          // 예방접종
         GENERAL               // 기타/전체
     }
     

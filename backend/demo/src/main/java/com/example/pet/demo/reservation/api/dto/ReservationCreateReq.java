@@ -29,13 +29,13 @@ public record ReservationCreateReq (
     @JsonProperty("petsitter_works")
     List<PetsitterWork> petsitterWorks,
 
-    @NotNull @JsonProperty("pets_id") 
+    @NotNull @JsonProperty("pets_id")
     Long petId,
-    
+
     @NotNull
-    @JsonProperty("created_at")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    OffsetDateTime createdAt,
+    @JsonProperty("visit_date_time")  // 프론트엔드에서 visit_date_time으로 전송
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    OffsetDateTime visitDateTime,
     
     // @Size(max = 2048) @JsonProperty("resv_url") 
     // String reservationImageUrl,

@@ -39,20 +39,23 @@ public class Reservation {
     private Long partnerId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "service_categorical", nullable = false, length = 20)
-    private ServiceCategorical serviceCategorical; // HOSPITAL/GROOMING/CAFE/SITTER
+    @Column(name = "service_categorical", length = 20)
+    private ServiceCategorical serviceCategorical; // HOSPITAL/GROOMING/CAFE/SITTER (상담 시 NULL)
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_type", nullable = false, length = 20)
-    private UserType userType; // 파트너 타입과 동일하게 사용
+    @Column(name = "user_type", length = 20)
+    private UserType userType; // 파트너 타입과 동일하게 사용 (상담 시 NULL)
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", length = 20)
     @Builder.Default
     private ReservationStatus status = ReservationStatus.WAITING;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    @Column(name = "visit_date_time")
+    private OffsetDateTime visitDateTime; // 상담 시 NULL
 
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
@@ -63,8 +66,8 @@ public class Reservation {
     @Column(name = "resv_content", columnDefinition = "text")
     private String reservationContent;
 
-    @Column(name = "pets_id", nullable = false)
-    private Long petId;
+    @Column(name = "pets_id")
+    private Long petId; // 상담 시 NULL
 
     // MySQL SET 컬럼과 매핑: CSV 형태("DENTISTRY,DERMATOLOGY")
     @Column(name = "vet_specialty", length = 255)

@@ -18,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.pet.demo.common.ApiResponse;
 import com.example.pet.demo.media.FileStorageService;
+import com.example.pet.demo.reservation.api.dto.CompletedReservationRes;
 import com.example.pet.demo.reservation.api.dto.MyReservationRes;
 import com.example.pet.demo.reservation.api.dto.ReservationCreateReq;
 import com.example.pet.demo.reservation.app.ReservationService;
@@ -71,5 +72,81 @@ public class ReservationController {
                 reservationService.getMyReservations(userId, serviceType)
         ));
     }
-    
+
+    /**
+     * 수의사(병원)에서 받은 진료 내역 조회
+     * GET /api/v1/reservations/completed/hospital?userId={userId}
+     */
+    @GetMapping("/completed/hospital")
+    public ResponseEntity<ApiResponse<List<CompletedReservationRes>>> getCompletedHospitalReservations(
+            @RequestParam("userId") Long userId
+    ) {
+        List<CompletedReservationRes> reservations = reservationService.getCompletedHospitalReservations(userId);
+        return ResponseEntity.ok(ApiResponse.ok(reservations));
+    }
+
+    /**
+     * 펫시터에게 받은 도움 내역 조회
+     * GET /api/v1/reservations/completed/sitter?userId={userId}
+     */
+    @GetMapping("/completed/sitter")
+    public ResponseEntity<ApiResponse<List<CompletedReservationRes>>> getCompletedSitterReservations(
+            @RequestParam("userId") Long userId
+    ) {
+        List<CompletedReservationRes> reservations = reservationService.getCompletedSitterReservations(userId);
+        return ResponseEntity.ok(ApiResponse.ok(reservations));
+    }
+
+    /**
+     * 파트너가 받은 예약 목록 조회
+     * GET /api/v1/reservations/partner?partnerId={partnerId}
+     */
+    @GetMapping("/partner")
+    public ResponseEntity<ApiResponse<List<MyReservationRes>>> getPartnerReservations(
+            @RequestParam("partnerId") Long partnerId
+    ) {
+        List<MyReservationRes> reservations = reservationService.getPartnerReservations(partnerId);
+        return ResponseEntity.ok(ApiResponse.ok(reservations));
+    }
+
+    /**
+     * 예약 거절
+     * PATCH /api/v1/reservations/{id}/reject
+     */
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> rejectReservation(
+        @PathVariable("id") Long reservationId,
+        @RequestParam("partnerId") Long partnerId,
+        @RequestParam(value = "reason", required = false) String reason
+    ) {
+        reservationService.reject(reservationId, partnerId, reason);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("reservation_id", reservationId)));
+    }
+
+    /**
+     * 진료/서비스 완료
+     * PATCH /api/v1/reservations/{id}/complete
+     */
+    @PatchMapping("/{id}/complete")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> completeReservation(
+        @PathVariable("id") Long reservationId,
+        @RequestParam("partnerId") Long partnerId
+    ) {
+        reservationService.complete(reservationId, partnerId);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("reservation_id", reservationId)));
+    }
+
+    /**
+     * 예약 취소 (사용자)
+     * PATCH /api/v1/reservations/{id}/cancel
+     */
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> cancelReservation(
+        @PathVariable("id") Long reservationId,
+        @RequestParam("userId") Long userId
+    ) {
+        reservationService.cancel(reservationId, userId);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("reservation_id", reservationId)));
+    }
+
 }

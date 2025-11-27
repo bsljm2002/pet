@@ -7,8 +7,7 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  static const String baseUrl =
-      "http://223.130.130.225:9075/api/v1/users"; // 백엔드 URL (실제 디바이스용)
+  static const String baseUrl = "http://10.0.2.2:9075/api/v1/users"; // 백엔드 URL (Android 에뮬레이터용)
 
   User? _currentUser;
   User? get currentUser => _currentUser;
@@ -28,6 +27,7 @@ class AuthService {
     String? addressNote,
     String? companyName,
     String? businessNumber,
+    String? fcmToken,
   }) async {
     // 백엔드 엔드포인트: POST /api/v1/users
     final url = Uri.parse(baseUrl);
@@ -54,6 +54,8 @@ class AuthService {
       "workingDays": null,
       "workingStartHours": null,
       "workingEndHours": null,
+      // FCM 토큰
+      "fcmToken": fcmToken,
     });
 
     try {
@@ -92,7 +94,7 @@ class AuthService {
   // 로그인 요청
   // 💡 파라미터명은 username이지만, 실제로는 이메일 값을 받아서 백엔드에 email로 전송합니다
   Future<Map<String, dynamic>> login({
-    required String username, // ← 이메일 값을 받습니다 (파라미터명만 username)
+    required String username,  // ← 이메일 값을 받습니다 (파라미터명만 username)
     required String password,
   }) async {
     // 1. URL 생성 (baseUrl에 /login 추가)
@@ -104,7 +106,7 @@ class AuthService {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": username, // ✅ 백엔드는 "email" 필드를 기대합니다!
+          "email": username,  // ✅ 백엔드는 "email" 필드를 기대합니다!
           "password": password,
         }),
       );
@@ -121,46 +123,46 @@ class AuthService {
             id: userData["id"].toString(),
             username: userData["username"],
             email: userData["email"],
-            password: "", // 비밀번호는 저장하지 않음
+            password: "",  // 비밀번호는 저장하지 않음
             nickname: userData["nickname"],
             gender: userData["gender"],
             userType: UserType.values.firstWhere(
-              (e) =>
-                  e.toString().split('.').last.toUpperCase() ==
-                  userData["userType"],
+              (e) => e.toString().split('.').last.toUpperCase() == userData["userType"],
               orElse: () => UserType.general,
             ),
           );
 
-          return {"success": true, "message": "로그인 성공", "user": _currentUser};
+          return {
+            "success": true,
+            "message": "로그인 성공",
+            "user": _currentUser
+          };
         } else {
-          return {"success": false, "message": data["message"] ?? "로그인 실패"};
+          return {
+            "success": false,
+            "message": data["message"] ?? "로그인 실패"
+          };
         }
       } else if (response.statusCode == 400) {
         // 400 Bad Request: 이메일/비밀번호 오류
         final errorData = jsonDecode(response.body);
         return {
           "success": false,
-          "message": errorData["message"] ?? "이메일 또는 비밀번호가 일치하지 않습니다.",
+          "message": errorData["message"] ?? "이메일 또는 비밀번호가 일치하지 않습니다."
         };
-      } else if (response.statusCode == 500) {
-        // 500 Internal Server Error
-        String errorMsg = "서버 내부 오류가 발생했습니다.";
-        try {
-          final errorData = jsonDecode(response.body);
-          errorMsg = errorData["message"] ?? errorMsg;
-        } catch (_) {}
-        return {"success": false, "message": "$errorMsg (코드: 500)"};
       } else {
         // 기타 서버 오류
         return {
           "success": false,
-          "message": "서버 오류가 발생했습니다. (코드: ${response.statusCode})",
+          "message": "서버 오류가 발생했습니다."
         };
       }
     } catch (e) {
       // 네트워크 오류
-      return {"success": false, "message": "네트워크 오류: $e"};
+      return {
+        "success": false,
+        "message": "네트워크 오류: $e"
+      };
     }
   }
 

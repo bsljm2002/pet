@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -45,7 +47,7 @@ dependencies:
   # 상태 관리를 위한 Provider 패키지
   provider: ^6.1.1
   table_calendar: ^3.0.9
-  intl: ^0.19.0
+  intl: ^0.20.2
 
   # 이미지 선택 패키지 (카메라/갤러리)
   image_picker: ^1.0.7
@@ -68,6 +70,19 @@ dependencies:
 
   # WebView 패키지
   webview_flutter: ^4.5.0
+
+  # 카카오맵 Flutter 플러그인
+  kakao_map_plugin: ^0.2.1
+
+  # URL 실행 패키지 (길 안내용)
+  url_launcher: ^6.2.5
+
+  # Firebase Cloud Messaging (FCM) 패키지
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.1.4
+
+  # Firebase Realtime Database (채팅용)
+  firebase_database: ^11.1.6
 
 dev_dependencies:
   flutter_test:

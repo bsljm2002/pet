@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import '../services/auth_service.dart';
+import '../models/user.dart';
+import 'partner/hospital_home_screen.dart';
+import 'partner/sitter_home_screen.dart';
+import 'partner/seller_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -149,9 +153,48 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
 
     if (result['success']) {
-      // 로그인 성공 - 메인 화면으로 이동
+      // 로그인 성공 - 사용자 타입에 따라 다른 화면으로 이동
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/main');
+        final user = result['user'] as User?;
+
+        if (user != null) {
+          // 사용자 타입에 따라 분기
+          switch (user.userType) {
+            case UserType.hospital:
+              // 펫닥터 (동물병원) 전용 화면
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HospitalHomeScreen(),
+                ),
+              );
+              break;
+            case UserType.sitter:
+              // 펫시터 전용 화면
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SitterHomeScreen(),
+                ),
+              );
+              break;
+            case UserType.seller:
+              // 펫샵 (판매자) 전용 화면
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SellerHomeScreen(),
+                ),
+              );
+              break;
+            default:
+              // 일반 사용자 - 메인 화면으로 이동
+              Navigator.pushReplacementNamed(context, '/main');
+          }
+        } else {
+          // user 정보가 없으면 기본 메인 화면으로
+          Navigator.pushReplacementNamed(context, '/main');
+        }
       }
     } else {
       // 로그인 실패
