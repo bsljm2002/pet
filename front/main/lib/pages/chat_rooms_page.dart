@@ -42,8 +42,15 @@ class _ChatRoomsPageState extends State<ChatRoomsPage> {
       final userId = int.parse(currentUser.id);
       final chatRooms = await _chatService.getChatRooms(userId);
 
+      // 펫시터 채팅만 필터링 (병원 채팅 제외) + 완료된 채팅방 제외
+      final filteredChatRooms = chatRooms
+          .where((room) =>
+              room.serviceType != 'HOSPITAL' &&
+              room.reservationStatus != 'COMPLETED')
+          .toList();
+
       setState(() {
-        _chatRooms = chatRooms;
+        _chatRooms = filteredChatRooms;
         _isLoading = false;
       });
     } catch (e) {

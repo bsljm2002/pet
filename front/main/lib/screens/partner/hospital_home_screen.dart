@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'hospital_settings_screen.dart';
 import 'hospital_reservation_screen.dart';
 import 'partner_consultations_screen.dart';
-import 'partner_chat_rooms_screen.dart';
 import 'partner_profile_form_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/partner_service.dart';
@@ -22,7 +21,6 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
     const HospitalMainPage(),
     const HospitalReservationScreen(),
     const PartnerConsultationsScreen(),
-    const PartnerChatRoomsScreen(),
     const HospitalSettingsScreen(),
   ];
 
@@ -53,10 +51,6 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.medical_services_outlined),
             label: '상담 관리',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: '채팅',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

@@ -124,6 +124,19 @@ public class ReservationController {
     }
 
     /**
+     * 작업 시작 (체크인)
+     * PATCH /api/v1/reservations/{id}/checkin
+     */
+    @PatchMapping("/{id}/checkin")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> checkinReservation(
+        @PathVariable("id") Long reservationId,
+        @RequestParam("partnerId") Long partnerId
+    ) {
+        reservationService.checkin(reservationId, partnerId);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("reservation_id", reservationId)));
+    }
+
+    /**
      * 진료/서비스 완료
      * PATCH /api/v1/reservations/{id}/complete
      */

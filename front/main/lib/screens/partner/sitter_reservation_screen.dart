@@ -3,7 +3,6 @@ import '../../services/auth_service.dart';
 import '../../services/partner_service.dart';
 import '../../services/partner_reservation_service.dart';
 import '../../models/partner_reservation_model.dart';
-import 'diagnosis_screen.dart';
 
 /// 펫시터 예약 상담 화면
 class SitterReservationScreen extends StatefulWidget {
@@ -350,24 +349,6 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                   ],
                 ),
               ],
-
-              // 확정된 예약: 진료하기 버튼
-              if (reservation.status == 'CONFIRMED') ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _startDiagnosis(reservation);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4FC59E),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('진료하기'),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -609,37 +590,6 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  void _startDiagnosis(PartnerReservationModel reservation) async {
-    // 파트너 ID 가져오기
-    final currentUser = _authService.currentUser;
-    if (currentUser == null) return;
-
-    final userId = int.parse(currentUser.id);
-    final partners = await _partnerService.getMyPartners(userId);
-    if (partners.isEmpty || partners.first.id == null) return;
-
-    final partnerId = partners.first.id!;
-
-    // 진료 페이지로 이동
-    if (!mounted) return;
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DiagnosisScreen(
-          reservation: reservation,
-          partnerId: partnerId,
-          symptoms: const [], // TODO: 확정 시 저장한 증상 목록 불러오기
-          initialNotes: null, // TODO: 확정 시 저장한 메모 불러오기
-        ),
-      ),
-    );
-
-    // 진료 완료 시 목록 새로고침
-    if (result == true) {
-      await _loadReservations();
     }
   }
 

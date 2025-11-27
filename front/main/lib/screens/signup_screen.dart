@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kpostal/kpostal.dart';
 import 'login_screen.dart';
 import '../models/user.dart';
@@ -44,7 +45,7 @@ class _SignupScreenState extends State<SignupScreen>
   String? _selectedDay;
   String? _selectedEmailDomain;
   String? _selectedGender;
-  String? _selectedPartnerType; // 파트너 타입 (HOSPITAL/SITTER/SELLER)
+  String? _selectedPartnerType; // 파트너 타입 (HOSPITAL/SITTER)
 
   // 회원가입 단계 관리
   // 0: 회원 유형 선택
@@ -455,11 +456,8 @@ class _SignupScreenState extends State<SignupScreen>
         case 'SITTER':
           userType = UserType.sitter;
           break;
-        case 'SELLER':
-          userType = UserType.seller;
-          break;
         default:
-          userType = UserType.seller;
+          userType = UserType.general;
       }
     }
 
@@ -520,60 +518,46 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFB8D8D0),
+      backgroundColor: const Color.fromARGB(255, 252, 255, 224),
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 80),
-
-                    // 로고 영역
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '숨숨\n루나',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF3BA688),
-                            height: 1.3,
-                          ),
+            Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32.0,
+                    vertical: 40.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 로고 영역
+                      SvgPicture.asset(
+                        'assets/icons/rogo.svg',
+                        width: 120,
+                        height: 120,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF3BA688),
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 40),
+                      const SizedBox(height: 40),
 
-                    // 단계별 콘텐츠 표시 (애니메이션 적용)
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: _buildCurrentStep(),
+                      // 단계별 콘텐츠 표시 (애니메이션 적용)
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: _buildCurrentStep(),
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 40),
-                  ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1693,7 +1677,6 @@ class _SignupScreenState extends State<SignupScreen>
               items: const [
                 DropdownMenuItem(value: 'HOSPITAL', child: Text('펫닥터 (동물병원)')),
                 DropdownMenuItem(value: 'SITTER', child: Text('펫시터')),
-                DropdownMenuItem(value: 'SELLER', child: Text('펫샵 (판매자)')),
               ],
               onChanged: (value) {
                 setState(() {

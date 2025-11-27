@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'signup_screen.dart';
 import '../services/auth_service.dart';
 import '../models/user.dart';
 import 'partner/hospital_home_screen.dart';
 import 'partner/sitter_home_screen.dart';
-import 'partner/seller_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,13 +13,14 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
   // 로그인 단계 관리
-  // 0: 초기 화면 (로고 + 다른 방법으로 로그인)
+  // 0: 직접 로그인 버튼
   // 1: 이메일 입력
   // 2: 비밀번호 입력
   int _loginStep = 0;
@@ -40,22 +41,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
 
     // 슬라이드 애니메이션 (아래에서 위로)
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 1.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // 페이드 애니메이션
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
 
     // 초기 화면을 보이게 하기 위해 애니메이션을 완료 상태로 설정
     _animationController.value = 1.0;
@@ -102,17 +99,19 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   // 이메일 확인 및 다음 단계로 진행
   void _proceedToPassword() {
     if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이메일을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일을 입력해주세요.')));
       return;
     }
 
     // 이메일 형식 검증
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(_emailController.text.trim())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('올바른 이메일 형식이 아닙니다.')),
-      );
+    if (!RegExp(
+      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+    ).hasMatch(_emailController.text.trim())) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('올바른 이메일 형식이 아닙니다.')));
       return;
     }
 
@@ -133,16 +132,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _handleLogin() async {
     // 입력값 검증
     if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이메일을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일을 입력해주세요.')));
       return;
     }
 
     if (_passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('비밀번호를 입력해주세요.')));
       return;
     }
 
@@ -178,15 +177,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
               );
               break;
-            case UserType.seller:
-              // 펫샵 (판매자) 전용 화면
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SellerHomeScreen(),
-                ),
-              );
-              break;
             default:
               // 일반 사용자 - 메인 화면으로 이동
               Navigator.pushReplacementNamed(context, '/main');
@@ -212,102 +202,87 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFB8D8D0), // 민트/연한 그린 배경색
+      backgroundColor: const Color.fromARGB(255, 252, 255, 224), // 민트/연한 그린 배경색
       body: SafeArea(
         child: Stack(
           children: [
             // 메인 콘텐츠
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 80),
-
-                    // 로고 영역
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '숨숨\n루나',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF3BA688),
-                            height: 1.3,
-                          ),
+            Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32.0,
+                    vertical: 40.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 로고 영역
+                      SvgPicture.asset(
+                        'assets/icons/rogo.svg',
+                        width: 120,
+                        height: 120,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF3BA688),
+                          BlendMode.srcIn,
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 60),
+                      const SizedBox(height: 40),
 
-                    // 단계별 콘텐츠 표시 (애니메이션 적용)
-                    SlideTransition(
-                      position: _slideAnimation,
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: _loginStep == 0
-                            ? _buildInitialScreen()
-                            : _loginStep == 1
-                                ? _buildEmailInputScreen()
-                                : _buildPasswordInputScreen(),
+                      // 단계별 콘텐츠 표시 (애니메이션 적용)
+                      SlideTransition(
+                        position: _slideAnimation,
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: _loginStep == 0
+                              ? _buildInitialScreen()
+                              : _loginStep == 1
+                              ? _buildEmailInputScreen()
+                              : _buildPasswordInputScreen(),
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 40),
+                      const SizedBox(height: 24),
 
-                    // 회원가입 링크 (초기 화면에만 표시)
-                    if (_loginStep == 0)
-                      Center(
-                        child: Column(
-                          children: [
-                            const Text(
-                              '계정이 없으신가요?',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF5A6C6D),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SignupScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                '회원가입',
+                      // 회원가입 링크 (초기 화면에만 표시)
+                      if (_loginStep == 0)
+                        Center(
+                          child: Column(
+                            children: [
+                              const Text(
+                                '계정이 없으신가요?',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF3BA688),
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF5A6C6D),
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SignupScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  '회원가입',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF3BA688),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-
-                    const SizedBox(height: 40),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -332,87 +307,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
-  // 초기 화면: 소셜 로그인 옵션과 직접 로그인 버튼
+  // 초기 화면: 직접 로그인 버튼
   Widget _buildInitialScreen() {
     return Column(
       children: [
-        // 다른 방법으로 로그인하기
-        const Text(
-          '다른 방법으로 로그인하기',
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF7A8C8D),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // 소셜 로그인 버튼들
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Google 로그인
-            _buildSocialLoginButton(
-              icon: Icons.g_mobiledata,
-              label: 'G',
-              onPressed: () {
-                // TODO: Google 로그인
-              },
-            ),
-            const SizedBox(width: 16),
-            // Facebook 로그인
-            _buildSocialLoginButton(
-              icon: Icons.facebook,
-              label: 'f',
-              onPressed: () {
-                // TODO: Facebook 로그인
-              },
-            ),
-            const SizedBox(width: 16),
-            // Twitter 로그인
-            _buildSocialLoginButton(
-              icon: Icons.tag,
-              label: 't',
-              onPressed: () {
-                // TODO: Twitter 로그인
-              },
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 40),
-
-        // 구분선
-        Row(
-          children: [
-            Expanded(
-              child: Divider(
-                color: Colors.grey[400],
-                thickness: 1,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'OR',
-                style: TextStyle(
-                  color: Color(0xFF7A8C8D),
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Divider(
-                color: Colors.grey[400],
-                thickness: 1,
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 40),
-
         // 직접 로그인 버튼
         SizedBox(
           width: double.infinity,
@@ -429,10 +327,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
             child: const Text(
               '직접 로그인',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -510,10 +405,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
             child: const Text(
               '다음',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -589,10 +481,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
             child: const Text(
               '로그인',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -618,39 +507,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSocialLoginButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF5A6C6D),
-          ),
-        ),
-      ),
     );
   }
 }

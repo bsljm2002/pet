@@ -23,8 +23,8 @@ public class ChatRoomController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getChatRooms(
-        @RequestParam(required = false) Long userId,
-        @RequestParam(required = false) Long partnerId
+        @RequestParam(value = "userId", required = false) Long userId,
+        @RequestParam(value = "partnerId", required = false) Long partnerId
     ) {
         List<ChatRoomRes> chatRooms;
 

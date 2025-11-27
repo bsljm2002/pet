@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 
@@ -8,7 +9,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFB8D8D0), // 민트/연한 그린 배경색
+      backgroundColor: const Color.fromARGB(255, 252, 255, 224), // 민트/연한 그린 배경색
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -19,17 +20,17 @@ class SplashScreen extends StatelessWidget {
                 const Spacer(flex: 2),
 
                 // 로고 영역
-                const Text(
-                  '로그인',
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3E3F),
-                    letterSpacing: 2,
+                SvgPicture.asset(
+                  'assets/icons/rogo.svg',
+                  width: 200,
+                  height: 200,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF3BA688),
+                    BlendMode.srcIn,
                   ),
                 ),
 
-                const Spacer(flex: 3),
+                const Spacer(flex: 1),
 
                 // 로그인 버튼
                 SizedBox(
@@ -39,7 +40,9 @@ class SplashScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -70,7 +73,9 @@ class SplashScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SignupScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SignupScreen(),
+                        ),
                       );
                     },
                     style: OutlinedButton.styleFrom(

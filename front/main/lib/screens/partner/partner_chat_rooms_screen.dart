@@ -61,12 +61,17 @@ class _PartnerChatRoomsScreenState extends State<PartnerChatRoomsScreen> {
       print('🔍 채팅방 조회에 사용할 User ID: $userId');
       final chatRooms = await _chatService.getChatRooms(userId, isPartner: true);
 
+      // COMPLETED 상태의 채팅방은 제외
+      final activeChatRooms = chatRooms.where((chatRoom) {
+        return chatRoom.reservationStatus != 'COMPLETED';
+      }).toList();
+
       setState(() {
-        _chatRooms = chatRooms;
+        _chatRooms = activeChatRooms;
         _isLoading = false;
       });
 
-      print('✅ 채팅방 ${chatRooms.length}개 로드됨');
+      print('✅ 채팅방 ${activeChatRooms.length}개 로드됨 (완료된 예약 제외)');
     } catch (e) {
       print('❌ 채팅방 목록 로드 오류: $e');
       setState(() {

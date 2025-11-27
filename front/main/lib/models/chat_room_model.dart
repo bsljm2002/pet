@@ -11,6 +11,7 @@ class ChatRoomModel {
   final int unreadCount; // 읽지 않은 메시지 수
   final String serviceType; // HOSPITAL or SITTER
   final DateTime createdAt; // 채팅방 생성 시간
+  final String? reservationStatus; // 예약 상태 (CONFIRMED, ACCEPTED, COMPLETED 등)
 
   ChatRoomModel({
     required this.id,
@@ -24,6 +25,7 @@ class ChatRoomModel {
     this.unreadCount = 0,
     required this.serviceType,
     required this.createdAt,
+    this.reservationStatus,
   });
 
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class ChatRoomModel {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
+      reservationStatus: json['reservationStatus'],
     );
   }
 
@@ -59,6 +62,7 @@ class ChatRoomModel {
       'unreadCount': unreadCount,
       'serviceType': serviceType,
       'createdAt': createdAt.toIso8601String(),
+      'reservationStatus': reservationStatus,
     };
   }
 

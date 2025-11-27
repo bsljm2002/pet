@@ -5,6 +5,8 @@ import com.example.pet.demo.chat.domain.ChatRoom;
 import com.example.pet.demo.chat.domain.ChatRoomRepository;
 import com.example.pet.demo.partner.domain.Partner;
 import com.example.pet.demo.partner.domain.PartnerRepository;
+import com.example.pet.demo.reservation.domain.Reservation;
+import com.example.pet.demo.reservation.domain.ReservationRepository;
 import com.example.pet.demo.users.app.UserService;
 import com.example.pet.demo.users.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final UserService userService;
     private final PartnerRepository partnerRepository;
+    private final ReservationRepository reservationRepository;
 
     /**
      * 사용자의 채팅방 목록 조회
@@ -64,6 +67,18 @@ public class ChatRoomService {
             System.out.println("⚠️ 파트너 정보 조회 실패: " + e.getMessage());
         }
 
+        // 예약 상태 조회
+        String reservationStatus = null;
+        try {
+            Reservation reservation = reservationRepository.findById(chatRoom.getReservationId())
+                .orElse(null);
+            if (reservation != null) {
+                reservationStatus = reservation.getStatus().name();
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ 예약 상태 조회 실패: " + e.getMessage());
+        }
+
         return new ChatRoomRes(
             chatRoom.getId(),
             chatRoom.getReservationId(),
@@ -75,7 +90,8 @@ public class ChatRoomService {
             chatRoom.getLastMessageTime(),
             chatRoom.getUserUnreadCount(),
             chatRoom.getServiceType(),
-            chatRoom.getCreatedAt()
+            chatRoom.getCreatedAt(),
+            reservationStatus
         );
     }
 }
