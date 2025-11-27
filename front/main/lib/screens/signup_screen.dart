@@ -44,7 +44,7 @@ class _SignupScreenState extends State<SignupScreen>
   String? _selectedDay;
   String? _selectedEmailDomain;
   String? _selectedGender;
-  String? _selectedPartnerType; // 파트너 타입 (HOSPITAL/SITTER/SELLER)
+  String? _selectedPartnerType; // 파트너 타입 (HOSPITAL/SITTER)
 
   // 회원가입 단계 관리
   // 0: 회원 유형 선택
@@ -455,11 +455,8 @@ class _SignupScreenState extends State<SignupScreen>
         case 'SITTER':
           userType = UserType.sitter;
           break;
-        case 'SELLER':
-          userType = UserType.seller;
-          break;
         default:
-          userType = UserType.seller;
+          userType = UserType.general;
       }
     }
 
@@ -1693,7 +1690,6 @@ class _SignupScreenState extends State<SignupScreen>
               items: const [
                 DropdownMenuItem(value: 'HOSPITAL', child: Text('펫닥터 (동물병원)')),
                 DropdownMenuItem(value: 'SITTER', child: Text('펫시터')),
-                DropdownMenuItem(value: 'SELLER', child: Text('펫샵 (판매자)')),
               ],
               onChanged: (value) {
                 setState(() {
