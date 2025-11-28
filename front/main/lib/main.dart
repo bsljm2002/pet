@@ -6,18 +6,21 @@ import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
 import 'screens/hospital_screen.dart';
 import 'screens/settings_screen.dart';
+import 'pages/chatbot_page.dart';
 import 'widgets/custom_app_bar.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'providers/hospital_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'services/fcm_service.dart';
+import 'services/openai_service.dart';
 
 // 애플리케이션 시작점
 // Flutter 앱이 실행될 때 가장 먼저 호출되는 함수
@@ -25,11 +28,24 @@ void main() async {
   // Flutter 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
+  // .env 파일 로드
+  try {
+    await dotenv.load(fileName: ".env");
+    print('✅ .env file loaded');
+  } catch (e) {
+    print('⚠️ .env file not found: $e');
+  }
+
+  // OpenAI 서비스 초기화
+  try {
+    OpenAIService().initialize();
+  } catch (e) {
+    print('⚠️ OpenAI initialization failed: $e');
+  }
+
   // Firebase 초기화 (중복 방지)
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp();
   } catch (e) {
     if (e.toString().contains('duplicate-app')) {
       print('⚠️ Firebase already initialized');
@@ -113,11 +129,12 @@ class _MainScreenState extends State<MainScreen> {
     _currentIndex = widget.initialIndex; // 초기 인덱스 설정
 
     // 각 탭에 해당하는 화면들의 리스트
-    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
+    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 챗봇, 4: 설정
     _screens = [
       HomeScreen(initialTabIndex: widget.homeTabIndex),
       AiCareScreen(),
       HospitalScreen(),
+      ChatbotPage(),
       SettingsScreen(),
     ];
   }

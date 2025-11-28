@@ -104,13 +104,14 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
     super.initState();
     // 기존 프로필 데이터로 초기화
     _nameController = TextEditingController(text: widget.profile.name);
-    _birthdayController =
-        TextEditingController(text: widget.profile.birthdate);
-    _breedController =
-        TextEditingController(text: widget.profile.speciesDetail ?? '');
+    _birthdayController = TextEditingController(text: widget.profile.birthdate);
+    _breedController = TextEditingController(
+      text: widget.profile.speciesDetail ?? '',
+    );
     _diseaseController = TextEditingController();
-    _weightController =
-        TextEditingController(text: widget.profile.weight.toString());
+    _weightController = TextEditingController(
+      text: widget.profile.weight.toString(),
+    );
 
     _selectedAbtiType = widget.profile.abtiTypeCode;
     _selectedImageUrl = widget.profile.imageUrl;
@@ -208,8 +209,8 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }
@@ -322,7 +323,9 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.8),
                     border: Border.all(
-                      color: _selectedImageFile != null || _selectedImageUrl != null
+                      color:
+                          _selectedImageFile != null ||
+                              _selectedImageUrl != null
                           ? const Color(0xFF4FC59E)
                           : const Color.fromARGB(255, 200, 200, 200),
                       width: 2,
@@ -333,13 +336,17 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
                             fit: BoxFit.cover,
                           )
                         : (_isValidNetworkUrl(_selectedImageUrl)
-                            ? DecorationImage(
-                                image: NetworkImage(_getFullImageUrl(_selectedImageUrl)),
-                                fit: BoxFit.cover,
-                              )
-                            : null),
+                              ? DecorationImage(
+                                  image: NetworkImage(
+                                    _getFullImageUrl(_selectedImageUrl),
+                                  ),
+                                  fit: BoxFit.cover,
+                                )
+                              : null),
                   ),
-                  child: (_selectedImageFile == null && !_isValidNetworkUrl(_selectedImageUrl))
+                  child:
+                      (_selectedImageFile == null &&
+                          !_isValidNetworkUrl(_selectedImageUrl))
                       ? Icon(
                           Icons.add_a_photo,
                           size: 40,

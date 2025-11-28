@@ -23,8 +23,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
 
   // 센서 데이터 상태 관리
   double? temperature; // 온도 (°C)
-  double? humidity;    // 습도 (%)
-  int? airQuality;     // 공기질 (CAI)
+  double? humidity; // 습도 (%)
+  int? airQuality; // 공기질 (CAI)
 
   // AI 진단 관련 변수
   final AIDiagnosisService _diagnosisService = AIDiagnosisService();
@@ -192,11 +192,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.pets,
-                          color: Color(0xFF93C5FD),
-                          size: 55,
-                        ),
+                        Icon(Icons.pets, color: Color(0xFF93C5FD), size: 55),
                         SizedBox(height: 1),
                         Text(
                           '작동',
@@ -248,13 +244,17 @@ class _AiCareScreenState extends State<AiCareScreen> {
               // 온도 센서
               _buildSensorCard(
                 label: '온도',
-                value: temperature != null ? '${temperature!.toStringAsFixed(1)} °C' : '--',
+                value: temperature != null
+                    ? '${temperature!.toStringAsFixed(1)} °C'
+                    : '--',
                 color: Colors.red,
               ),
               // 습도 센서
               _buildSensorCard(
                 label: '습도',
-                value: humidity != null ? '${humidity!.toStringAsFixed(1)} %' : '--',
+                value: humidity != null
+                    ? '${humidity!.toStringAsFixed(1)} %'
+                    : '--',
                 color: Colors.blue,
               ),
               // 공기질 센서
@@ -366,10 +366,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
               const SizedBox(height: 12),
               const Text(
                 '반려동물의 사진을 찍어 AI 진단을 받아보세요',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF5A6C6D),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF5A6C6D)),
               ),
             ],
           ),
@@ -395,7 +392,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
               // 이미지 미리보기
               _selectedImage != null
                   ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
                       child: Image.file(
                         _selectedImage!,
                         width: double.infinity,
@@ -407,7 +406,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       height: 300,
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -484,7 +485,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (_selectedImage != null && !_isAnalyzing) ? _performDiagnosis : null,
+            onPressed: (_selectedImage != null && !_isAnalyzing)
+                ? _performDiagnosis
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00B27A),
               foregroundColor: Colors.white,
@@ -518,10 +521,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                   )
                 : const Text(
                     'AI 진단 시작',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
         ),
@@ -545,10 +545,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
             label: const Text('진단 기록 보기'),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF00B27A),
-              side: const BorderSide(
-                color: Color(0xFF00B27A),
-                width: 2,
-              ),
+              side: const BorderSide(color: Color(0xFF00B27A), width: 2),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -572,11 +569,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF00B27A),
-                    size: 20,
-                  ),
+                  Icon(Icons.info_outline, color: Color(0xFF00B27A), size: 20),
                   SizedBox(width: 8),
                   Text(
                     '진단 안내',
@@ -782,10 +775,14 @@ class _DiagnosisResultSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: diagnosis.getSeverityColor().withValues(alpha: 0.1),
+                      color: diagnosis.getSeverityColor().withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: diagnosis.getSeverityColor().withValues(alpha: 0.3),
+                        color: diagnosis.getSeverityColor().withValues(
+                          alpha: 0.3,
+                        ),
                         width: 2,
                       ),
                     ),
@@ -905,11 +902,7 @@ class _DiagnosisResultSheet extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFF00B27A),
-              size: 20,
-            ),
+            Icon(icon, color: const Color(0xFF00B27A), size: 20),
             const SizedBox(width: 8),
             Text(
               title,
@@ -930,10 +923,7 @@ class _DiagnosisResultSheet extends StatelessWidget {
               children: [
                 const Text(
                   '• ',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF5A6C6D),
-                  ),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF5A6C6D)),
                 ),
                 Expanded(
                   child: Text(

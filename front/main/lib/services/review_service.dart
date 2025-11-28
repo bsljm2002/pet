@@ -4,7 +4,7 @@ import '../models/review_model.dart';
 
 /// 리뷰 서비스
 class ReviewService {
-  static const String baseUrl = 'http://10.0.2.2:9075/api/v1/reviews';
+  static const String baseUrl = 'http://223.130.130.225:9075/api/v1/reviews';
 
   /// 파트너별 리뷰 목록 조회
   Future<List<ReviewModel>> getReviewsByPartnerId(int partnerId) async {
@@ -15,7 +15,9 @@ class ReviewService {
       print('리뷰 목록 조회 응답: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> jsonData = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
 
         if (jsonData['ok'] == true && jsonData['data'] != null) {
           final List<dynamic> reviewList = jsonData['data'];
@@ -67,29 +69,35 @@ class ReviewService {
       print('📨 응답 본문: ${utf8.decode(response.bodyBytes)}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> jsonData = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
 
         if (jsonData['ok'] == true) {
           return {'success': true, 'message': '리뷰가 작성되었습니다.'};
         } else {
           return {
             'success': false,
-            'message': jsonData['message'] ?? '리뷰 작성에 실패했습니다.'
+            'message': jsonData['message'] ?? '리뷰 작성에 실패했습니다.',
           };
         }
       } else {
         // 모든 에러 응답 처리
         try {
-          final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
-          final errorMessage = jsonData['message'] ?? jsonData['error'] ?? '알 수 없는 오류가 발생했습니다.';
+          final Map<String, dynamic> jsonData = jsonDecode(
+            utf8.decode(response.bodyBytes),
+          );
+          final errorMessage =
+              jsonData['message'] ?? jsonData['error'] ?? '알 수 없는 오류가 발생했습니다.';
           return {
             'success': false,
-            'message': '[$response.statusCode] $errorMessage'
+            'message': '[$response.statusCode] $errorMessage',
           };
         } catch (e) {
           return {
             'success': false,
-            'message': '서버 오류 (${response.statusCode}): ${utf8.decode(response.bodyBytes)}'
+            'message':
+                '서버 오류 (${response.statusCode}): ${utf8.decode(response.bodyBytes)}',
           };
         }
       }
@@ -111,16 +119,15 @@ class ReviewService {
       final response = await http.put(
         url,
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: jsonEncode({
-          'rating': rating,
-          'content': content,
-        }),
+        body: jsonEncode({'rating': rating, 'content': content}),
       );
 
       print('리뷰 수정 응답: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> jsonData = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
 
         if (jsonData['ok'] == true) {
           return {'success': true, 'message': '리뷰가 수정되었습니다.'};
@@ -162,7 +169,9 @@ class ReviewService {
       print('사용자 리뷰 목록 조회 응답: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = jsonDecode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> jsonData = jsonDecode(
+          utf8.decode(response.bodyBytes),
+        );
 
         if (jsonData['ok'] == true && jsonData['data'] != null) {
           final List<dynamic> reviewList = jsonData['data'];

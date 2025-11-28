@@ -10,7 +10,7 @@ class DiaryService {
   DiaryService._internal();
 
   // 백엔드 API URL (Android 에뮬레이터용)
-  static const String _baseUrl = 'http://10.0.2.2:9075/api/diaries';
+  static const String _baseUrl = 'http://223.130.130.225:9075/api/diaries';
 
   /// 일기 저장
   Future<Map<String, dynamic>> saveDiary(PetDiary diary) async {
@@ -44,10 +44,7 @@ class DiaryService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': '일기 저장 실패: $e',
-      };
+      return {'success': false, 'message': '일기 저장 실패: $e'};
     }
   }
 
@@ -56,9 +53,7 @@ class DiaryService {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
 
-      final response = await http.get(
-        Uri.parse('$_baseUrl/$petId/$dateStr'),
-      );
+      final response = await http.get(Uri.parse('$_baseUrl/$petId/$dateStr'));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(utf8.decode(response.bodyBytes));
@@ -84,13 +79,12 @@ class DiaryService {
   /// 특정 펫의 모든 일기 조회
   Future<List<PetDiary>> getDiariesByPet(int petId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/pet/$petId'),
-      );
+      final response = await http.get(Uri.parse('$_baseUrl/pet/$petId'));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(utf8.decode(response.bodyBytes));
-        if (responseData['success'] == true && responseData['diaries'] != null) {
+        if (responseData['success'] == true &&
+            responseData['diaries'] != null) {
           final List diariesList = responseData['diaries'];
           return diariesList.map((diaryData) {
             return PetDiary(
@@ -114,9 +108,7 @@ class DiaryService {
   /// 일기 삭제
   Future<Map<String, dynamic>> deleteDiary(int diaryId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$_baseUrl/$diaryId'),
-      );
+      final response = await http.delete(Uri.parse('$_baseUrl/$diaryId'));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(utf8.decode(response.bodyBytes));
@@ -131,23 +123,19 @@ class DiaryService {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': '일기 삭제 실패: $e',
-      };
+      return {'success': false, 'message': '일기 삭제 실패: $e'};
     }
   }
 
   /// 특정 펫의 최근 30일 일기 조회
   Future<List<PetDiary>> getRecentDiaries(int petId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/pet/$petId/recent'),
-      );
+      final response = await http.get(Uri.parse('$_baseUrl/pet/$petId/recent'));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(utf8.decode(response.bodyBytes));
-        if (responseData['success'] == true && responseData['diaries'] != null) {
+        if (responseData['success'] == true &&
+            responseData['diaries'] != null) {
           final List diariesList = responseData['diaries'];
           return diariesList.map((diaryData) {
             return PetDiary(
@@ -179,12 +167,15 @@ class DiaryService {
       final endDateStr = endDate.toIso8601String().split('T')[0];
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/pet/$petId/range?startDate=$startDateStr&endDate=$endDateStr'),
+        Uri.parse(
+          '$_baseUrl/pet/$petId/range?startDate=$startDateStr&endDate=$endDateStr',
+        ),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(utf8.decode(response.bodyBytes));
-        if (responseData['success'] == true && responseData['diaries'] != null) {
+        if (responseData['success'] == true &&
+            responseData['diaries'] != null) {
           final List diariesList = responseData['diaries'];
           return diariesList.map((diaryData) {
             return PetDiary(

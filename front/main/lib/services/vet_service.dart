@@ -11,7 +11,7 @@ class VetService {
   VetService._internal();
 
   // 백엔드 서버 URL
-  static const String baseUrl = "http://10.0.2.2:9075/api/v1/partners";
+  static const String baseUrl = "http://223.130.130.225:9075/api/v1/partners";
 
   /// 수의사 목록 조회
   ///
@@ -37,10 +37,14 @@ class VetService {
         final data = jsonDecode(response.body);
         if (data['ok'] == true) {
           final List<dynamic> vetList = data['data'] as List;
-          print('수의사 원본 JSON 데이터 샘플: ${vetList.isNotEmpty ? vetList[0] : "비어있음"}');
+          print(
+            '수의사 원본 JSON 데이터 샘플: ${vetList.isNotEmpty ? vetList[0] : "비어있음"}',
+          );
           final vets = vetList.map((json) => VetModel.fromJson(json)).toList();
           if (vets.isNotEmpty) {
-            print('변환된 VetModel 샘플 - education: ${vets[0].education}, description: ${vets[0].description}');
+            print(
+              '변환된 VetModel 샘플 - education: ${vets[0].education}, description: ${vets[0].description}',
+            );
           }
           return {'success': true, 'vets': vets};
         } else {
@@ -79,8 +83,9 @@ class VetService {
         final data = jsonDecode(response.body);
         if (data['ok'] == true) {
           final List<dynamic> sitterList = data['data'] as List;
-          final sitters =
-              sitterList.map((json) => SitterModel.fromJson(json)).toList();
+          final sitters = sitterList
+              .map((json) => SitterModel.fromJson(json))
+              .toList();
           return {'success': true, 'sitters': sitters};
         } else {
           return {'success': false, 'message': data['message'] ?? '조회 실패'};
@@ -135,10 +140,12 @@ class VetService {
   ) async {
     try {
       final response = await http.patch(
-        Uri.parse('$baseUrl/$partnerId/location').replace(queryParameters: {
-          'latitude': latitude.toString(),
-          'longitude': longitude.toString(),
-        }),
+        Uri.parse('$baseUrl/$partnerId/location').replace(
+          queryParameters: {
+            'latitude': latitude.toString(),
+            'longitude': longitude.toString(),
+          },
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 

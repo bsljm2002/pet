@@ -75,11 +75,17 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
     }
 
     _nameController = TextEditingController(text: profile?.name ?? '');
-    _doctorNameController = TextEditingController(text: profile?.doctorName ?? '');
+    _doctorNameController = TextEditingController(
+      text: profile?.doctorName ?? '',
+    );
     _addressController = TextEditingController(text: profile?.address ?? '');
     _phoneController = TextEditingController(text: profile?.phone ?? '');
-    _descriptionController = TextEditingController(text: profile?.description ?? '');
-    _experienceController = TextEditingController(text: profile?.experience ?? '');
+    _descriptionController = TextEditingController(
+      text: profile?.description ?? '',
+    );
+    _experienceController = TextEditingController(
+      text: profile?.experience ?? '',
+    );
 
     if (profile != null) {
       _specialties = List.from(profile.specialties);
@@ -101,7 +107,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
   Future<void> _loadWorkingHours(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:9075/api/v1/users/$userId'),
+        Uri.parse('http://223.130.130.225:9075/api/v1/users/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -111,7 +117,8 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
 
         if (userData != null) {
           // workingDays 파싱
-          if (userData['workingDays'] != null && userData['workingDays'] is String) {
+          if (userData['workingDays'] != null &&
+              userData['workingDays'] is String) {
             final days = (userData['workingDays'] as String).split(',');
             setState(() {
               _workingDays = days.map((d) => d.trim()).toSet();
@@ -187,24 +194,24 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
     }
 
     if (_latitude == null || _longitude == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('지도에서 위치를 선택해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('지도에서 위치를 선택해주세요')));
       return;
     }
 
     // 영업시간 유효성 검사
     if (_workingDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('근무 요일을 선택해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('근무 요일을 선택해주세요')));
       return;
     }
 
     if (_workingStartTime == null || _workingEndTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('근무 시간을 설정해주세요')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('근무 시간을 설정해주세요')));
       return;
     }
 
@@ -215,9 +222,9 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
     // 현재 로그인한 사용자 ID 가져오기
     final currentUser = _authService.currentUser;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('로그인이 필요합니다')));
       setState(() {
         _isLoading = false;
       });
@@ -257,17 +264,23 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
       id: widget.existingProfile?.id,
       partnerType: _partnerType,
       name: _nameController.text,
-      doctorName: _doctorNameController.text.isEmpty ? null : _doctorNameController.text,
+      doctorName: _doctorNameController.text.isEmpty
+          ? null
+          : _doctorNameController.text,
       address: _addressController.text,
       latitude: _latitude,
       longitude: _longitude,
       phone: _phoneController.text,
-      description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+      description: _descriptionController.text.isEmpty
+          ? null
+          : _descriptionController.text,
       specialties: _specialties,
       availableTimes: [], // 영업시간 기반 타임슬롯 생성을 위해 비움
       education: _education,
       certifications: _certifications,
-      experience: _experienceController.text.isEmpty ? null : _experienceController.text,
+      experience: _experienceController.text.isEmpty
+          ? null
+          : _experienceController.text,
       userId: userId,
     );
 
@@ -301,7 +314,10 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
     }
 
     // 영업시간 저장 (User 엔티티 업데이트)
-    if (success && _workingDays.isNotEmpty && _workingStartTime != null && _workingEndTime != null) {
+    if (success &&
+        _workingDays.isNotEmpty &&
+        _workingStartTime != null &&
+        _workingEndTime != null) {
       print('영업시간 저장 중...');
       final workingHoursSuccess = await _saveWorkingHours(userId);
       if (!workingHoursSuccess) {
@@ -317,28 +333,32 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
       print('저장 완료, 화면으로 돌아갑니다');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.existingProfile != null
-              ? '프로필이 수정되었습니다'
-              : '프로필이 등록되었습니다'),
+          content: Text(
+            widget.existingProfile != null ? '프로필이 수정되었습니다' : '프로필이 등록되었습니다',
+          ),
         ),
       );
       Navigator.of(context).pop(true);
     } else if (mounted) {
       print('저장 실패');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('저장에 실패했습니다')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('저장에 실패했습니다')));
     }
   }
 
   /// 영업시간 저장
   Future<bool> _saveWorkingHours(int userId) async {
     try {
-      final String startHours = '${_workingStartTime!.hour.toString().padLeft(2, '0')}:${_workingStartTime!.minute.toString().padLeft(2, '0')}';
-      final String endHours = '${_workingEndTime!.hour.toString().padLeft(2, '0')}:${_workingEndTime!.minute.toString().padLeft(2, '0')}';
+      final String startHours =
+          '${_workingStartTime!.hour.toString().padLeft(2, '0')}:${_workingStartTime!.minute.toString().padLeft(2, '0')}';
+      final String endHours =
+          '${_workingEndTime!.hour.toString().padLeft(2, '0')}:${_workingEndTime!.minute.toString().padLeft(2, '0')}';
 
       final response = await http.patch(
-        Uri.parse('http://10.0.2.2:9075/api/v1/users/$userId/working-hours'),
+        Uri.parse(
+          'http://223.130.130.225:9075/api/v1/users/$userId/working-hours',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'workingDays': _workingDays.toList(),
@@ -375,10 +395,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   // 기본 정보
                   const Text(
                     '기본 정보',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -400,7 +417,9 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   TextFormField(
                     controller: _doctorNameController,
                     decoration: InputDecoration(
-                      labelText: _partnerType == 'HOSPITAL' ? '담당 수의사명 (선택)' : '담당자명 (선택)',
+                      labelText: _partnerType == 'HOSPITAL'
+                          ? '담당 수의사명 (선택)'
+                          : '담당자명 (선택)',
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -430,7 +449,10 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                       onPressed: _selectLocation,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF4FC59E),
-                        side: const BorderSide(color: Color(0xFF4FC59E), width: 2),
+                        side: const BorderSide(
+                          color: Color(0xFF4FC59E),
+                          width: 2,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -458,7 +480,9 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFE6F7F1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF4FC59E).withOpacity(0.3)),
+                          border: Border.all(
+                            color: const Color(0xFF4FC59E).withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -553,10 +577,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   // 영업 시간
                   const Text(
                     '영업 시간',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -620,10 +641,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   // 자격증
                   const Text(
                     '자격증 및 인증',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -651,10 +669,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   // 소개
                   const Text(
                     '소개',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
 
@@ -801,10 +816,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 2),
                   Text(

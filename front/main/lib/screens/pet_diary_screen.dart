@@ -37,7 +37,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
       return imageUrl;
     }
     // 상대 경로인 경우 백엔드 서버 주소를 붙여서 반환
-    return 'http://10.0.2.2:9075$imageUrl';
+    return 'http://223.130.130.225:9075$imageUrl';
   }
 
   @override
@@ -111,14 +111,18 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
       return;
     }
 
-    print('📋 일기 불러오기 시작: petId=${_petProfiles[_selectedPetIndex].id}, date=${_selectedDate.toString().split(' ')[0]}');
+    print(
+      '📋 일기 불러오기 시작: petId=${_petProfiles[_selectedPetIndex].id}, date=${_selectedDate.toString().split(' ')[0]}',
+    );
 
     final diary = await DiaryService().getDiary(
       _petProfiles[_selectedPetIndex].id!,
       _selectedDate,
     );
 
-    print('📋 일기 조회 결과: ${diary != null ? "일기 있음 (${diary.content?.length ?? 0}자)" : "일기 없음"}');
+    print(
+      '📋 일기 조회 결과: ${diary != null ? "일기 있음 (${diary.content?.length ?? 0}자)" : "일기 없음"}',
+    );
 
     setState(() {
       _currentDiary = diary;

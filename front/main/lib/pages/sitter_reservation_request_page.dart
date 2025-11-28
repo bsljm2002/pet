@@ -20,10 +20,12 @@ class SitterReservationRequestPage extends StatefulWidget {
   const SitterReservationRequestPage({super.key, required this.sitter});
 
   @override
-  State<SitterReservationRequestPage> createState() => _SitterReservationRequestPageState();
+  State<SitterReservationRequestPage> createState() =>
+      _SitterReservationRequestPageState();
 }
 
-class _SitterReservationRequestPageState extends State<SitterReservationRequestPage> {
+class _SitterReservationRequestPageState
+    extends State<SitterReservationRequestPage> {
   final _memoController = TextEditingController();
   final _locationController = TextEditingController();
   DateTime? _selectedDate;
@@ -58,8 +60,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
       print('🎬 [INIT] 선택된 날짜: $_selectedDate');
 
       print('🎬 [INIT] 서비스 선택 시작');
-      _selectedService =
-          widget.sitter.services.isNotEmpty ? widget.sitter.services.first : null;
+      _selectedService = widget.sitter.services.isNotEmpty
+          ? widget.sitter.services.first
+          : null;
       print('🎬 [INIT] 선택된 서비스: $_selectedService');
 
       print('🎬 [INIT] 타임슬롯 생성 시작');
@@ -98,9 +101,16 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
     // availableTimes가 비어있거나 유효하지 않은 경우에만 기본값 제공
     // 기본값: 09:00 ~ 18:00 (일반적인 업무 시간)
     return [
-      '09:00', '10:00', '11:00', '12:00',
-      '13:00', '14:00', '15:00', '16:00',
-      '17:00', '18:00'
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+      '13:00',
+      '14:00',
+      '15:00',
+      '16:00',
+      '17:00',
+      '18:00',
     ];
   }
 
@@ -207,39 +217,39 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
 
   Future<void> _submit() async {
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 날짜를 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 날짜를 선택해 주세요.')));
       return;
     }
 
     if (_selectedTime == null || _selectedTime!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 시간을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해 주세요.')));
       return;
     }
 
     if (_locationController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('서비스 위치를 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('서비스 위치를 선택해 주세요.')));
       return;
     }
 
     if (_petProfiles.isNotEmpty && _selectedPetIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('돌봄을 받을 반려동물을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('돌봄을 받을 반려동물을 선택해 주세요.')));
       return;
     }
 
     // 로그인 사용자 확인
     final currentUser = AuthService().currentUser;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('로그인이 필요합니다.')));
       return;
     }
 
@@ -263,7 +273,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
       // 예: 2025-11-26T14:00:00+09:00
       String dateTimeStr;
 
-      if (_selectedTime == null || _selectedTime!.isEmpty || !_selectedTime!.contains(':')) {
+      if (_selectedTime == null ||
+          _selectedTime!.isEmpty ||
+          !_selectedTime!.contains(':')) {
         // 시간이 "협의 가능" 같은 텍스트인 경우 기본값 사용
         final visitDateTime = DateTime(
           _selectedDate!.year,
@@ -273,7 +285,8 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
           0,
         );
         // 백엔드 형식: yyyy-MM-dd'T'HH:mm:ss.SSSXXX (밀리초 필수)
-        dateTimeStr = '${DateFormat('yyyy-MM-dd').format(visitDateTime)}T${DateFormat('HH:mm:ss').format(visitDateTime)}.000+09:00';
+        dateTimeStr =
+            '${DateFormat('yyyy-MM-dd').format(visitDateTime)}T${DateFormat('HH:mm:ss').format(visitDateTime)}.000+09:00';
         print('⚠️ [WARN] 시간이 유효하지 않아 기본값(09:00) 사용: $_selectedTime');
       } else {
         final timeParts = _selectedTime!.split(':');
@@ -289,7 +302,8 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
         );
 
         // 백엔드 형식: yyyy-MM-dd'T'HH:mm:ss.SSSXXX (밀리초 필수)
-        dateTimeStr = '${DateFormat('yyyy-MM-dd').format(visitDateTime)}T${DateFormat('HH:mm:ss').format(visitDateTime)}.000+09:00';
+        dateTimeStr =
+            '${DateFormat('yyyy-MM-dd').format(visitDateTime)}T${DateFormat('HH:mm:ss').format(visitDateTime)}.000+09:00';
       }
 
       print('🔍 [DEBUG] 생성된 예약 시간: $dateTimeStr');
@@ -319,9 +333,11 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
           'partner_id': int.parse(widget.sitter.id),
           'user_id': int.parse(currentUser.id.toString()),
           'user_type': 'SITTER',
-          'petsitter_works': petsitterWorkEnum != null ? [petsitterWorkEnum] : ['ALL'],
+          'petsitter_works': petsitterWorkEnum != null
+              ? [petsitterWorkEnum]
+              : ['ALL'],
           'pets_id': petId,
-          'visit_date_time': dateTimeStr,  // 방문 예약 시간 (사용자가 선택한 날짜/시간)
+          'visit_date_time': dateTimeStr, // 방문 예약 시간 (사용자가 선택한 날짜/시간)
           'resv_urls': [],
           'resv_content': content,
         };
@@ -349,7 +365,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
           } else {
             failCount++;
             failedPetNames.add(petName);
-            print('❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}');
+            print(
+              '❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}',
+            );
           }
         } else {
           failCount++;
@@ -376,7 +394,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}'
+              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}',
             ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 4),
@@ -397,9 +415,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
       Navigator.of(context).pop();
 
       print('❌ [ERROR] 예약 생성 오류: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')));
     }
   }
 
@@ -526,8 +544,10 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                   Expanded(
                     child: Text(
                       _selectedDate != null
-                          ? DateFormat('yyyy년 MM월 dd일 (E)', 'ko_KR')
-                              .format(_selectedDate!)
+                          ? DateFormat(
+                              'yyyy년 MM월 dd일 (E)',
+                              'ko_KR',
+                            ).format(_selectedDate!)
                           : '날짜를 선택해주세요',
                       style: TextStyle(
                         fontSize: 16,
@@ -537,8 +557,11 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                       ),
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios,
-                      size: 16, color: Colors.grey),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
                 ],
               ),
             ),
@@ -548,12 +571,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
           DropdownButtonFormField<String>(
             initialValue: _selectedTime,
             items: _generateTimeSlots()
-                .map(
-                  (time) => DropdownMenuItem(
-                    value: time,
-                    child: Text(time),
-                  ),
-                )
+                .map((time) => DropdownMenuItem(value: time, child: Text(time)))
                 .toList(),
             onChanged: (value) => setState(() => _selectedTime = value),
             decoration: const InputDecoration(
@@ -573,7 +591,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
 
     // 상대 경로를 절대 경로로 변환
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://10.0.2.2:9075$imageUrl';
+      imageUrl = 'http://223.130.130.225:9075$imageUrl';
       print('🔍 [DEBUG] 상대 경로 변환: ${profile.imageUrl} -> $imageUrl');
     }
 
@@ -627,7 +645,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                             imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              print('❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error');
+                              print(
+                                '❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error',
+                              );
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -646,10 +666,14 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                                 print('✅ [DEBUG] 이미지 로드 완료 (${profile.name})');
                                 return child;
                               }
-                              final progress = loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              final progress =
+                                  loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
                                   : 0.0;
-                              print('⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%');
+                              print(
+                                '⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%',
+                              );
                               return const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
@@ -707,9 +731,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected
-                      ? const Color(0xFF003829)
-                      : Colors.black87,
+                  color: isSelected ? const Color(0xFF003829) : Colors.black87,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -760,10 +782,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
               ),
               child: const Text(
                 '반려동물 정보를 불러오는 중...',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
                 textAlign: TextAlign.center,
               ),
             )
@@ -779,10 +798,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                 children: [
                   Text(
                     '❌ $_petLoadError',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(color: Colors.red, height: 1.5),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
@@ -792,7 +808,10 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4FC59E),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -808,10 +827,7 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
               ),
               child: const Text(
                 '등록된 반려동물 프로필이 없습니다.\n홈 화면에서 프로필을 추가해 주세요.',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
               ),
             )
           else
@@ -944,16 +960,13 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
 
   Widget _buildServiceCard() {
     // 백엔드 PetsitterWork enum에 맞는 서비스 목록
-    final allServices = [
-      '산책',
-      '이동/동행',
-      '위생관리',
-      '전체',
-    ];
+    final allServices = ['산책', '이동/동행', '위생관리', '전체'];
 
     // 펫시터가 제공하는 서비스를 상단에, 나머지를 하단에 배치
     final sitterServices = widget.sitter.services;
-    final otherServices = allServices.where((s) => !sitterServices.contains(s)).toList();
+    final otherServices = allServices
+        .where((s) => !sitterServices.contains(s))
+        .toList();
     final orderedServices = [...sitterServices, ...otherServices];
 
     return Container(
@@ -992,7 +1005,9 @@ class _SitterReservationRequestPageState extends State<SitterReservationRequestP
                       service,
                       style: TextStyle(
                         color: isProvided ? Colors.black : Colors.grey[600],
-                        fontWeight: isProvided ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isProvided
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -1069,7 +1084,9 @@ class _SitterHeader extends StatelessWidget {
         CircleAvatar(
           radius: 30,
           backgroundColor: const Color(0xFFE6F7F1),
-          backgroundImage: sitter.imageUrl.isNotEmpty ? NetworkImage(sitter.imageUrl) : null,
+          backgroundImage: sitter.imageUrl.isNotEmpty
+              ? NetworkImage(sitter.imageUrl)
+              : null,
           child: sitter.imageUrl.isNotEmpty
               ? null
               : const Icon(Icons.person, color: Color(0xFF4FC59E)),

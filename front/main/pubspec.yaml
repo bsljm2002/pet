@@ -68,6 +68,18 @@ dependencies:
   # Firebase Realtime Database (채팅용)
   firebase_database: ^11.1.6
 
+  # WebView 패키지
+  webview_flutter: ^4.4.2
+
+  # 비디오 플레이어 패키지
+  video_player: ^2.8.1
+
+  # 환경 변수 로드 패키지
+  flutter_dotenv: ^5.1.0
+
+  # OpenAI Dart SDK
+  dart_openai: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -93,6 +105,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
+    - assets/videos/
+    - assets/html/
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

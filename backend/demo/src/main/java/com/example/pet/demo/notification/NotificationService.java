@@ -1,21 +1,42 @@
 package com.example.pet.demo.notification;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
+    
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    
+    private final FirebaseApp firebaseApp;
+    
+    @Autowired
+    public NotificationService(@Autowired(required = false) FirebaseApp firebaseApp) {
+        this.firebaseApp = firebaseApp;
+    }
+    
+    private boolean isFirebaseEnabled() {
+        if (firebaseApp == null) {
+            log.warn("⚠️ Firebase가 초기화되지 않아 알림을 전송할 수 없습니다.");
+            return false;
+        }
+        return true;
+    }
+    
     /**
      * 고객에게 예약 수락 알림 전송
      */
     public void sendReservationAccepted(String targetToken, Long reservationId) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(targetToken)
             .putData("type", "reservation_accepted")
@@ -32,6 +53,8 @@ public class NotificationService {
      * 파트너에게 새 예약 알림 전송
      */
     public void sendNewReservationToPartner(String partnerToken, Long reservationId, String userName) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(partnerToken)
             .putData("type", "reservation_update")
@@ -49,6 +72,8 @@ public class NotificationService {
      * 파트너에게 예약 상태 변경 알림 전송
      */
     public void sendReservationUpdateToPartner(String partnerToken, Long reservationId, String message) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(partnerToken)
             .putData("type", "reservation_update")
@@ -66,6 +91,8 @@ public class NotificationService {
      * 고객에게 예약 거절 알림 전송
      */
     public void sendReservationRejected(String targetToken, Long reservationId, String reason) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         String body = reason != null && !reason.isBlank()
             ? "예약이 거절되었습니다. 사유: " + reason
             : "예약이 거절되었습니다.";
@@ -87,6 +114,8 @@ public class NotificationService {
      * 고객에게 진료/서비스 완료 알림 전송
      */
     public void sendReservationCompleted(String targetToken, Long reservationId) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(targetToken)
             .putData("type", "reservation_completed")
@@ -103,6 +132,8 @@ public class NotificationService {
      * 파트너에게 예약 취소 알림 전송
      */
     public void sendReservationCancelled(String targetToken, Long reservationId) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(targetToken)
             .putData("type", "reservation_cancelled")
@@ -119,6 +150,8 @@ public class NotificationService {
      * 파트너에게 상담 요청 알림 전송
      */
     public void sendConsultationRequested(String targetToken, Long consultationId) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(targetToken)
             .putData("type", "consultation_requested")
@@ -135,6 +168,8 @@ public class NotificationService {
      * 고객에게 상담 답변 알림 전송
      */
     public void sendConsultationAnswered(String targetToken, Long consultationId) throws FirebaseMessagingException {
+        if (!isFirebaseEnabled()) return;
+        
         Message msg = Message.builder()
             .setToken(targetToken)
             .putData("type", "consultation_answered")

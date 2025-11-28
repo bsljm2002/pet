@@ -88,9 +88,9 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
   /// 삭제 확인 다이얼로그 표시
   Future<void> _showDeleteConfirmDialog() async {
     if (widget.profile.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('저장되지 않은 프로필은 삭제할 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('저장되지 않은 프로필은 삭제할 수 없습니다.')));
       return;
     }
 
@@ -136,9 +136,9 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
     setState(() => _isDeleting = false);
 
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로필이 삭제되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('프로필이 삭제되었습니다.')));
       Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,8 +162,8 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }
@@ -273,10 +273,7 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
               'assets/icons/settings.svg',
               width: 28,
               height: 28,
-              colorFilter: ColorFilter.mode(
-                Colors.grey,
-                BlendMode.srcIn,
-              ),
+              colorFilter: ColorFilter.mode(Colors.grey, BlendMode.srcIn),
             ),
             onPressed: () {
               setState(() {
@@ -405,19 +402,24 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
             width: 140,
             height: 140,
             child: PhysicalShape(
-              clipper: _SvgMaskClipper((_latestProfile ?? widget.profile).species),
+              clipper: _SvgMaskClipper(
+                (_latestProfile ?? widget.profile).species,
+              ),
               color: Colors.transparent,
               shadowColor: Colors.black,
               elevation: 3,
               child: ClipPath(
-                clipper: _SvgMaskClipper((_latestProfile ?? widget.profile).species),
+                clipper: _SvgMaskClipper(
+                  (_latestProfile ?? widget.profile).species,
+                ),
                 child: Container(
                   width: 140,
                   height: 140,
                   color: Color(0xFFE5E7EB),
-                  child: _isValidNetworkUrl(
-                            (_latestProfile ?? widget.profile).imageUrl,
-                          )
+                  child:
+                      _isValidNetworkUrl(
+                        (_latestProfile ?? widget.profile).imageUrl,
+                      )
                       ? Image.network(
                           _getFullImageUrl(
                             (_latestProfile ?? widget.profile).imageUrl,
@@ -427,7 +429,11 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
                           height: 140,
                           errorBuilder: (context, error, stackTrace) {
                             return Center(
-                              child: Icon(Icons.pets, size: 70, color: Colors.grey),
+                              child: Icon(
+                                Icons.pets,
+                                size: 70,
+                                color: Colors.grey,
+                              ),
                             );
                           },
                         )
@@ -790,33 +796,194 @@ class _SvgMaskClipper extends CustomClipper<Path> {
     if (speciesLower.contains('dog') || speciesLower.contains('개')) {
       // 개 프레임 경로 (dog_i.svg의 path)
       path.moveTo(111 * scaleX, 30.1659 * scaleY);
-      path.cubicTo(123.333 * scaleX, 25.8325 * scaleY, 156.6 * scaleX, 19.7659 * scaleY, 191 * scaleX, 30.1659 * scaleY);
-      path.cubicTo(193.833 * scaleX, 22.1659 * scaleY, 204.5 * scaleX, 5.16587 * scaleY, 224.5 * scaleX, 1.16587 * scaleY);
-      path.cubicTo(244.5 * scaleX, -2.83413 * scaleY, 260.833 * scaleX, 12.1659 * scaleY, 266.5 * scaleX, 20.1659 * scaleY);
-      path.cubicTo(274.667 * scaleX, 30.9992 * scaleY, 287.3 * scaleX, 59.3659 * scaleY, 272.5 * scaleX, 86.1659 * scaleY);
-      path.cubicTo(282.833 * scaleX, 99.4992 * scaleY, 303 * scaleX, 136.666 * scaleY, 301 * scaleX, 178.666 * scaleY);
-      path.cubicTo(299.333 * scaleX, 197.499 * scaleY, 291.3 * scaleX, 240.766 * scaleY, 272.5 * scaleX, 263.166 * scaleY);
-      path.cubicTo(261 * scaleX, 277.499 * scaleY, 228.6 * scaleX, 308.766 * scaleY, 191 * scaleX, 319.166 * scaleY);
-      path.cubicTo(177.667 * scaleX, 322.833 * scaleY, 143 * scaleX, 327.966 * scaleY, 111 * scaleX, 319.166 * scaleY);
-      path.cubicTo(94.6667 * scaleX, 314.999 * scaleY, 55.6 * scaleX, 297.966 * scaleY, 30 * scaleX, 263.166 * scaleY);
-      path.cubicTo(20.3333 * scaleX, 252.333 * scaleY, 0.9 * scaleX, 220.266 * scaleY, 0.5 * scaleX, 178.666 * scaleY);
-      path.cubicTo(0.833333 * scaleX, 159.666 * scaleY, 7.2 * scaleX, 114.566 * scaleY, 30 * scaleX, 86.1659 * scaleY);
-      path.cubicTo(23.5 * scaleX, 76.1659 * scaleY, 15.5 * scaleX, 48.9659 * scaleY, 35.5 * scaleX, 20.1659 * scaleY);
-      path.cubicTo(40 * scaleX, 12.6659 * scaleY, 54.7 * scaleX, -1.63412 * scaleY, 77.5 * scaleX, 1.16587 * scaleY);
-      path.cubicTo(85.6667 * scaleX, 2.49921 * scaleY, 103.8 * scaleX, 10.1659 * scaleY, 111 * scaleX, 30.1659 * scaleY);
+      path.cubicTo(
+        123.333 * scaleX,
+        25.8325 * scaleY,
+        156.6 * scaleX,
+        19.7659 * scaleY,
+        191 * scaleX,
+        30.1659 * scaleY,
+      );
+      path.cubicTo(
+        193.833 * scaleX,
+        22.1659 * scaleY,
+        204.5 * scaleX,
+        5.16587 * scaleY,
+        224.5 * scaleX,
+        1.16587 * scaleY,
+      );
+      path.cubicTo(
+        244.5 * scaleX,
+        -2.83413 * scaleY,
+        260.833 * scaleX,
+        12.1659 * scaleY,
+        266.5 * scaleX,
+        20.1659 * scaleY,
+      );
+      path.cubicTo(
+        274.667 * scaleX,
+        30.9992 * scaleY,
+        287.3 * scaleX,
+        59.3659 * scaleY,
+        272.5 * scaleX,
+        86.1659 * scaleY,
+      );
+      path.cubicTo(
+        282.833 * scaleX,
+        99.4992 * scaleY,
+        303 * scaleX,
+        136.666 * scaleY,
+        301 * scaleX,
+        178.666 * scaleY,
+      );
+      path.cubicTo(
+        299.333 * scaleX,
+        197.499 * scaleY,
+        291.3 * scaleX,
+        240.766 * scaleY,
+        272.5 * scaleX,
+        263.166 * scaleY,
+      );
+      path.cubicTo(
+        261 * scaleX,
+        277.499 * scaleY,
+        228.6 * scaleX,
+        308.766 * scaleY,
+        191 * scaleX,
+        319.166 * scaleY,
+      );
+      path.cubicTo(
+        177.667 * scaleX,
+        322.833 * scaleY,
+        143 * scaleX,
+        327.966 * scaleY,
+        111 * scaleX,
+        319.166 * scaleY,
+      );
+      path.cubicTo(
+        94.6667 * scaleX,
+        314.999 * scaleY,
+        55.6 * scaleX,
+        297.966 * scaleY,
+        30 * scaleX,
+        263.166 * scaleY,
+      );
+      path.cubicTo(
+        20.3333 * scaleX,
+        252.333 * scaleY,
+        0.9 * scaleX,
+        220.266 * scaleY,
+        0.5 * scaleX,
+        178.666 * scaleY,
+      );
+      path.cubicTo(
+        0.833333 * scaleX,
+        159.666 * scaleY,
+        7.2 * scaleX,
+        114.566 * scaleY,
+        30 * scaleX,
+        86.1659 * scaleY,
+      );
+      path.cubicTo(
+        23.5 * scaleX,
+        76.1659 * scaleY,
+        15.5 * scaleX,
+        48.9659 * scaleY,
+        35.5 * scaleX,
+        20.1659 * scaleY,
+      );
+      path.cubicTo(
+        40 * scaleX,
+        12.6659 * scaleY,
+        54.7 * scaleX,
+        -1.63412 * scaleY,
+        77.5 * scaleX,
+        1.16587 * scaleY,
+      );
+      path.cubicTo(
+        85.6667 * scaleX,
+        2.49921 * scaleY,
+        103.8 * scaleX,
+        10.1659 * scaleY,
+        111 * scaleX,
+        30.1659 * scaleY,
+      );
     } else {
       // 고양이 프레임 경로 (cat_i.svg의 path)
       final catScaleY = size.height / 331;
       path.moveTo(186.347 * scaleX, 35.1901 * catScaleY);
-      path.cubicTo(172.847 * scaleX, 32.0235 * catScaleY, 139.547 * scaleX, 27.5901 * catScaleY, 114.347 * scaleX, 35.1901 * catScaleY);
-      path.cubicTo(108.18 * scaleX, 26.0235 * catScaleY, 94.047 * scaleX, 6.29012 * catScaleY, 86.847 * scaleX, 0.690125 * catScaleY);
-      path.cubicTo(76.1803 * scaleX, 9.52346 * catScaleY, 52.547 * scaleX, 36.8901 * catScaleY, 43.347 * scaleX, 75.6901 * catScaleY);
-      path.cubicTo(11.0136 * scaleX, 109.19 * catScaleY, -34.253 * scaleX, 198.09 * catScaleY, 43.347 * scaleX, 285.69 * catScaleY);
-      path.cubicTo(56.347 * scaleX, 300.023 * catScaleY, 94.5469 * scaleX, 328.99 * catScaleY, 143.347 * scaleX, 330.19 * catScaleY);
-      path.cubicTo(167.014 * scaleX, 331.19 * catScaleY, 223.047 * scaleX, 323.69 * catScaleY, 257.847 * scaleX, 285.69 * catScaleY);
-      path.cubicTo(290.18 * scaleX, 254.523 * catScaleY, 335.447 * scaleX, 168.89 * catScaleY, 257.847 * scaleX, 75.6901 * catScaleY);
-      path.cubicTo(252.347 * scaleX, 58.5235 * catScaleY, 235.847 * scaleX, 19.4901 * catScaleY, 213.847 * scaleX, 0.690125 * catScaleY);
-      path.cubicTo(206.18 * scaleX, 8.85679 * catScaleY, 189.947 * scaleX, 27.1901 * catScaleY, 186.347 * scaleX, 35.1901 * catScaleY);
+      path.cubicTo(
+        172.847 * scaleX,
+        32.0235 * catScaleY,
+        139.547 * scaleX,
+        27.5901 * catScaleY,
+        114.347 * scaleX,
+        35.1901 * catScaleY,
+      );
+      path.cubicTo(
+        108.18 * scaleX,
+        26.0235 * catScaleY,
+        94.047 * scaleX,
+        6.29012 * catScaleY,
+        86.847 * scaleX,
+        0.690125 * catScaleY,
+      );
+      path.cubicTo(
+        76.1803 * scaleX,
+        9.52346 * catScaleY,
+        52.547 * scaleX,
+        36.8901 * catScaleY,
+        43.347 * scaleX,
+        75.6901 * catScaleY,
+      );
+      path.cubicTo(
+        11.0136 * scaleX,
+        109.19 * catScaleY,
+        -34.253 * scaleX,
+        198.09 * catScaleY,
+        43.347 * scaleX,
+        285.69 * catScaleY,
+      );
+      path.cubicTo(
+        56.347 * scaleX,
+        300.023 * catScaleY,
+        94.5469 * scaleX,
+        328.99 * catScaleY,
+        143.347 * scaleX,
+        330.19 * catScaleY,
+      );
+      path.cubicTo(
+        167.014 * scaleX,
+        331.19 * catScaleY,
+        223.047 * scaleX,
+        323.69 * catScaleY,
+        257.847 * scaleX,
+        285.69 * catScaleY,
+      );
+      path.cubicTo(
+        290.18 * scaleX,
+        254.523 * catScaleY,
+        335.447 * scaleX,
+        168.89 * catScaleY,
+        257.847 * scaleX,
+        75.6901 * catScaleY,
+      );
+      path.cubicTo(
+        252.347 * scaleX,
+        58.5235 * catScaleY,
+        235.847 * scaleX,
+        19.4901 * catScaleY,
+        213.847 * scaleX,
+        0.690125 * catScaleY,
+      );
+      path.cubicTo(
+        206.18 * scaleX,
+        8.85679 * catScaleY,
+        189.947 * scaleX,
+        27.1901 * catScaleY,
+        186.347 * scaleX,
+        35.1901 * catScaleY,
+      );
     }
 
     path.close();

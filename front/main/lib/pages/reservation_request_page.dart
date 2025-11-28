@@ -42,8 +42,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
     _focusedDay = _selectedDate!;
-    _selectedSpecialty =
-        widget.vet.specialties.isNotEmpty ? widget.vet.specialties.first : null;
+    _selectedSpecialty = widget.vet.specialties.isNotEmpty
+        ? widget.vet.specialties.first
+        : null;
 
     // 생성된 타임슬롯에서 첫 번째 시간 선택
     final timeSlots = _generateTimeSlots();
@@ -71,7 +72,6 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
         widget.vet.workingEndHours != null &&
         widget.vet.workingStartHours!.isNotEmpty &&
         widget.vet.workingEndHours!.isNotEmpty) {
-
       List<String> timeSlots = [];
 
       try {
@@ -131,7 +131,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
       print('🔍 [DEBUG] 펫 목록 로드 시작 - 사용자 ID: ${currentUser.id}');
 
-      final response = await PetService().getPetsByOwner(currentUser.id.toString());
+      final response = await PetService().getPetsByOwner(
+        currentUser.id.toString(),
+      );
 
       print('🔍 [DEBUG] 펫 목록 응답: $response');
 
@@ -184,32 +186,32 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
   Future<void> _submit() async {
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 날짜를 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 날짜를 선택해 주세요.')));
       return;
     }
 
     if (_selectedTime == null || _selectedTime!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 시간을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해 주세요.')));
       return;
     }
 
     if (_petProfiles.isNotEmpty && _selectedPetIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('진료 받을 반려동물을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('진료 받을 반려동물을 선택해 주세요.')));
       return;
     }
 
     // 로그인 사용자 확인
     final currentUser = AuthService().currentUser;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('로그인이 필요합니다.')));
       return;
     }
 
@@ -230,7 +232,8 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
       print('🔍 [DEBUG] 선택된 펫 ID 목록: $selectedPets');
 
       // 날짜와 시간 조합
-      final dateTimeStr = '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}T${_selectedTime!}:00.000+09:00';
+      final dateTimeStr =
+          '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}T${_selectedTime!}:00.000+09:00';
 
       // Specialty를 백엔드 enum으로 매핑 (VetSpecialty enum)
       String? vetSpecialtyEnum = _mapSpecialtyToEnum(_selectedSpecialty);
@@ -257,9 +260,11 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           'partner_id': int.parse(widget.vet.id),
           'user_id': currentUser.id,
           'user_type': 'HOSPITAL',
-          'vet_specialties': vetSpecialtyEnum != null ? [vetSpecialtyEnum] : ['GENERAL'],
+          'vet_specialties': vetSpecialtyEnum != null
+              ? [vetSpecialtyEnum]
+              : ['GENERAL'],
           'pets_id': petId,
-          'visit_date_time': dateTimeStr,  // 방문 예약 시간 (사용자가 선택한 날짜/시간)
+          'visit_date_time': dateTimeStr, // 방문 예약 시간 (사용자가 선택한 날짜/시간)
           'resv_urls': [],
           'resv_content': content,
         };
@@ -283,7 +288,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           } else {
             failCount++;
             failedPetNames.add(petName);
-            print('❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}');
+            print(
+              '❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}',
+            );
           }
         } else {
           failCount++;
@@ -308,7 +315,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}'
+              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}',
             ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 4),
@@ -329,9 +336,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
       Navigator.of(context).pop();
 
       print('❌ [ERROR] 예약 생성 오류: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')));
     }
   }
 
@@ -360,9 +367,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('예약 신청'),
-      ),
+      appBar: AppBar(title: const Text('예약 신청')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -451,12 +456,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           DropdownButtonFormField<String>(
             value: _selectedTime,
             items: _generateTimeSlots()
-                .map(
-                  (time) => DropdownMenuItem(
-                    value: time,
-                    child: Text(time),
-                  ),
-                )
+                .map((time) => DropdownMenuItem(value: time, child: Text(time)))
                 .toList(),
             onChanged: (value) => setState(() => _selectedTime = value),
             decoration: const InputDecoration(
@@ -475,7 +475,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
     // 상대 경로를 절대 경로로 변환
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://10.0.2.2:9075$imageUrl';
+      imageUrl = 'http://223.130.130.225:9075$imageUrl';
       print('🔍 [DEBUG] 상대 경로 변환: ${profile.imageUrl} -> $imageUrl');
     }
 
@@ -529,7 +529,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                             imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              print('❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error');
+                              print(
+                                '❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error',
+                              );
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -548,10 +550,14 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                                 print('✅ [DEBUG] 이미지 로드 완료 (${profile.name})');
                                 return child;
                               }
-                              final progress = loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              final progress =
+                                  loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
                                   : 0.0;
-                              print('⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%');
+                              print(
+                                '⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%',
+                              );
                               return const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
@@ -609,9 +615,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected
-                      ? const Color(0xFF003829)
-                      : Colors.black87,
+                  color: isSelected ? const Color(0xFF003829) : Colors.black87,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -662,10 +666,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               ),
               child: const Text(
                 '반려동물 정보를 불러오는 중...',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
                 textAlign: TextAlign.center,
               ),
             )
@@ -681,10 +682,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 children: [
                   Text(
                     '❌ $_petLoadError',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(color: Colors.red, height: 1.5),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
@@ -694,7 +692,10 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4FC59E),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -710,10 +711,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               ),
               child: const Text(
                 '등록된 반려동물 프로필이 없습니다.\n홈 화면에서 프로필을 추가해 주세요.',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
               ),
             )
           else
@@ -758,9 +756,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 )
                 .toList(),
             onChanged: (value) => setState(() => _selectedSpecialty = value),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
         ],
       ),
@@ -825,10 +821,15 @@ class _VetHeader extends StatelessWidget {
         CircleAvatar(
           radius: 30,
           backgroundColor: const Color(0xFFE6F7F1),
-          backgroundImage: vet.imageUrl.isNotEmpty ? NetworkImage(vet.imageUrl) : null,
+          backgroundImage: vet.imageUrl.isNotEmpty
+              ? NetworkImage(vet.imageUrl)
+              : null,
           child: vet.imageUrl.isNotEmpty
               ? null
-              : const Icon(Icons.local_hospital_outlined, color: Color(0xFF4FC59E)),
+              : const Icon(
+                  Icons.local_hospital_outlined,
+                  color: Color(0xFF4FC59E),
+                ),
         ),
         const SizedBox(width: 16),
         Expanded(
