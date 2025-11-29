@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/partner_profile_model.dart';
 
 class PartnerService {
-  static const String baseUrl = 'http://223.130.130.225:9075/api/v1/partners';
+  static const String baseUrl = 'http://192.168.70.210:9075/api/v1/partners';
 
   /// 파트너 프로필 생성
   Future<int?> createPartner(PartnerProfileModel profile) async {

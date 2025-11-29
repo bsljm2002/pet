@@ -4,7 +4,7 @@ import '../models/completed_reservation_model.dart';
 
 class CompletedReservationService {
   static const String baseUrl =
-      'http://223.130.130.225:9075/api/v1/reservations';
+      'http://192.168.70.210:9075/api/v1/reservations';
 
   /// 수의사(병원)에서 받은 진료 내역 조회
   Future<List<CompletedReservationModel>> getCompletedHospitalReservations(

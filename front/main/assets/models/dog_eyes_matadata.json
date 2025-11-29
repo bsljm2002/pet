@@ -1,0 +1,22 @@
+{
+  "model_type": "YOLOv8",
+  "architecture": "ClassificationModel",
+  "task": "classify",
+  "model_path": "model_cls/dog-eyes-classifier2/weights/best.pt",
+  "names": {
+    "0": "conjunctivitis",
+    "1": "entropion",
+    "2": "eyelid_lump",
+    "3": "healthy"
+  },
+  "num_classes": 4,
+  "input_shape": [
+    640,
+    640
+  ],
+  "parameters": {
+    "total": 1536228,
+    "trainable": 0
+  },
+  "model_structure": "ClassificationModel(\n  (model): Sequential(\n    (0): Conv(\n      (conv): Conv2d(3, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)\n      (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n      (act): SiLU(inplace=True)\n    )\n    (1): Conv(\n      (conv): Conv2d(16, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)\n      (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n      (act): SiLU(inplace=True)\n    )\n    (2): C3k2(\n      (cv1): Conv(\n        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)\n        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n        (act): SiLU(inplace=True)\n      )\n      (cv2): Conv(\n        (conv): Conv2d(48, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)\n        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)\n        (act): SiLU(inplace=True)\n      )\n  ..."
+}

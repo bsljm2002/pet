@@ -1,0 +1,32 @@
+{
+  "model_name": "cat_skin_best",
+  "original_file": "cat_skin_best.pt",
+  "converted_file": "cat_skin_best.ptl",
+  "conversion_date": "2025-11-26T09:05:26.697538",
+  "pytorch_version": "2.6.0+cu124",
+  "training_config": {
+    "task": "classify",
+    "model_architecture": "yolo11s-cls.pt",
+    "epochs": 100,
+    "batch_size": 32,
+    "image_size": 224,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "project": "cls_model_v1",
+    "name": "cat-skin-cls"
+  },
+  "class_names": {
+    "0": "Alopecia",
+    "1": "Eosinophilic Plague",
+    "2": "Flea_Allergy",
+    "3": "Health",
+    "4": "Miliary Dermatitis",
+    "5": "Ringworm",
+    "6": "Scabies"
+  },
+  "num_classes": 7,
+  "file_size_bytes": 11052372,
+  "file_size_mb": 10.54,
+  "converted_file_size_bytes": 21814689,
+  "converted_file_size_mb": 20.8
+}

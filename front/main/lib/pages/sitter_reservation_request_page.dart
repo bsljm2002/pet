@@ -591,7 +591,7 @@ class _SitterReservationRequestPageState
 
     // 상대 경로를 절대 경로로 변환
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://223.130.130.225:9075$imageUrl';
+      imageUrl = 'http://192.168.70.210:9075$imageUrl';
       print('🔍 [DEBUG] 상대 경로 변환: ${profile.imageUrl} -> $imageUrl');
     }
 

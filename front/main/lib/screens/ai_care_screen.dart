@@ -32,6 +32,14 @@ class _AiCareScreenState extends State<AiCareScreen> {
   File? _selectedImage;
   bool _isAnalyzing = false;
 
+  // 🆕 반려동물 종류와 부위 선택
+  PetType _selectedPetType = PetType.dog;
+  BodyPart _selectedBodyPart = BodyPart.skin;
+
+  // 🆕 현재 선택된 모델 타입
+  DiagnosisModelType get _currentModelType =>
+      DiagnosisModelTypeExtension.fromSelection(_selectedPetType, _selectedBodyPart);
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -372,6 +380,15 @@ class _AiCareScreenState extends State<AiCareScreen> {
           ),
         ),
 
+        // 🆕 반려동물 종류 선택
+        _buildPetTypeSelector(),
+
+        // 🆕 진단 부위 선택
+        _buildBodyPartSelector(),
+
+        // 🆕 현재 선택 표시
+        _buildCurrentSelection(),
+
         // 이미지 선택 영역
         Container(
           margin: const EdgeInsets.all(16),
@@ -592,6 +609,317 @@ class _AiCareScreenState extends State<AiCareScreen> {
 
         const SizedBox(height: 40),
       ],
+    );
+  }
+
+  // 🆕 반려동물 종류 선택 위젯
+  Widget _buildPetTypeSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.pets, color: Color(0xFF00B27A), size: 20),
+              SizedBox(width: 8),
+              Text(
+                '반려동물 종류',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3E3F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedPetType = PetType.dog),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _selectedPetType == PetType.dog
+                          ? const Color(0xFF00B27A)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedPetType == PetType.dog
+                            ? const Color(0xFF00B27A)
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '🐕',
+                          style: TextStyle(fontSize: 32),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '강아지',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedPetType == PetType.dog
+                                ? Colors.white
+                                : const Color(0xFF2D3E3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedPetType = PetType.cat),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _selectedPetType == PetType.cat
+                          ? const Color(0xFF00B27A)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedPetType == PetType.cat
+                            ? const Color(0xFF00B27A)
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '🐈',
+                          style: TextStyle(fontSize: 32),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '고양이',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedPetType == PetType.cat
+                                ? Colors.white
+                                : const Color(0xFF2D3E3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🆕 진단 부위 선택 위젯
+  Widget _buildBodyPartSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.medical_services, color: Color(0xFF00B27A), size: 20),
+              SizedBox(width: 8),
+              Text(
+                '진단 부위',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3E3F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedBodyPart = BodyPart.skin),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _selectedBodyPart == BodyPart.skin
+                          ? const Color(0xFF00B27A)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedBodyPart == BodyPart.skin
+                            ? const Color(0xFF00B27A)
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '🩹',
+                          style: TextStyle(fontSize: 32),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '피부',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedBodyPart == BodyPart.skin
+                                ? Colors.white
+                                : const Color(0xFF2D3E3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedBodyPart = BodyPart.eye),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _selectedBodyPart == BodyPart.eye
+                          ? const Color(0xFF00B27A)
+                          : const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedBodyPart == BodyPart.eye
+                            ? const Color(0xFF00B27A)
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '👁️',
+                          style: TextStyle(fontSize: 32),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '눈',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedBodyPart == BodyPart.eye
+                                ? Colors.white
+                                : const Color(0xFF2D3E3F),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🆕 현재 선택 표시 위젯
+  Widget _buildCurrentSelection() {
+    final petTypeText = _selectedPetType == PetType.dog ? '강아지' : '고양이';
+    final bodyPartText = _selectedBodyPart == BodyPart.skin ? '피부' : '눈';
+    final modelInfo = _currentModelType.displayName;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF00B27A).withOpacity(0.1),
+            const Color(0xFF00D68F).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF00B27A).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: Color(0xFF00B27A),
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '선택된 진단 모델',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF5A6C6D),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$petTypeText $bodyPartText 진단',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D3E3F),
+                  ),
+                ),
+                Text(
+                  '모델: $modelInfo',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF5A6C6D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

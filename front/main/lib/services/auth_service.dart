@@ -9,7 +9,7 @@ class AuthService {
 
   // 실제 기기용: PC의 IP 주소 사용 (같은 WiFi 네트워크 필요)
   // 에뮬레이터용: 10.0.2.2 사용
-  static const String baseUrl = "http://223.130.130.225:9075/api/v1/users";
+  static const String baseUrl = "http://192.168.70.210:9075/api/v1/users";
 
   User? _currentUser;
   User? get currentUser => _currentUser;

@@ -10,7 +10,7 @@ class DiaryService {
   DiaryService._internal();
 
   // 백엔드 API URL (Android 에뮬레이터용)
-  static const String _baseUrl = 'http://223.130.130.225:9075/api/diaries';
+  static const String _baseUrl = 'http://192.168.70.210:9075/api/diaries';
 
   /// 일기 저장
   Future<Map<String, dynamic>> saveDiary(PetDiary diary) async {

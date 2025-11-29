@@ -37,7 +37,7 @@ class _PetDiaryScreenState extends State<PetDiaryScreen> {
       return imageUrl;
     }
     // 상대 경로인 경우 백엔드 서버 주소를 붙여서 반환
-    return 'http://223.130.130.225:9075$imageUrl';
+    return 'http://192.168.70.210:9075$imageUrl';
   }
 
   @override

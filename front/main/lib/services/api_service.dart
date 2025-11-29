@@ -6,7 +6,7 @@ import '../models/reservation_model.dart';
 
 class ApiService {
   // 백엔드 서버 URL
-  static const String baseUrl = 'http://223.130.130.225:9075/api/v1';
+  static const String baseUrl = 'http://192.168.70.210:9075/api/v1';
 
   // 수의사 목록 조회
   static Future<List<VetModel>> getVets({

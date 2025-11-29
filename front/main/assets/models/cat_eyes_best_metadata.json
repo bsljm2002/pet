@@ -1,0 +1,31 @@
+{
+  "model_name": "cat_eyes_best",
+  "original_file": "cat_eyes_best.pt",
+  "converted_file": "cat_eyes_best.ptl",
+  "conversion_date": "2025-11-26T18:04:36.390663",
+  "pytorch_version": "2.6.0+cu124",
+  "training_config": {
+    "task": "classify",
+    "model_architecture": "yolo11s-cls.pt",
+    "epochs": 100,
+    "batch_size": 32,
+    "image_size": 224,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "project": "cls_model_v1",
+    "name": "cat-eyes-cls"
+  },
+  "class_names": {
+    "0": "Blepharitis",
+    "1": "Conjunctivitis",
+    "2": "Corneal Sequestrum",
+    "3": "Corneal Ulcer",
+    "4": "Health",
+    "5": "Non-ulcerative"
+  },
+  "num_classes": 6,
+  "file_size_bytes": 11052052,
+  "file_size_mb": 10.54,
+  "converted_file_size_bytes": 21809569,
+  "converted_file_size_mb": 20.8
+}

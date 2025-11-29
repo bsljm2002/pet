@@ -107,7 +107,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
   Future<void> _loadWorkingHours(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://223.130.130.225:9075/api/v1/users/$userId'),
+        Uri.parse('http://192.168.70.210:9075/api/v1/users/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -357,7 +357,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
 
       final response = await http.patch(
         Uri.parse(
-          'http://223.130.130.225:9075/api/v1/users/$userId/working-hours',
+          'http://192.168.70.210:9075/api/v1/users/$userId/working-hours',
         ),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({

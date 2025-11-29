@@ -1,0 +1,31 @@
+{
+  "model_name": "dog_skin_best",
+  "original_file": "dog_skin_best.pt",
+  "converted_file": "dog_skin_best.ptl",
+  "conversion_date": "2025-11-26T09:05:30.000000",
+  "pytorch_version": "2.6.0+cu124",
+  "training_config": {
+    "task": "classify",
+    "model_architecture": "yolo11s-cls.pt",
+    "epochs": 100,
+    "batch_size": 32,
+    "image_size": 224,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "project": "cls_model_v1",
+    "name": "dog-skin-cls"
+  },
+  "class_names": {
+    "0": "Bacterial_Dermatosis",
+    "1": "Fungal_Infections",
+    "2": "Allergic_Dermatitis",
+    "3": "Health",
+    "4": "Seborrhea",
+    "5": "Alopecia"
+  },
+  "num_classes": 6,
+  "file_size_bytes": 11052052,
+  "file_size_mb": 10.54,
+  "converted_file_size_bytes": 21809569,
+  "converted_file_size_mb": 20.8
+}
