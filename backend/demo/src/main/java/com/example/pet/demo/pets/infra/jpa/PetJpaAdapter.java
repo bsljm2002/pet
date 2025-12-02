@@ -26,7 +26,6 @@ public class PetJpaAdapter implements PetPersistencePort {
             String species,
             LocalDate birthdate,
             BigDecimal weight,
-            String abitTypeCode,
             String imageUrl,
             String name,
             String gender,
@@ -39,7 +38,6 @@ public class PetJpaAdapter implements PetPersistencePort {
                 .species(Pet.Species.valueOf(species))
                 .birthdate(birthdate)
                 .weight(weight)
-                .abitTypeCode(Pet.AbitTypeCode.valueOf(abitTypeCode))
                 .imageUrl(imageUrl)
                 .name(name)
                 .gender(Pet.Gender.valueOf(gender))
@@ -58,6 +56,32 @@ public class PetJpaAdapter implements PetPersistencePort {
     @Transactional(readOnly = true)
     public Optional<Pet> findById(Long id) {
         return jpa.findById(id);
+    }
+
+    @Override
+    @Transactional
+    public void update(Long id,
+            String species,
+            LocalDate birthdate,
+            BigDecimal weight,
+            String imageUrl,
+            String name,
+            String gender,
+            String speciesDetail) {
+
+        Pet pet = jpa.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found with id: " + id));
+
+        pet.update(
+                Pet.Species.valueOf(species),
+                birthdate,
+                weight,
+                imageUrl,
+                name,
+                Pet.Gender.valueOf(gender),
+                speciesDetail);
+
+        jpa.save(pet);
     }
 
     @Override

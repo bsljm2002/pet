@@ -94,6 +94,12 @@ public class Partner {
     private String imageUrl;
 
     /**
+     * 갤러리 이미지 URL들 (최대 8개, JSON 또는 콤마 구분)
+     */
+    @Column(columnDefinition = "TEXT")
+    private String galleryImages;
+
+    /**
      * 소개글
      */
     @Column(columnDefinition = "TEXT")
@@ -179,6 +185,13 @@ public class Partner {
      */
     public void updateImage(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    /**
+     * 갤러리 이미지 업데이트
+     */
+    public void updateGalleryImages(String galleryImages) {
+        this.galleryImages = galleryImages;
     }
 
     /**

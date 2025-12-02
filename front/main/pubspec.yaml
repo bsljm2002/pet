@@ -84,6 +84,12 @@ dependencies:
   # Firebase Realtime Database (채팅용)
   firebase_database: ^11.1.6
 
+  # 로컬 저장소 (즐겨찾기 등)
+  shared_preferences: ^2.2.2
+
+  # OpenAI API 패키지 (챗봇용)
+  dart_openai: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -13,12 +13,12 @@ import 'screens/home_screen.dart';
 import 'screens/ai_care_screen.dart';
 import 'screens/hospital_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/chatbot_screen.dart';
 import 'widgets/custom_app_bar.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'providers/hospital_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
-import 'providers/llm_emoticon_provider.dart';
 import 'services/fcm_service.dart';
 
 // 애플리케이션 시작점
@@ -59,7 +59,6 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => HospitalProvider()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => LlmEmoticonProvider()),
       ],
       child: const MyApp(),
     ),
@@ -99,9 +98,8 @@ class MyApp extends StatelessWidget {
 // StatefulWidget으로 화면 전환 시 상태를 관리
 class MainScreen extends StatefulWidget {
   final int initialIndex; // 초기 탭 인덱스
-  final int homeTabIndex; // 홈 화면의 초기 탭 인덱스 (0: 펫 프로필, 1: 펫 일기)
 
-  const MainScreen({super.key, this.initialIndex = 0, this.homeTabIndex = 0});
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -120,9 +118,9 @@ class _MainScreenState extends State<MainScreen> {
     _currentIndex = widget.initialIndex; // 초기 인덱스 설정
 
     // 각 탭에 해당하는 화면들의 리스트
-    // 0: 홈 (펫프로필/펫일기), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
+    // 0: 홈 (펫프로필), 1: AI케어 (케이지/AI진단), 2: 동물병원, 3: 설정
     _screens = [
-      HomeScreen(initialTabIndex: widget.homeTabIndex),
+      HomeScreen(),
       AiCareScreen(),
       HospitalScreen(),
       SettingsScreen(),
@@ -148,6 +146,26 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _currentIndex, // 현재 선택된 탭 인덱스 전달
         onTap: _onTabTapped, // 탭 클릭 시 호출될 콜백 함수 전달
       ),
+      // 플로팅 챗봇 버튼
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+            );
+          },
+          backgroundColor: const Color.fromARGB(255, 0, 108, 82),
+          elevation: 6,
+          child: const Icon(
+            Icons.chat_bubble_outline,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

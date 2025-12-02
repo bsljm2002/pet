@@ -11,6 +11,7 @@ class VetModel {
   final double distance; // 거리 (km)
   final bool isOpen; // 현재 영업 여부
   final String imageUrl;
+  final List<String> galleryImages; // 갤러리 이미지들
   final String description; // 수의사/병원 소개
   final List<String> education; // 학력 사항
   final String experience; // 경력
@@ -33,6 +34,7 @@ class VetModel {
     required this.distance,
     required this.isOpen,
     required this.imageUrl,
+    this.galleryImages = const [],
     required this.description,
     this.education = const [],
     this.experience = '',
@@ -66,6 +68,11 @@ class VetModel {
       distance: (json['distance'] ?? 0.0).toDouble(),
       isOpen: json['isOpen'] ?? true,
       imageUrl: json['imageUrl'] ?? '',
+      galleryImages: json['galleryImages'] != null
+          ? (json['galleryImages'] is List
+              ? List<String>.from(json['galleryImages'])
+              : [])
+          : [],
       description: json['description'] ?? '',
       education: json['education'] != null
           ? (json['education'] is List
@@ -104,6 +111,7 @@ class VetModel {
       'distance': distance,
       'isOpen': isOpen,
       'imageUrl': imageUrl,
+      'galleryImages': galleryImages,
       'description': description,
       'education': education,
       'experience': experience,

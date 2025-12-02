@@ -9,7 +9,6 @@ class PetProfile {
   final double weight; //몸무게
   final String? speciesDetail;
   final String? gender;
-  final String? abtiTypeCode;
 
   PetProfile({
     this.id, // nullable (백엔드에서 자동 생성)
@@ -18,7 +17,6 @@ class PetProfile {
     required this.species, // 필수
     required this.birthdate, // 필수
     required this.weight, // 필수
-    this.abtiTypeCode, // nullable로 변경 (백엔드 데이터에 없을 수 있음)
     this.gender, // nullable로 변경
     this.speciesDetail, // 선택사항
     this.imageUrl, // 선택사항
@@ -33,7 +31,6 @@ class PetProfile {
       'species': species,
       'birthdate': birthdate,
       'weight': weight,
-      'abitTypeCode': abtiTypeCode,
       'gender': gender,
       'speciesDetail': speciesDetail,
       'imageUrl': imageUrl,
@@ -49,7 +46,6 @@ class PetProfile {
       species: json['species'] as String? ?? '', // null일 경우 빈 문자열
       birthdate: json['birthdate'] as String? ?? '', // null일 경우 빈 문자열
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0, // null일 경우 0.0
-      abtiTypeCode: json['abitTypeCode'] as String?, // nullable
       gender: json['gender'] as String?, // nullable
       speciesDetail: json['speciesDetail'] as String?, // nullable
       imageUrl: json['imageUrl'] as String?, // nullable
@@ -64,7 +60,6 @@ class PetProfile {
     String? species,
     String? birthdate,
     double? weight,
-    String? abtiTypeCode,
     String? gender,
     String? speciesDetail,
     String? imageUrl,
@@ -76,7 +71,6 @@ class PetProfile {
       species: species ?? this.species,
       birthdate: birthdate ?? this.birthdate,
       weight: weight ?? this.weight,
-      abtiTypeCode: abtiTypeCode ?? this.abtiTypeCode,
       gender: gender ?? this.gender,
       speciesDetail: speciesDetail ?? this.speciesDetail,
       imageUrl: imageUrl ?? this.imageUrl,

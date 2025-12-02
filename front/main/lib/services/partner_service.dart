@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/partner_profile_model.dart';
 
 class PartnerService {
-  static const String baseUrl = 'http://223.130.130.225:9075/api/v1/partners';
+  static const String baseUrl = 'http://10.0.2.2:9075/api/v1/partners';
 
   /// 파트너 프로필 생성
   Future<int?> createPartner(PartnerProfileModel profile) async {
@@ -43,11 +43,20 @@ class PartnerService {
     PartnerProfileModel profile,
   ) async {
     try {
+      print('=== 파트너 수정 API 호출 ===');
+      print('URL: $baseUrl/$partnerId/profile');
+      final requestBody = profile.toJson();
+      print('요청 데이터: ${json.encode(requestBody)}');
+      print('galleryImages in request: ${requestBody['galleryImages']}');
+
       final response = await http.put(
         Uri.parse('$baseUrl/$partnerId/profile'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(profile.toJson()),
+        body: json.encode(requestBody),
       );
+
+      print('응답 코드: ${response.statusCode}');
+      print('응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = json.decode(response.body);

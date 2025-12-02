@@ -21,6 +21,7 @@ public class PartnerUpdateReq {
     private Double longitude;
     private String phone;
     private String imageUrl;
+    private List<String> galleryImages;
     private String description;
     private List<String> specialties;
     private List<String> availableTimes;

@@ -35,6 +35,8 @@ public class PartnerCreateReq {
     @NotBlank(message = "전화번호는 필수입니다")
     private String phone;
 
+    private String imageUrl;
+    private List<String> galleryImages;
     private String description;
     private List<String> specialties;
     private List<String> availableTimes;
@@ -55,6 +57,8 @@ public class PartnerCreateReq {
                 .latitude(latitude)
                 .longitude(longitude)
                 .phone(phone)
+                .imageUrl(imageUrl)
+                .galleryImages(joinList(galleryImages))
                 .description(description)
                 .specialties(joinList(specialties))
                 .availableTimes(joinList(availableTimes))

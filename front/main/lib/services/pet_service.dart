@@ -8,7 +8,7 @@ class PetService {
   factory PetService() => _instance;
   PetService._internal();
 
-  static const String baseUrl = "http://223.130.130.225:9075/api/v1/pets";
+  static const String baseUrl = "http://10.0.2.2:9075/api/v1/pets";
 
   /// 펫 프로필 등록 API 호출
   Future<Map<String, dynamic>> createPet({
@@ -17,7 +17,6 @@ class PetService {
     required String species, // "DOG" or "CAT"
     required String birthdate, // "yyyy-MM-dd"
     required double weight, // 몸무게 (kg)
-    required String abitTypeCode, // ABTI코드
     required String gender, // 성별
     String? speciesDetail, // 품
     String? imageUrl, // 나중에 구현
@@ -34,7 +33,6 @@ class PetService {
           "species": species,
           "birthdate": birthdate,
           "weight": weight,
-          "abitTypeCode": abitTypeCode,
           "gender": gender,
           "speciesDetail": speciesDetail,
           "imageUrl": imageUrl, // null이면 백엔드에서 처리
@@ -180,7 +178,6 @@ class PetService {
     required String species, // "DOG" or "CAT"
     required String birthdate, // "yyyy-MM-dd"
     required double weight, // 몸무게 (kg)
-    required String abitTypeCode, // ABTI코드
     required String gender, // 성별
     String? speciesDetail, // 품종
     String? imageUrl, // 이미지 URL
@@ -188,15 +185,15 @@ class PetService {
     final url = Uri.parse('$baseUrl/$petId');
 
     try {
-      final response = await http.put(
+      final response = await http.patch(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
+          "userId": "1", // 임시로 추가 (백엔드에서 필요한 경우)
           "name": name,
           "species": species,
           "birthdate": birthdate,
           "weight": weight,
-          "abitTypeCode": abitTypeCode,
           "gender": gender,
           "speciesDetail": speciesDetail,
           "imageUrl": imageUrl,

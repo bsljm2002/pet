@@ -8,7 +8,7 @@ class AuthService {
   AuthService._internal();
 
   static const String baseUrl =
-      "http://192.168.70.73:9075/api/v1/users"; // 로컬 백엔드 서버 (같은 Wi-Fi 네트워크)
+      "http://10.0.2.2:9075/api/v1/users"; // Android 에뮬레이터용 localhost
 
   User? _currentUser;
   User? get currentUser => _currentUser;

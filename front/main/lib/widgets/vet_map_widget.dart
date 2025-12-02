@@ -17,28 +17,30 @@ class _VetMapWidgetState extends State<VetMapWidget> {
   late KakaoMapController mapController;
   Set<Marker> markers = {};
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeMarker();
-  }
-
-  /// 마커 초기화
+  /// 마커 초기화 - 맵 생성 후 호출
   void _initializeMarker() {
     if (widget.vet.latitude != null && widget.vet.longitude != null) {
+      print('🗺️ [MAP] 수의사 마커 초기화');
+      print('  - ID: ${widget.vet.id}');
+      print('  - 위도: ${widget.vet.latitude}');
+      print('  - 경도: ${widget.vet.longitude}');
+
       final marker = Marker(
         markerId: widget.vet.id,
         latLng: LatLng(widget.vet.latitude!, widget.vet.longitude!),
-        width: 40,
-        height: 40,
-        offsetX: 20,
-        offsetY: 40,
+        width: 30,
+        height: 44,
         markerImageSrc:
             'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png',
       );
+
       setState(() {
         markers.add(marker);
       });
+
+      print('  ✅ 마커 추가 완료 (총 ${markers.length}개)');
+    } else {
+      print('⚠️ [MAP] 위치 정보 없음');
     }
   }
 
@@ -128,6 +130,8 @@ class _VetMapWidgetState extends State<VetMapWidget> {
           child: KakaoMap(
             onMapCreated: (controller) {
               mapController = controller;
+              print('🗺️ [MAP] 카카오맵 생성 완료, 마커 초기화 시작');
+              _initializeMarker();
             },
             center: LatLng(widget.vet.latitude!, widget.vet.longitude!),
             markers: markers.toList(),

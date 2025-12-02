@@ -1,233 +1,180 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// OpenAI API 서비스 (DALL-E 이미지 생성)
 class OpenAIService {
   static final OpenAIService _instance = OpenAIService._internal();
   factory OpenAIService() => _instance;
   OpenAIService._internal();
 
-  static const String baseUrl = 'https://api.openai.com/v1';
-  late String _apiKey;
+  bool _initialized = false;
 
-  /// API 키 초기화
+  // OpenAI 초기화
   void initialize() {
-    // .env 파일에서 API 키 가져오기
-    _apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
-
-    if (_apiKey.isEmpty) {
-      print('⚠️ OPENAI_API_KEY가 .env 파일에 설정되지 않았습니다.');
-    } else {
-      print('✅ OpenAI API 키 로드 완료');
+    if (_initialized) return;
+    
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('OpenAI API Key not found in .env file');
     }
+    
+    OpenAI.apiKey = apiKey;
+    _initialized = true;
+    print('✅ OpenAI Service initialized');
   }
 
-  /// DALL-E로 반려동물 이모티콘 생성
-  ///
-  /// [petName]: 반려동물 이름
-  /// [petType]: 반려동물 종류 (강아지/고양이)
-  /// [style]: 스타일 (cute, cartoon, realistic 등)
-  /// [emotion]: 감정 (happy, sad, excited 등)
-  /// [action]: 동작 (playing, sleeping, eating 등)
-  ///
-  /// Returns: 생성된 이미지 URL
-  Future<String> generatePetEmoticon({
-    required String petName,
-    required String petType,
-    String style = 'cute',
-    String emotion = 'happy',
-    String action = 'playing',
+  // 스트리밍 없이 한 번에 응답받기
+  Future<String> sendMessage({
+    required String message,
+    List<Map<String, String>>? conversationHistory,
   }) async {
     try {
-      if (_apiKey.isEmpty) {
-        throw Exception('OpenAI API 키가 설정되지 않았습니다.');
+      if (!_initialized) initialize();
+
+      // 대화 히스토리 구성
+      List<OpenAIChatCompletionChoiceMessageModel> messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              '''당신은 반려동물 케어 전문 AI 어시스턴트입니다.
+사용자의 반려동물(강아지, 고양이 등)에 관한 질문에 친절하고 전문적으로 답변해주세요.
+
+답변 가이드라인:
+1. 따뜻하고 친근한 말투로 답변하세요
+2. 전문적이면서도 이해하기 쉽게 설명하세요
+3. 필요한 경우 구체적인 예시를 들어주세요
+4. 응급 상황이나 심각한 증상인 경우 반드시 동물병원 방문을 권유하세요
+5. 한국어로 답변하세요
+6. 답변은 간결하게 3-4문장 정도로 작성하세요''',
+            ),
+          ],
+          role: OpenAIChatMessageRole.system,
+        ),
+      ];
+
+      // 이전 대화 히스토리 추가
+      if (conversationHistory != null) {
+        for (var msg in conversationHistory) {
+          messages.add(
+            OpenAIChatCompletionChoiceMessageModel(
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                  msg['content'] ?? '',
+                ),
+              ],
+              role: msg['role'] == 'user' 
+                  ? OpenAIChatMessageRole.user 
+                  : OpenAIChatMessageRole.assistant,
+            ),
+          );
+        }
       }
 
-      // 프롬프트 생성
-      final prompt = _buildKakaoStylePrompt(
-        petName: petName,
-        petType: petType,
-        style: style,
-        emotion: emotion,
-        action: action,
+      // 현재 메시지 추가
+      messages.add(
+        OpenAIChatCompletionChoiceMessageModel(
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(message),
+          ],
+          role: OpenAIChatMessageRole.user,
+        ),
       );
 
-      print('🎨 DALL-E 이미지 생성 중...');
-      print('📝 프롬프트: $prompt');
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/images/generations'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
-        },
-        body: jsonEncode({
-          'model': 'dall-e-3',
-          'prompt': prompt,
-          'n': 1,
-          'size': '1024x1024',
-          'quality': 'standard',
-          'response_format': 'url',
-        }),
+      // OpenAI API 호출
+      final chatCompletion = await OpenAI.instance.chat.create(
+        model: 'gpt-4o-mini',
+        messages: messages,
+        temperature: 0.7,
+        maxTokens: 500,
       );
 
-      print('📥 응답 코드: ${response.statusCode}');
+      final response = chatCompletion.choices.first.message.content?.first.text ?? 
+          '죄송합니다. 응답을 생성할 수 없습니다.';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final imageUrl = data['data'][0]['url'] as String;
-
-        print('✅ 이미지 생성 성공: $imageUrl');
-        return imageUrl;
-      } else {
-        final errorBody = response.body;
-        print('❌ 이미지 생성 실패: ${response.statusCode} - $errorBody');
-        throw Exception('이미지 생성 실패: ${response.statusCode}');
-      }
+      return response;
     } catch (e) {
-      print('❌ OpenAI API 오류: $e');
-      rethrow;
+      print('❌ OpenAI API Error: $e');
+      return '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
   }
 
-  /// 업로드된 이미지를 기반으로 이모티콘 생성
-  ///
-  /// [imageUrl]: 원본 이미지 URL
-  /// [petName]: 반려동물 이름
-  /// [petType]: 반려동물 종류
-  /// [style]: 변환할 스타일
-  /// [emotion]: 감정 표현
-  /// [action]: 행동
-  /// [customPrompt]: 사용자 커스텀 프롬프트 (우선순위 최상)
-  Future<String> generateEmoticonFromImage({
-    required String imageUrl,
-    required String petName,
-    String? petType,
-    String? style,
-    String? emotion,
-    String? action,
-    String? customPrompt,
-  }) async {
+  // 스트리밍으로 응답받기 (타이핑 효과)
+  Stream<String> sendMessageStream({
+    required String message,
+    List<Map<String, String>>? conversationHistory,
+  }) async* {
     try {
-      if (_apiKey.isEmpty) {
-        throw Exception('OpenAI API 키가 설정되지 않았습니다.');
+      if (!_initialized) initialize();
+
+      // 대화 히스토리 구성
+      List<OpenAIChatCompletionChoiceMessageModel> messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              '''당신은 반려동물 케어 전문 AI 어시스턴트입니다.
+사용자의 반려동물(강아지, 고양이 등)에 관한 질문에 친절하고 전문적으로 답변해주세요.
+
+답변 가이드라인:
+1. 따뜻하고 친근한 말투로 답변하세요
+2. 전문적이면서도 이해하기 쉽게 설명하세요
+3. 필요한 경우 구체적인 예시를 들어주세요
+4. 응급 상황이나 심각한 증상인 경우 반드시 동물병원 방문을 권유하세요
+5. 한국어로 답변하세요
+6. 답변은 간결하게 3-4문장 정도로 작성하세요''',
+            ),
+          ],
+          role: OpenAIChatMessageRole.system,
+        ),
+      ];
+
+      // 이전 대화 히스토리 추가
+      if (conversationHistory != null) {
+        for (var msg in conversationHistory) {
+          messages.add(
+            OpenAIChatCompletionChoiceMessageModel(
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                  msg['content'] ?? '',
+                ),
+              ],
+              role: msg['role'] == 'user' 
+                  ? OpenAIChatMessageRole.user 
+                  : OpenAIChatMessageRole.assistant,
+            ),
+          );
+        }
       }
 
-      // 이미지 기반 프롬프트 생성 (카카오 스타일)
-      final prompt = _buildKakaoStylePrompt(
-        petName: petName,
-        petType: petType,
-        style: style ?? 'cute',
-        emotion: emotion,
-        action: action,
-        customPrompt: customPrompt,
+      // 현재 메시지 추가
+      messages.add(
+        OpenAIChatCompletionChoiceMessageModel(
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(message),
+          ],
+          role: OpenAIChatMessageRole.user,
+        ),
       );
 
-      print('🎨 이미지 기반 이모티콘 생성 중...');
-      print('📝 프롬프트: $prompt');
-
-      // Note: DALL-E 3는 이미지 편집을 지원하지 않으므로,
-      // 텍스트 설명으로 유사한 이모티콘을 생성합니다.
-      final response = await http.post(
-        Uri.parse('$baseUrl/images/generations'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
-        },
-        body: jsonEncode({
-          'model': 'dall-e-3',
-          'prompt': prompt,
-          'n': 1,
-          'size': '1024x1024',
-          'quality': 'standard',
-        }),
+      // OpenAI API 스트리밍 호출
+      final stream = OpenAI.instance.chat.createStream(
+        model: 'gpt-4o-mini',
+        messages: messages,
+        temperature: 0.7,
+        maxTokens: 500,
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final imageUrl = data['data'][0]['url'] as String;
-
-        print('✅ 이모티콘 생성 성공: $imageUrl');
-        return imageUrl;
-      } else {
-        throw Exception('이미지 생성 실패: ${response.statusCode}');
+      await for (final event in stream) {
+        final content = event.choices.first.delta.content;
+        if (content != null && content.isNotEmpty) {
+          for (var item in content) {
+            if (item?.text != null) {
+              yield item!.text!;
+            }
+          }
+        }
       }
     } catch (e) {
-      print('❌ OpenAI API 오류: $e');
-      rethrow;
+      print('❌ OpenAI Streaming Error: $e');
+      yield '죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
   }
-
-  /// 카카오톡 스타일 이모티콘 프롬프트 생성
-  String _buildKakaoStylePrompt({
-    required String petName,
-    String? petType,
-    required String style,
-    String? emotion,
-    String? action,
-    String? customPrompt,
-  }) {
-    // 기본 타입 설정
-    final typeStr = petType ?? 'cute pet animal';
-
-    // 감정 매핑 (한국어 감정을 영어로 변환)
-    final emotionMap = {
-      'joy': 'joyful and laughing with big smile',
-      'happy': 'happy with bright smile',
-      'love': 'loving with heart eyes',
-      'surprised': 'surprised with wide open eyes and mouth',
-      'angry': 'angry with furrowed brows',
-      'flustered': 'flustered and confused',
-      'shy': 'shy and blushing',
-      'sleepy': 'sleepy with droopy eyes',
-      'bored': 'bored with tired expression',
-      'grumpy': 'grumpy and cranky',
-      'cool': 'cool and confident',
-      'cheering': 'cheering enthusiastically',
-      'thankful': 'thankful and grateful',
-      'curious': 'curious with questioning look',
-      'playful': 'playful and mischievous',
-      'excited': 'excited with sparkling eyes',
-      'shocked': 'shocked and alarmed',
-      'disappointed': 'disappointed and sad',
-      'impressed': 'impressed and amazed',
-      'moved': 'moved to tears emotionally',
-      'neutral': 'neutral with blank expression',
-      'deflated': 'deflated and defeated',
-      'nervous': 'nervous and anxious',
-      'serious': 'serious and focused',
-      'funny': 'funny and silly',
-      'trembling': 'trembling with intense emotion',
-      'anticipating': 'anticipating with sparkling excitement',
-      'dazed': 'dazed and dizzy',
-    };
-
-    final emotionStr = emotion != null
-        ? emotionMap[emotion] ?? emotion
-        : 'happy';
-
-    // 커스텀 프롬프트가 있으면 추가 설명으로 활용
-    final customDescription = customPrompt != null && customPrompt.isNotEmpty
-        ? ' $customPrompt.'
-        : '';
-
-    return 'Create a KakaoTalk style animal emoticon sticker of a $typeStr. '
-        'IMPORTANT: Only create emoticons of ANIMALS (pets like dogs, cats, birds, rabbits, etc.). '
-        'Main emotion: The animal should be $emotionStr.$customDescription '
-        'Design requirements: '
-        '- Kawaii/chibi art style with oversized head (60% of body) and big expressive eyes '
-        '- Bold black outlines for clarity and cuteness '
-        '- Bright, vibrant, flat colors with slight gradients '
-        '- Simple white or very light background '
-        '- Centered composition, facing forward '
-        '- EXAGGERATE the emotion - make it very clear and recognizable '
-        '- Similar to popular Korean messaging app stickers (LINE Friends, KakaoTalk characters) '
-        '- Friendly, adorable, and highly expressive '
-        '- Square format, suitable for 360x360px display '
-        '- MUST BE AN ANIMAL CHARACTER ONLY';
-  }
-
-  /// API 키 확인
-  bool get hasApiKey => _apiKey.isNotEmpty;
 }

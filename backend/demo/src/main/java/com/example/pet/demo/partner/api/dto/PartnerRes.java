@@ -29,6 +29,7 @@ public class PartnerRes {
     private Double rating;
     private Boolean isOpen;
     private String imageUrl;
+    private List<String> galleryImages;
     private String description;
     private List<String> specialties;
     private List<String> availableTimes;
@@ -53,6 +54,7 @@ public class PartnerRes {
                 .rating(partner.getRating())
                 .isOpen(partner.getIsOpen())
                 .imageUrl(partner.getImageUrl())
+                .galleryImages(splitString(partner.getGalleryImages()))
                 .description(partner.getDescription())
                 .specialties(splitString(partner.getSpecialties()))
                 .availableTimes(splitString(partner.getAvailableTimes()))

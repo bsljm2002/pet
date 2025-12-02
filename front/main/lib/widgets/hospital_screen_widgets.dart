@@ -5,6 +5,7 @@ import '../models/vet_model.dart';
 import '../models/sitter_model.dart';
 import '../pages/vet_profile_page.dart';
 import '../pages/sitter_profile_page.dart';
+import '../services/favorite_service.dart';
 
 /// 동물병원 화면에서 사용되는 위젯들을 모아둔 클래스
 ///
@@ -494,24 +495,14 @@ class HospitalScreenWidgets {
 
   /// 펫시터 서비스 선택 섹션
   static Widget _buildSitterServiceSelector(HospitalProvider provider) {
-    final services = [
-      '방문 돌봄',
-      '산책 서비스',
-      '호텔/위탁',
-      '목욕/미용',
-      '놀이/훈련',
-      '응급 케어',
-    ];
+    final services = ['방문 돌봄', '산책 서비스', '호텔/위탁', '목욕/미용', '놀이/훈련', '응급 케어'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.pets,
-              color: Color(0xFF4FC59E),
-            ),
+            const Icon(Icons.pets, color: Color(0xFF4FC59E)),
             const SizedBox(width: 6),
             const Text(
               '펫시터 서비스',
@@ -623,38 +614,39 @@ class HospitalScreenWidgets {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    Color iconColor = const Color(0xFF003829),
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 120,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFC7E8DA),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              offset: const Offset(0, 4),
-              blurRadius: 6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 55,
+            width: 55,
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 50, color: const Color(0xFF003829)),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF003829),
-              ),
+            child: Icon(icon, size: 28, color: iconColor),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color.fromARGB(255, 132, 182, 169),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -672,18 +664,31 @@ class _SitterStackedList extends StatefulWidget {
 class _SitterStackedListState extends State<_SitterStackedList>
     with SingleTickerProviderStateMixin {
   int _expandedIndex = 0;
+  Set<String> _favoritedSitters = {}; // 즐겨찾기된 펫시터 ID 목록
+  final FavoriteService _favoriteService = FavoriteService();
 
   @override
   void initState() {
     super.initState();
     _expandedIndex = widget.sitters.isNotEmpty ? 0 : -1;
+    _loadFavorites();
+  }
+
+  /// 즐겨찾기 목록 로드
+  Future<void> _loadFavorites() async {
+    final favorites = await _favoriteService.getSitterFavorites();
+    setState(() {
+      _favoritedSitters = favorites;
+    });
   }
 
   @override
   void didUpdateWidget(covariant _SitterStackedList oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_expandedIndex >= widget.sitters.length) {
-      _expandedIndex = widget.sitters.isNotEmpty ? widget.sitters.length - 1 : -1;
+      _expandedIndex = widget.sitters.isNotEmpty
+          ? widget.sitters.length - 1
+          : -1;
     }
   }
 
@@ -798,6 +803,36 @@ class _SitterStackedListState extends State<_SitterStackedList>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          final isFavorited = _favoritedSitters.contains(
+                            sitter.id,
+                          );
+                          if (isFavorited) {
+                            await _favoriteService.removeSitterFavorite(
+                              sitter.id,
+                            );
+                            setState(() {
+                              _favoritedSitters.remove(sitter.id);
+                            });
+                          } else {
+                            await _favoriteService.addSitterFavorite(sitter.id);
+                            setState(() {
+                              _favoritedSitters.add(sitter.id);
+                            });
+                          }
+                        },
+                        child: Icon(
+                          _favoritedSitters.contains(sitter.id)
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: _favoritedSitters.contains(sitter.id)
+                              ? const Color(0xFFFF6B9D)
+                              : Colors.grey.shade400,
+                          size: 24,
                         ),
                       ),
                     ],
@@ -933,11 +968,22 @@ class _VetStackedList extends StatefulWidget {
 class _VetStackedListState extends State<_VetStackedList>
     with SingleTickerProviderStateMixin {
   int _expandedIndex = 0;
+  Set<String> _favoritedVets = {}; // 즐겨찾기된 수의사 ID 목록
+  final FavoriteService _favoriteService = FavoriteService();
 
   @override
   void initState() {
     super.initState();
     _expandedIndex = widget.vets.isNotEmpty ? 0 : -1;
+    _loadFavorites();
+  }
+
+  /// 즐겨찾기 목록 로드
+  Future<void> _loadFavorites() async {
+    final favorites = await _favoriteService.getVetFavorites();
+    setState(() {
+      _favoritedVets = favorites;
+    });
   }
 
   @override
@@ -971,7 +1017,7 @@ class _VetStackedListState extends State<_VetStackedList>
             ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(48),
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(isExpanded ? 0.16 : 0.06),
@@ -1059,6 +1105,32 @@ class _VetStackedListState extends State<_VetStackedList>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          final isFavorited = _favoritedVets.contains(vet.id);
+                          if (isFavorited) {
+                            await _favoriteService.removeVetFavorite(vet.id);
+                            setState(() {
+                              _favoritedVets.remove(vet.id);
+                            });
+                          } else {
+                            await _favoriteService.addVetFavorite(vet.id);
+                            setState(() {
+                              _favoritedVets.add(vet.id);
+                            });
+                          }
+                        },
+                        child: Icon(
+                          _favoritedVets.contains(vet.id)
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: _favoritedVets.contains(vet.id)
+                              ? const Color(0xFFFF6B9D)
+                              : Colors.grey.shade400,
+                          size: 24,
                         ),
                       ),
                     ],

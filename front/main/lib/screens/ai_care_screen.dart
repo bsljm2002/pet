@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'ai_diagnosis_gallery_screen.dart';
 import '../services/ai_diagnosis_service.dart';
-import '../services/pet_profile_manager.dart';
+import '../services/pet_service.dart';
+import '../services/auth_service.dart';
+import '../models/pet_profile.dart';
 import '../models/ai_diagnosis.dart';
 
 /// AI 케어 화면
@@ -18,9 +20,6 @@ class AiCareScreen extends StatefulWidget {
 }
 
 class _AiCareScreenState extends State<AiCareScreen> {
-  // 현재 선택된 탭 인덱스 (0: 케이지, 1: AI진단)
-  int _selectedTabIndex = 0;
-
   // 센서 데이터 상태 관리
   double? temperature; // 온도 (°C)
   double? humidity; // 습도 (%)
@@ -32,101 +31,102 @@ class _AiCareScreenState extends State<AiCareScreen> {
   File? _selectedImage;
   bool _isAnalyzing = false;
 
-  // 반려동물 종류 선택 (0: 강아지, 1: 고양이)
-  int _selectedPetType = 0;
+  // 선택된 반려동물 프로필 ID
+  int? _selectedPetId;
   // 진단 부위 선택 (0: 눈, 1: 피부)
   int _selectedBodyPart = 0;
 
+  // 반려동물 목록
+  List<PetProfile> _petProfiles = [];
+  bool _isPetLoading = false;
+
+  // 온도 조절 관련 변수
+  double _targetTemperature = 22.0; // 목표 온도
+  bool _isAutoMode = true; // 자동/수동 모드 (true: 자동, false: 수동)
+  bool _isHeaterOn = true; // 온열 기능 켜짐/꺼짐
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPetProfiles();
+  }
+
+  // 반려동물 목록 로드
+  Future<void> _loadPetProfiles() async {
+    setState(() {
+      _isPetLoading = true;
+    });
+
+    try {
+      final currentUser = AuthService().currentUser;
+      if (currentUser == null) {
+        setState(() {
+          _isPetLoading = false;
+        });
+        return;
+      }
+
+      final response = await PetService().getPetsByOwner(currentUser.id);
+      if (response['success'] == true) {
+        final List<dynamic> petsData = response['pets'];
+        final List<PetProfile> profiles = petsData
+            .map((json) => PetProfile.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        setState(() {
+          _petProfiles = profiles;
+          _isPetLoading = false;
+          // 첫 번째 반려동물 자동 선택
+          if (profiles.isNotEmpty && _selectedPetId == null) {
+            _selectedPetId = profiles.first.id;
+          }
+        });
+      } else {
+        setState(() {
+          _isPetLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isPetLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // 상단 헤더 영역 - '케이지', 'AI진단' 탭
-          Container(
-            width: double.infinity,
-            height: 30,
-            color: const Color.fromARGB(255, 212, 244, 228),
-            child: Row(
-              children: [
-                // 케이지 탭
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTabIndex = 0;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          style: TextStyle(
-                            color: const Color.fromARGB(255, 0, 108, 82),
-                            fontSize: 16,
-                            fontWeight: _selectedTabIndex == 0
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          '케이지',
-                        ),
-                        SizedBox(height: 4),
-                        Container(
-                          height: 3,
-                          width: 60,
-                          color: _selectedTabIndex == 0
-                              ? const Color.fromARGB(255, 0, 108, 82)
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // AI진단 탭
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTabIndex = 1;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          style: TextStyle(
-                            color: const Color.fromARGB(255, 0, 108, 82),
-                            fontSize: 16,
-                            fontWeight: _selectedTabIndex == 1
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          'AI진단',
-                        ),
-                        SizedBox(height: 3),
-                        Container(
-                          height: 3,
-                          width: 60,
-                          color: _selectedTabIndex == 1
-                              ? const Color.fromARGB(255, 0, 108, 82)
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 248, 246, 240),
+        body: Column(
+          children: [
+            // 상단 탭바 (고정)
+            Container(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              child: const TabBar(
+                labelColor: Color.fromARGB(255, 0, 108, 82),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Color.fromARGB(255, 0, 108, 82),
+                tabs: [
+                  Tab(text: '케이지'),
+                  Tab(text: 'AI진단'),
+                ],
+              ),
             ),
-          ),
-          // 선택된 탭에 따라 컨텐츠 표시
-          if (_selectedTabIndex == 0) ...[
-            // 케이지 탭 컨텐츠
-            _buildCageContent(),
-          ] else ...[
-            // AI진단 탭 컨텐츠
-            _buildAIDiagnosisContent(),
+            // 탭별 컨텐츠 (스크롤 가능)
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // 케이지 탭
+                  SingleChildScrollView(child: _buildCageContent()),
+                  // AI진단 탭
+                  SingleChildScrollView(child: _buildAIDiagnosisContent()),
+                ],
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -159,6 +159,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
           ),
           child: Stack(
             children: [
+              // 중앙 온도 표시 원
               Center(
                 child: Container(
                   width: 240,
@@ -171,24 +172,57 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       width: 3,
                     ),
                   ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${_targetTemperature.toStringAsFixed(1)}°C',
+                        style: TextStyle(
+                          fontSize: 56,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.3),
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '목표 온도',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+              // 온열 ON/OFF 버튼 (작동 버튼)
               Positioned(
                 right: 20,
                 bottom: 20,
                 child: GestureDetector(
                   onTap: () {
-                    print('작동 버튼 클릭됨');
+                    setState(() {
+                      _isHeaterOn = !_isHeaterOn;
+                    });
                   },
                   child: Container(
                     width: 90,
                     height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white,
+                      color: _isHeaterOn ? Color(0xFFFF6B6B) : Colors.grey[400],
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
+                          color: (_isHeaterOn ? Color(0xFFFF6B6B) : Colors.grey)
+                              .withOpacity(0.4),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),
@@ -197,14 +231,154 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.pets, color: Color(0xFF93C5FD), size: 55),
-                        SizedBox(height: 1),
+                        Icon(
+                          _isHeaterOn ? Icons.pets : Icons.power_settings_new,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                        SizedBox(height: 4),
                         Text(
-                          '작동',
+                          _isHeaterOn ? 'ON' : 'OFF',
                           style: TextStyle(
-                            color: Color(0xFF93C5FD),
+                            color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 온도 조절 컨트롤 패널
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // 고정/수동 버튼
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isAutoMode = !_isAutoMode;
+                    });
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _isAutoMode ? Color(0xFF3BA688) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Color(0xFF3BA688), width: 2),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isAutoMode
+                              ? Icons.settings_suggest
+                              : Icons.touch_app,
+                          color: _isAutoMode
+                              ? Colors.white
+                              : Color.fromARGB(255, 0, 108, 82),
+                          size: 20,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          _isAutoMode ? '고정' : '수동',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _isAutoMode
+                                ? Colors.white
+                                : Color.fromARGB(255, 0, 108, 82),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16),
+              // 온도 올리기 버튼 (고양이 모양)
+              GestureDetector(
+                onTap: _isAutoMode
+                    ? null
+                    : () {
+                        setState(() {
+                          if (_targetTemperature < 30.0) {
+                            _targetTemperature += 0.5;
+                          }
+                        });
+                      },
+                child: Opacity(
+                  opacity: _isAutoMode ? 0.4 : 1.0,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    child: Stack(
+                      children: [
+                        ClipPath(
+                          clipper: _CatShapeClipper(),
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            color: Color.fromARGB(255, 255, 133, 165),
+                          ),
+                        ),
+                        Center(
+                          child: Icon(Icons.add, color: Colors.white, size: 24),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              // 온도 내리기 버튼 (고양이 모양)
+              GestureDetector(
+                onTap: _isAutoMode
+                    ? null
+                    : () {
+                        setState(() {
+                          if (_targetTemperature > 15.0) {
+                            _targetTemperature -= 0.5;
+                          }
+                        });
+                      },
+                child: Opacity(
+                  opacity: _isAutoMode ? 0.4 : 1.0,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    child: Stack(
+                      children: [
+                        ClipPath(
+                          clipper: _CatShapeClipper(),
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            color: Color.fromARGB(255, 142, 214, 255),
+                          ),
+                        ),
+                        Center(
+                          child: Icon(
+                            Icons.remove,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
                       ],
@@ -242,7 +416,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
         // 센서 데이터 표시
         Container(
           width: double.infinity,
-          height: 200,
+          height: 300,
           color: Colors.transparent,
           child: Column(
             children: [
@@ -282,7 +456,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
   }) {
     return Container(
       width: double.infinity,
-      height: 55,
+      height: 80,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -299,22 +473,28 @@ class _AiCareScreenState extends State<AiCareScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              width: 45,
-              height: 45,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: color, width: 2.5),
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+            SizedBox(
+              width: 55,
+              height: 55,
+              child: Stack(
+                children: [
+                  // 고양이 모양 테두리 (Stroke)
+                  CustomPaint(
+                    size: Size(55, 55),
+                    painter: _CatShapeBorderPainter(color: color),
                   ),
-                ),
+                  // 중앙 텍스트
+                  Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Text(
@@ -333,193 +513,236 @@ class _AiCareScreenState extends State<AiCareScreen> {
 
   /// AI 진단 컨텐츠
   Widget _buildAIDiagnosisContent() {
+    // 선택된 반려동물 찾기
+    final selectedPet = _selectedPetId != null
+        ? _petProfiles.firstWhere(
+            (pet) => pet.id == _selectedPetId,
+            orElse: () => _petProfiles.isNotEmpty
+                ? _petProfiles.first
+                : throw Exception('No pets available'),
+          )
+        : (_petProfiles.isNotEmpty ? _petProfiles.first : null);
+
     // 현재 선택된 모델 타입 계산
-    DiagnosisModelType selectedModelType;
-    if (_selectedPetType == 0) {
-      // 강아지
-      selectedModelType = _selectedBodyPart == 0
-          ? DiagnosisModelType.dogEyes
-          : DiagnosisModelType.dogSkin;
-    } else {
-      // 고양이
-      selectedModelType = _selectedBodyPart == 0
-          ? DiagnosisModelType.catEyes
-          : DiagnosisModelType.catSkin;
+    DiagnosisModelType? selectedModelType;
+    if (selectedPet != null) {
+      final isDog =
+          selectedPet.species.toLowerCase().contains('강아지') ||
+          selectedPet.species.toLowerCase().contains('dog');
+
+      if (isDog) {
+        selectedModelType = _selectedBodyPart == 0
+            ? DiagnosisModelType.dogEyes
+            : DiagnosisModelType.dogSkin;
+      } else {
+        selectedModelType = _selectedBodyPart == 0
+            ? DiagnosisModelType.catEyes
+            : DiagnosisModelType.catSkin;
+      }
     }
 
     final isModelAvailable =
+        selectedPet != null &&
+        selectedModelType != null &&
         AIDiagnosisService.isModelAvailable(selectedModelType);
 
     return Column(
       children: [
-        // 헤더
+        // 반려동물 선택
         Container(
           width: double.infinity,
+          height: 50,
+          color: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 0, 108, 82),
+                  fontSize: 16,
+                ),
+                '반려동물 선택',
+              ),
+              SizedBox(height: 8),
+              Container(
+                height: 2,
+                width: double.infinity,
+                color: const Color.fromARGB(255, 230, 233, 229),
+              ),
+            ],
+          ),
+        ),
+        // 반려동물 리스트 컨테이너
+        Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFD4F4E7),
+            color: Colors.white,
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              if (_petProfiles.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '등록된 반려동물이 없습니다.\n펫홈에서 반려동물을 추가해주세요.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ),
+                )
+              else
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _petProfiles.length,
+                    itemBuilder: (context, index) {
+                      final pet = _petProfiles[index];
+                      final isSelected = pet.id == _selectedPetId;
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedPetId = pet.id;
+                            _selectedImage = null; // 반려동물 변경 시 이미지 초기화
+                          });
+                        },
+                        child: Container(
+                          margin: EdgeInsets.only(
+                            right: index < _petProfiles.length - 1 ? 16 : 0,
+                          ),
+                          child: Column(
+                            children: [
+                              // 반려동물 이미지 (실루엣)
+                              SizedBox(
+                                width: 70,
+                                height: 70,
+                                child: PhysicalShape(
+                                  clipper: _SvgMaskClipper(pet.species),
+                                  color: Colors.transparent,
+                                  shadowColor: isSelected
+                                      ? const Color(0xFF00B27A)
+                                      : Colors.grey,
+                                  elevation: isSelected ? 6 : 2,
+                                  child: ClipPath(
+                                    clipper: _SvgMaskClipper(pet.species),
+                                    child: Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE5E7EB),
+                                        border: isSelected
+                                            ? Border.all(
+                                                color: const Color(0xFF00B27A),
+                                                width: 3,
+                                              )
+                                            : null,
+                                      ),
+                                      child: _isValidNetworkUrl(pet.imageUrl)
+                                          ? Image.network(
+                                              _getFullImageUrl(pet.imageUrl),
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Icon(
+                                                        Icons.pets,
+                                                        size: 40,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    );
+                                                  },
+                                            )
+                                          : Center(
+                                              child: Icon(
+                                                Icons.pets,
+                                                size: 40,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // 반려동물 이름
+                              Text(
+                                pet.name,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isSelected
+                                      ? const Color(0xFF00B27A)
+                                      : const Color(0xFF2D3E3F),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // 진단 부위 선택 헤더
+        Container(
+          width: double.infinity,
+          height: 50,
+          color: Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 0, 108, 82),
+                  fontSize: 16,
+                ),
+                '진단 부위',
+              ),
+              SizedBox(height: 8),
+              Container(
+                height: 2,
+                width: double.infinity,
+                color: const Color.fromARGB(255, 230, 233, 229),
+              ),
+            ],
+          ),
+        ),
+        // 진단 섹션 전체 컨테이너
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 4,
-                offset: const Offset(0, 2),
+                offset: Offset(0, 2),
               ),
             ],
           ),
           child: Column(
             children: [
-              const Text(
-                'AI 진단',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF00B27A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                width: 60,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00B27A),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                '반려동물의 사진을 찍어 AI 진단을 받아보세요',
-                style: TextStyle(fontSize: 14, color: Color(0xFF5A6C6D)),
-              ),
-            ],
-          ),
-        ),
-
-        // 반려동물 종류 선택 (강아지/고양이)
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '반려동물 종류',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3E3F),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPetType = 0;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedPetType == 0
-                              ? const Color(0xFF00B27A)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFF00B27A),
-                            width: 2,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.pets,
-                              color: _selectedPetType == 0
-                                  ? Colors.white
-                                  : const Color(0xFF00B27A),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '강아지',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: _selectedPetType == 0
-                                    ? Colors.white
-                                    : const Color(0xFF00B27A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedPetType = 1;
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _selectedPetType == 1
-                              ? const Color(0xFF00B27A)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFF00B27A),
-                            width: 2,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '🐱',
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '고양이',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: _selectedPetType == 1
-                                    ? Colors.white
-                                    : const Color(0xFF00B27A),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // 진단 부위 선택 (눈/피부)
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '진단 부위',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3E3F),
-                ),
-              ),
-              const SizedBox(height: 8),
+              // 진단 부위 선택 버튼
               Row(
                 children: [
                   Expanded(
@@ -615,240 +838,199 @@ class _AiCareScreenState extends State<AiCareScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
 
-        // 현재 선택된 진단 모델 표시
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isModelAvailable
-                ? const Color(0xFFE8F5E9)
-                : const Color(0xFFFFF3E0),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isModelAvailable
-                  ? const Color(0xFF00B27A)
-                  : const Color(0xFFFF9800),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isModelAvailable ? Icons.check_circle : Icons.info_outline,
-                color: isModelAvailable
-                    ? const Color(0xFF00B27A)
-                    : const Color(0xFFFF9800),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  isModelAvailable
-                      ? '${AIDiagnosisService.getModelTypeName(selectedModelType)} 진단 모델 준비됨'
-                      : '${AIDiagnosisService.getModelTypeName(selectedModelType)} 모델은 준비 중입니다',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isModelAvailable
-                        ? const Color(0xFF2D3E3F)
-                        : const Color(0xFFE65100),
-                    fontWeight: FontWeight.w500,
-                  ),
+              const SizedBox(height: 16),
+
+              // 이미지 선택 영역
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // 이미지 선택 영역
-        Container(
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // 이미지 미리보기
-              _selectedImage != null
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      child: Image.file(
-                        _selectedImage!,
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Container(
-                      height: 300,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_photo_alternate,
-                            size: 80,
-                            color: Colors.grey[400],
+                child: Column(
+                  children: [
+                    // 이미지 미리보기
+                    _selectedImage != null
+                        ? ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.file(
+                              _selectedImage!,
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Container(
+                            width: double.infinity,
+                            height: 300,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 80,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '사진을 선택해주세요',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            '사진을 선택해주세요',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
+
+                    // 카메라/갤러리 버튼
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isAnalyzing ? null : _takePicture,
+                              icon: const Icon(Icons.camera_alt),
+                              label: const Text('카메라'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00B27A),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isAnalyzing ? null : _pickFromGallery,
+                              icon: const Icon(Icons.photo_library),
+                              label: const Text('갤러리'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF00B27A),
+                                side: const BorderSide(
+                                  color: Color(0xFF00B27A),
+                                  width: 2,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-
-              // 카메라/갤러리 버튼
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isAnalyzing ? null : _takePicture,
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('카메라'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00B27A),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isAnalyzing ? null : _pickFromGallery,
-                        icon: const Icon(Icons.photo_library),
-                        label: const Text('갤러리'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF00B27A),
-                          side: const BorderSide(
-                            color: Color(0xFF00B27A),
-                            width: 2,
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
 
-        const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-        // 진단 버튼
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: (_selectedImage != null &&
-                    !_isAnalyzing &&
-                    isModelAvailable)
-                ? _performDiagnosis
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B27A),
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey[300],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 2,
-            ),
-            child: _isAnalyzing
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'AI 분석 중...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    isModelAvailable
-                        ? 'AI 진단 시작'
-                        : '모델 준비 중 (사용 불가)',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+              // 진단 버튼
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed:
+                      (_selectedImage != null &&
+                          !_isAnalyzing &&
+                          isModelAvailable)
+                      ? _performDiagnosis
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00B27A),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
                   ),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // 진단 기록 보기 버튼
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AIDiagnosisGalleryScreen(),
+                  child: _isAnalyzing
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'AI 분석 중...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          isModelAvailable ? 'AI 진단 시작' : '모델 준비 중 (사용 불가)',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
-              );
-            },
-            icon: const Icon(Icons.history),
-            label: const Text('진단 기록 보기'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF00B27A),
-              side: const BorderSide(color: Color(0xFF00B27A), width: 2),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
               ),
-            ),
+
+              const SizedBox(height: 16),
+
+              // 진단 기록 보기 버튼
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AIDiagnosisGalleryScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.history),
+                  label: const Text('진단 기록 보기'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF00B27A),
+                    side: const BorderSide(color: Color(0xFF00B27A), width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -954,15 +1136,27 @@ class _AiCareScreenState extends State<AiCareScreen> {
       return;
     }
 
+    if (_selectedPetId == null) {
+      _showErrorDialog('반려동물을 선택해주세요.');
+      return;
+    }
+
+    final selectedPet = _petProfiles.firstWhere(
+      (pet) => pet.id == _selectedPetId,
+      orElse: () => throw Exception('선택된 반려동물을 찾을 수 없습니다.'),
+    );
+
     // 현재 선택된 모델 타입 결정
+    final isDog =
+        selectedPet.species.toLowerCase().contains('강아지') ||
+        selectedPet.species.toLowerCase().contains('dog');
+
     DiagnosisModelType modelType;
-    if (_selectedPetType == 0) {
-      // 강아지
+    if (isDog) {
       modelType = _selectedBodyPart == 0
           ? DiagnosisModelType.dogEyes
           : DiagnosisModelType.dogSkin;
     } else {
-      // 고양이
       modelType = _selectedBodyPart == 0
           ? DiagnosisModelType.catEyes
           : DiagnosisModelType.catSkin;
@@ -971,15 +1165,10 @@ class _AiCareScreenState extends State<AiCareScreen> {
     // 모델 사용 가능 여부 확인
     if (!AIDiagnosisService.isModelAvailable(modelType)) {
       _showErrorDialog(
-          '${AIDiagnosisService.getModelTypeName(modelType)} 모델은 아직 준비 중입니다.');
+        '${AIDiagnosisService.getModelTypeName(modelType)} 모델은 아직 준비 중입니다.',
+      );
       return;
     }
-
-    final profiles = PetProfileManager().getAllProfiles();
-
-    // 등록된 반려동물 정보 (없으면 기본값 사용)
-    final petName = profiles.isNotEmpty ? profiles.first.name : '반려동물';
-    final petId = profiles.isNotEmpty ? profiles.first.id?.toString() : null;
 
     setState(() {
       _isAnalyzing = true;
@@ -988,8 +1177,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
     try {
       final diagnosis = await _diagnosisService.performDiagnosis(
         imagePath: _selectedImage!.path,
-        petName: petName,
-        petId: petId,
+        petName: selectedPet.name,
+        petId: selectedPet.id?.toString(),
         modelType: modelType,
       );
 
@@ -1004,6 +1193,27 @@ class _AiCareScreenState extends State<AiCareScreen> {
       });
       _showErrorDialog('진단 중 오류가 발생했습니다.\n$e');
     }
+  }
+
+  // 네트워크 URL 유효성 검사
+  bool _isValidNetworkUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    return url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('/media/');
+  }
+
+  // 전체 이미지 URL 생성
+  String _getFullImageUrl(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return '';
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    if (imageUrl.startsWith('/media/')) {
+      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
+      return 'http://10.0.2.2:9075$imageUrl';
+    }
+    return imageUrl;
   }
 
   // 진단 결과 표시
@@ -1262,4 +1472,381 @@ class _DiagnosisResultSheet extends StatelessWidget {
       ],
     );
   }
+}
+
+/// 고양이 모양 클리퍼
+class _CatShapeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    // SVG path를 50x50 크기로 스케일 조정
+    final scaleX = size.width / 302;
+    final scaleY = size.height / 331;
+
+    path.moveTo(186.347 * scaleX, 35.1901 * scaleY);
+    path.cubicTo(
+      172.847 * scaleX,
+      32.0235 * scaleY,
+      139.547 * scaleX,
+      27.5901 * scaleY,
+      114.347 * scaleX,
+      35.1901 * scaleY,
+    );
+    path.cubicTo(
+      108.18 * scaleX,
+      26.0235 * scaleY,
+      94.047 * scaleX,
+      6.29012 * scaleY,
+      86.847 * scaleX,
+      0.690125 * scaleY,
+    );
+    path.cubicTo(
+      76.1803 * scaleX,
+      9.52346 * scaleY,
+      52.547 * scaleX,
+      36.8901 * scaleY,
+      43.347 * scaleX,
+      75.6901 * scaleY,
+    );
+    path.cubicTo(
+      11.0136 * scaleX,
+      109.19 * scaleY,
+      -34.253 * scaleX,
+      198.09 * scaleY,
+      43.347 * scaleX,
+      285.69 * scaleY,
+    );
+    path.cubicTo(
+      56.347 * scaleX,
+      300.023 * scaleY,
+      94.5469 * scaleX,
+      328.99 * scaleY,
+      143.347 * scaleX,
+      330.19 * scaleY,
+    );
+    path.cubicTo(
+      167.014 * scaleX,
+      331.19 * scaleY,
+      223.047 * scaleX,
+      323.69 * scaleY,
+      257.847 * scaleX,
+      285.69 * scaleY,
+    );
+    path.cubicTo(
+      290.18 * scaleX,
+      254.523 * scaleY,
+      335.447 * scaleX,
+      168.89 * scaleY,
+      257.847 * scaleX,
+      75.6901 * scaleY,
+    );
+    path.cubicTo(
+      252.347 * scaleX,
+      58.5235 * scaleY,
+      235.847 * scaleX,
+      19.4901 * scaleY,
+      213.847 * scaleX,
+      0.690125 * scaleY,
+    );
+    path.cubicTo(
+      206.18 * scaleX,
+      8.85679 * scaleY,
+      189.947 * scaleX,
+      27.1901 * scaleY,
+      186.347 * scaleX,
+      35.1901 * scaleY,
+    );
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+/// 고양이 모양 테두리 페인터
+class _CatShapeBorderPainter extends CustomPainter {
+  final Color color;
+
+  _CatShapeBorderPainter({required this.color});
+
+  Path _getCatPath(Size size) {
+    final path = Path();
+    final scaleX = size.width / 302;
+    final scaleY = size.height / 331;
+
+    path.moveTo(186.347 * scaleX, 35.1901 * scaleY);
+    path.cubicTo(
+      172.847 * scaleX,
+      32.0235 * scaleY,
+      139.547 * scaleX,
+      27.5901 * scaleY,
+      114.347 * scaleX,
+      35.1901 * scaleY,
+    );
+    path.cubicTo(
+      108.18 * scaleX,
+      26.0235 * scaleY,
+      94.047 * scaleX,
+      6.29012 * scaleY,
+      86.847 * scaleX,
+      0.690125 * scaleY,
+    );
+    path.cubicTo(
+      76.1803 * scaleX,
+      9.52346 * scaleY,
+      52.547 * scaleX,
+      36.8901 * scaleY,
+      43.347 * scaleX,
+      75.6901 * scaleY,
+    );
+    path.cubicTo(
+      11.0136 * scaleX,
+      109.19 * scaleY,
+      -34.253 * scaleX,
+      198.09 * scaleY,
+      43.347 * scaleX,
+      285.69 * scaleY,
+    );
+    path.cubicTo(
+      56.347 * scaleX,
+      300.023 * scaleY,
+      94.5469 * scaleX,
+      328.99 * scaleY,
+      143.347 * scaleX,
+      330.19 * scaleY,
+    );
+    path.cubicTo(
+      167.014 * scaleX,
+      331.19 * scaleY,
+      223.047 * scaleX,
+      323.69 * scaleY,
+      257.847 * scaleX,
+      285.69 * scaleY,
+    );
+    path.cubicTo(
+      290.18 * scaleX,
+      254.523 * scaleY,
+      335.447 * scaleX,
+      168.89 * scaleY,
+      257.847 * scaleX,
+      75.6901 * scaleY,
+    );
+    path.cubicTo(
+      252.347 * scaleX,
+      58.5235 * scaleY,
+      235.847 * scaleX,
+      19.4901 * scaleY,
+      213.847 * scaleX,
+      0.690125 * scaleY,
+    );
+    path.cubicTo(
+      206.18 * scaleX,
+      8.85679 * scaleY,
+      189.947 * scaleX,
+      27.1901 * scaleY,
+      186.347 * scaleX,
+      35.1901 * scaleY,
+    );
+    path.close();
+
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    final path = _getCatPath(size);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// SVG 마스크 클리퍼 (강아지/고양이 실루엣)
+class _SvgMaskClipper extends CustomClipper<Path> {
+  final String species;
+
+  _SvgMaskClipper(this.species);
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // 강아지 또는 고양이에 따라 다른 SVG 경로 사용
+    final isDog =
+        species.toLowerCase().contains('강아지') ||
+        species.toLowerCase().contains('dog');
+
+    if (isDog) {
+      // dog_i.svg 경로
+      final scaleX = size.width / 308;
+      final scaleY = size.height / 335;
+
+      path.moveTo(189.347 * scaleX, 35.1901 * scaleY);
+      path.cubicTo(
+        175.847 * scaleX,
+        32.0235 * scaleY,
+        142.547 * scaleX,
+        27.5901 * scaleY,
+        117.347 * scaleX,
+        35.1901 * scaleY,
+      );
+      path.cubicTo(
+        111.18 * scaleX,
+        26.0235 * scaleY,
+        97.047 * scaleX,
+        6.29012 * scaleY,
+        89.847 * scaleX,
+        0.690125 * scaleY,
+      );
+      path.cubicTo(
+        79.1803 * scaleX,
+        9.52346 * scaleY,
+        55.547 * scaleX,
+        36.8901 * scaleY,
+        46.347 * scaleX,
+        75.6901 * scaleY,
+      );
+      path.cubicTo(
+        14.0136 * scaleX,
+        109.19 * scaleY,
+        -31.253 * scaleX,
+        198.09 * scaleY,
+        46.347 * scaleX,
+        285.69 * scaleY,
+      );
+      path.cubicTo(
+        59.347 * scaleX,
+        300.023 * scaleY,
+        97.5469 * scaleX,
+        328.99 * scaleY,
+        146.347 * scaleX,
+        330.19 * scaleY,
+      );
+      path.cubicTo(
+        170.014 * scaleX,
+        331.19 * scaleY,
+        226.047 * scaleX,
+        323.69 * scaleY,
+        260.847 * scaleX,
+        285.69 * scaleY,
+      );
+      path.cubicTo(
+        293.18 * scaleX,
+        254.523 * scaleY,
+        338.447 * scaleX,
+        168.89 * scaleY,
+        260.847 * scaleX,
+        75.6901 * scaleY,
+      );
+      path.cubicTo(
+        255.347 * scaleX,
+        58.5235 * scaleY,
+        238.847 * scaleX,
+        19.4901 * scaleY,
+        216.847 * scaleX,
+        0.690125 * scaleY,
+      );
+      path.cubicTo(
+        209.18 * scaleX,
+        8.85679 * scaleY,
+        192.947 * scaleX,
+        27.1901 * scaleY,
+        189.347 * scaleX,
+        35.1901 * scaleY,
+      );
+      path.close();
+    } else {
+      // cat_i.svg 경로
+      final scaleX = size.width / 302;
+      final scaleY = size.height / 331;
+
+      path.moveTo(186.347 * scaleX, 35.1901 * scaleY);
+      path.cubicTo(
+        172.847 * scaleX,
+        32.0235 * scaleY,
+        139.547 * scaleX,
+        27.5901 * scaleY,
+        114.347 * scaleX,
+        35.1901 * scaleY,
+      );
+      path.cubicTo(
+        108.18 * scaleX,
+        26.0235 * scaleY,
+        94.047 * scaleX,
+        6.29012 * scaleY,
+        86.847 * scaleX,
+        0.690125 * scaleY,
+      );
+      path.cubicTo(
+        76.1803 * scaleX,
+        9.52346 * scaleY,
+        52.547 * scaleX,
+        36.8901 * scaleY,
+        43.347 * scaleX,
+        75.6901 * scaleY,
+      );
+      path.cubicTo(
+        11.0136 * scaleX,
+        109.19 * scaleY,
+        -34.253 * scaleX,
+        198.09 * scaleY,
+        43.347 * scaleX,
+        285.69 * scaleY,
+      );
+      path.cubicTo(
+        56.347 * scaleX,
+        300.023 * scaleY,
+        94.5469 * scaleX,
+        328.99 * scaleY,
+        143.347 * scaleX,
+        330.19 * scaleY,
+      );
+      path.cubicTo(
+        167.014 * scaleX,
+        331.19 * scaleY,
+        223.047 * scaleX,
+        323.69 * scaleY,
+        257.847 * scaleX,
+        285.69 * scaleY,
+      );
+      path.cubicTo(
+        290.18 * scaleX,
+        254.523 * scaleY,
+        335.447 * scaleX,
+        168.89 * scaleY,
+        257.847 * scaleX,
+        75.6901 * scaleY,
+      );
+      path.cubicTo(
+        252.347 * scaleX,
+        58.5235 * scaleY,
+        235.847 * scaleX,
+        19.4901 * scaleY,
+        213.847 * scaleX,
+        0.690125 * scaleY,
+      );
+      path.cubicTo(
+        206.18 * scaleX,
+        8.85679 * scaleY,
+        189.947 * scaleX,
+        27.1901 * scaleY,
+        186.347 * scaleX,
+        35.1901 * scaleY,
+      );
+      path.close();
+    }
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

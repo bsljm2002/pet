@@ -22,8 +22,9 @@ class _MyReservationState extends State<MyReservation> {
   List<UserReservationModel> _reservations = [];
   bool _isLoading = false;
   String? _errorMessage;
-  String _selectedFilter = 'WAITING'; // WAITING, CONFIRMED, COMPLETED, CANCELLED (기본값: 대기중)
-  String _selectedServiceType = 'ALL'; // ALL, HOSPITAL, SITTER (기본값: 전체)
+  String _selectedFilter =
+      'WAITING'; // WAITING, CONFIRMED, COMPLETED, CANCELLED (기본값: 대기중)
+  String _selectedServiceType = 'HOSPITAL'; // HOSPITAL, SITTER (기본값: 수의사)
 
   @override
   void initState() {
@@ -47,11 +48,10 @@ class _MyReservationState extends State<MyReservation> {
 
       final userId = int.parse(currentUser.id);
 
-      // 서비스 타입 필터 적용 (ALL이면 null로 전달하여 전체 조회)
-      final serviceTypeFilter = _selectedServiceType == 'ALL' ? null : _selectedServiceType;
+      // 서비스 타입 필터 적용
       final reservations = await _reservationService.getMyReservations(
         userId,
-        serviceType: serviceTypeFilter,
+        serviceType: _selectedServiceType,
       );
 
       setState(() {
@@ -70,9 +70,11 @@ class _MyReservationState extends State<MyReservation> {
     if (_selectedFilter == 'CANCELLED') {
       // 취소됨 필터: 사용자 취소, 파트너 거절 모두 포함
       return _reservations
-          .where((reservation) =>
-              reservation.status == 'CANCELLED_BY_USER' ||
-              reservation.status == 'CANCELLED_BY_BIZ')
+          .where(
+            (reservation) =>
+                reservation.status == 'CANCELLED_BY_USER' ||
+                reservation.status == 'CANCELLED_BY_BIZ',
+          )
           .toList();
     }
     // 선택된 필터에 해당하는 예약만 반환
@@ -81,121 +83,161 @@ class _MyReservationState extends State<MyReservation> {
         .toList();
   }
 
+  void _onTabChanged(int index) {
+    setState(() {
+      _selectedServiceType = index == 0 ? 'HOSPITAL' : 'SITTER';
+      _loadReservations();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final filteredReservations = _getFilteredReservations();
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('내 예약'),
-        backgroundColor: const Color(0xFF4FC59E),
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          // 서비스 타입 필터 (수의사/펫시터)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: const Color(0xFFF5F5F5),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildServiceTypeChip('전체', 'ALL'),
-                  const SizedBox(width: 8),
-                  _buildServiceTypeChip('수의사', 'HOSPITAL'),
-                  const SizedBox(width: 8),
-                  _buildServiceTypeChip('펫시터', 'SITTER'),
-                ],
-              ),
-            ),
+    return DefaultTabController(
+      length: 2,
+      initialIndex: _selectedServiceType == 'HOSPITAL' ? 0 : 1,
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 248, 246, 240),
+        appBar: AppBar(
+          title: const Text('내 예약'),
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: const Color.fromARGB(255, 48, 145, 71),
+          bottom: TabBar(
+            labelColor: const Color(0xFF3BA688),
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: const Color(0xFF3BA688),
+            tabs: const [
+              Tab(text: '수의사 찾기'),
+              Tab(text: '펫시터 찾기'),
+            ],
+            onTap: _onTabChanged,
           ),
-          const Divider(height: 1),
-
-          // 상태 필터 칩
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.white,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('대기중', 'WAITING'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('확정됨', 'CONFIRMED'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('완료됨', 'COMPLETED'),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('취소됨', 'CANCELLED'),
-                ],
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-
-          // 예약 목록
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                    ? _ErrorView(
-                        message: _errorMessage!,
-                        onRetry: _loadReservations,
-                      )
-                    : filteredReservations.isEmpty
-                        ? _EmptyView(
-                            title: '해당하는 예약이 없습니다',
-                            description: '${_getFilterLabel(_selectedFilter)} 상태의 예약이 없습니다.',
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadReservations,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-                              itemCount: filteredReservations.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 16),
-                              itemBuilder: (context, index) {
-                                final reservation = filteredReservations[index];
-                                final currentUser = _authService.currentUser;
-                                final userId = currentUser != null ? int.parse(currentUser.id) : 0;
-                                return _ReservationTicket(
-                                  reservation: reservation,
-                                  onCancel: () => _cancelReservation(reservation),
-                                  onRefresh: _loadReservations,
-                                  userId: userId,
-                                );
-                              },
-                            ),
-                          ),
-          ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            // 수의사 찾기 탭 컨텐츠
+            _buildReservationContent(filteredReservations),
+            // 펫시터 찾기 탭 컨텐츠
+            _buildReservationContent(filteredReservations),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildServiceTypeChip(String label, String value) {
-    final isSelected = _selectedServiceType == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedServiceType = value;
-          _loadReservations(); // 서비스 타입 변경 시 목록 다시 로드
-        });
-      },
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF2196F3).withOpacity(0.2),
-      checkmarkColor: const Color(0xFF2196F3),
-      labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected ? const Color(0xFF2196F3) : Colors.grey.shade300,
-      ),
-    );
+  Widget _buildReservationContent(List<UserReservationModel> filteredReservations) {
+    return _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _errorMessage != null
+            ? _ErrorView(message: _errorMessage!, onRetry: _loadReservations)
+            : filteredReservations.isEmpty
+            ? Column(
+                children: [
+                  // 상태 필터 칩
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    color: Colors.white,
+                    child: Center(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildFilterChip('대기중', 'WAITING'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('확정됨', 'CONFIRMED'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('완료됨', 'COMPLETED'),
+                            const SizedBox(width: 8),
+                            _buildFilterChip('취소됨', 'CANCELLED'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: _EmptyView(
+                      title: '해당하는 예약이 없습니다',
+                      description:
+                          '${_getFilterLabel(_selectedFilter)} 상태의 예약이 없습니다.',
+                    ),
+                  ),
+                ],
+              )
+            : RefreshIndicator(
+                onRefresh: _loadReservations,
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: filteredReservations.length + 1,
+                  itemBuilder: (context, index) {
+                    // 첫 번째 아이템: 상태 필터 칩
+                    if (index == 0) {
+                      return Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            color: Colors.white,
+                            child: Center(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildFilterChip('대기중', 'WAITING'),
+                                    const SizedBox(width: 8),
+                                    _buildFilterChip('확정됨', 'CONFIRMED'),
+                                    const SizedBox(width: 8),
+                                    _buildFilterChip('완료됨', 'COMPLETED'),
+                                    const SizedBox(width: 8),
+                                    _buildFilterChip('취소됨', 'CANCELLED'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    }
+
+                    // 나머지 아이템: 예약 카드
+                    final reservationIndex = index - 1;
+                    final reservation = filteredReservations[reservationIndex];
+                    final currentUser = _authService.currentUser;
+                    final userId = currentUser != null
+                        ? int.parse(currentUser.id)
+                        : 0;
+
+                    return Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        0,
+                        20,
+                        reservationIndex == filteredReservations.length - 1
+                            ? 40
+                            : 16,
+                      ),
+                      child: _ReservationTicket(
+                        reservation: reservation,
+                        onCancel: () => _cancelReservation(reservation),
+                        onRefresh: _loadReservations,
+                        userId: userId,
+                      ),
+                    );
+                  },
+                ),
+              );
   }
 
   Widget _buildFilterChip(String label, String value) {
@@ -218,6 +260,9 @@ class _MyReservationState extends State<MyReservation> {
       side: BorderSide(
         color: isSelected ? const Color(0xFF4FC59E) : Colors.grey.shade300,
       ),
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 
@@ -293,10 +338,7 @@ class _MyReservationState extends State<MyReservation> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -361,10 +403,7 @@ class _ReservationTicket extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     if (reservation.petName != null)
-                      _InfoChip(
-                        icon: Icons.pets,
-                        label: reservation.petName!,
-                      ),
+                      _InfoChip(icon: Icons.pets, label: reservation.petName!),
                     _InfoChip(
                       icon: Icons.category_outlined,
                       label: reservation.serviceTypeLabel,
@@ -506,7 +545,11 @@ class _ReservationTicket extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.grey.shade600, size: 20),
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.grey.shade600,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '리뷰 작성 완료',

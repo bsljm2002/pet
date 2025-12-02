@@ -22,29 +22,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final User? currentUser = _authService.currentUser;
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(height: 0),
+    return Container(
+      color: const Color.fromARGB(255, 248, 246, 240), // 원하는 배경색
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(height: 0),
 
-          // 사용자 프로필 섹션
-          _buildUserProfileSection(currentUser),
+            // 사용자 프로필 섹션
+            _buildUserProfileSection(currentUser),
 
-          SizedBox(height: 30),
+            SizedBox(height: 30),
 
-          // 섹션 구분선
-          _buildSectionDivider('바로가기'),
+            // 섹션 구분선
+            _buildSectionDivider('바로가기'),
 
-          // 바로가기 메뉴
-          _buildShortcutSection(context),
+            // 바로가기 메뉴
+            _buildShortcutSection(context),
 
-          SizedBox(height: 30),
+            SizedBox(height: 30),
 
-          // 로그아웃 버튼
-          _buildLogoutButton(context),
+            // 로그아웃 버튼
+            _buildLogoutButton(context),
 
-          SizedBox(height: 40),
-        ],
+            SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
@@ -165,7 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: double.infinity,
       child: Column(
         children: [
-          // 홈 섹션 (펫 프로필 + 펫 일기)
+          // 홈 섹션 (펫 프로필)
           _buildExpandableShortcutCard(
             context,
             icon: Icons.home,
@@ -175,12 +178,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'icon': Icons.pets,
                 'title': '펫 프로필',
                 'subtitle': '반려동물 프로필 관리',
-                'tabIndex': 0,
-              },
-              {
-                'icon': Icons.book,
-                'title': '펫 일기',
-                'subtitle': '오늘의 기록 남기기',
                 'tabIndex': 0,
               },
             ],
@@ -199,12 +196,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'title': '케이지 센서',
                 'subtitle': '온도, 습도, 공기질 확인',
                 'tabIndex': 1,
+                'aiTab': 0,
               },
               {
                 'icon': Icons.camera_alt,
                 'title': 'AI 진단',
                 'subtitle': '사진으로 건강 체크',
                 'tabIndex': 1,
+                'aiTab': 1,
               },
             ],
             mainTabIndex: 1,
@@ -454,8 +453,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return '카페';
     }
   }
-
-
 
   /// 탭 이동 처리
   void _navigateToTab(BuildContext context, int tabIndex) {

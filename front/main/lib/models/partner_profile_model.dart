@@ -9,6 +9,7 @@ class PartnerProfileModel {
   final double? longitude;
   final String phone;
   final String? imageUrl;
+  final List<String> galleryImages;
   final String? description;
   final List<String> specialties;
   final List<String> availableTimes;
@@ -32,6 +33,7 @@ class PartnerProfileModel {
     this.longitude,
     required this.phone,
     this.imageUrl,
+    this.galleryImages = const [],
     this.description,
     this.specialties = const [],
     this.availableTimes = const [],
@@ -57,6 +59,9 @@ class PartnerProfileModel {
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
       phone: json['phone'] ?? '',
       imageUrl: json['imageUrl'],
+      galleryImages: json['galleryImages'] != null
+          ? List<String>.from(json['galleryImages'])
+          : [],
       description: json['description'],
       specialties: json['specialties'] != null
           ? List<String>.from(json['specialties'])
@@ -93,6 +98,7 @@ class PartnerProfileModel {
       if (longitude != null) 'longitude': longitude,
       'phone': phone,
       if (imageUrl != null) 'imageUrl': imageUrl,
+      'galleryImages': galleryImages,
       if (description != null) 'description': description,
       'specialties': specialties,
       'availableTimes': availableTimes,
@@ -114,6 +120,7 @@ class PartnerProfileModel {
     double? longitude,
     String? phone,
     String? imageUrl,
+    List<String>? galleryImages,
     String? description,
     List<String>? specialties,
     List<String>? availableTimes,
@@ -137,6 +144,7 @@ class PartnerProfileModel {
       longitude: longitude ?? this.longitude,
       phone: phone ?? this.phone,
       imageUrl: imageUrl ?? this.imageUrl,
+      galleryImages: galleryImages ?? this.galleryImages,
       description: description ?? this.description,
       specialties: specialties ?? this.specialties,
       availableTimes: availableTimes ?? this.availableTimes,

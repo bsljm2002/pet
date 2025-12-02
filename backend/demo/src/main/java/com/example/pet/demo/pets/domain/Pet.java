@@ -57,10 +57,6 @@ public class Pet {
     @Column(precision = 4, scale = 1, nullable = false)
     private BigDecimal weight;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "abit_type_code", nullable = false, length = 4)
-    private AbitTypeCode abitTypeCode;
-
     @Column(name = "p_image_url", length = 2048)
     private String imageUrl;
 
@@ -87,16 +83,29 @@ public class Pet {
         return owner != null ? owner.getId() : null;
     }
 
+    // 펫 정보 업데이트 메서드
+    public void update(
+            Species species,
+            LocalDate birthdate,
+            BigDecimal weight,
+            String imageUrl,
+            String name,
+            Gender gender,
+            String speciesDetail) {
+        this.species = species;
+        this.birthdate = birthdate;
+        this.weight = weight;
+        this.imageUrl = imageUrl;
+        this.name = name;
+        this.gender = gender;
+        this.speciesDetail = speciesDetail;
+    }
+
 
     public enum Species {
         DOG, CAT
     }
 
-    public enum AbitTypeCode {
-        ISTJ, ISFJ, INFJ, INTJ, ISTP, ISFP, INFP, INTP,
-        ESTP, ESFP, ENFP, ENTP, ESTJ, ESFJ, ENFJ, ENTJ
-    }
-    
     public enum Gender {
         MALE, FEMALE
     }

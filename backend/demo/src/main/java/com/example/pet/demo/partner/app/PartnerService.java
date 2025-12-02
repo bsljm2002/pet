@@ -206,6 +206,11 @@ public class PartnerService {
             partner.updateImage(req.getImageUrl());
         }
 
+        // 갤러리 이미지 업데이트
+        if (req.getGalleryImages() != null) {
+            partner.updateGalleryImages(req.joinList(req.getGalleryImages()));
+        }
+
         // 영업 상태 업데이트
         if (req.getIsOpen() != null && partner.getIsOpen() != req.getIsOpen()) {
             partner.toggleOpen();

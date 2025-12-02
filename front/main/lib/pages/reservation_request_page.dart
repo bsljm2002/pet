@@ -42,8 +42,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
     final now = DateTime.now();
     _selectedDate = DateTime(now.year, now.month, now.day);
     _focusedDay = _selectedDate!;
-    _selectedSpecialty =
-        widget.vet.specialties.isNotEmpty ? widget.vet.specialties.first : null;
+    _selectedSpecialty = widget.vet.specialties.isNotEmpty
+        ? widget.vet.specialties.first
+        : null;
 
     // 생성된 타임슬롯에서 첫 번째 시간 선택
     final timeSlots = _generateTimeSlots();
@@ -71,7 +72,6 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
         widget.vet.workingEndHours != null &&
         widget.vet.workingStartHours!.isNotEmpty &&
         widget.vet.workingEndHours!.isNotEmpty) {
-
       List<String> timeSlots = [];
 
       try {
@@ -131,7 +131,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
       print('🔍 [DEBUG] 펫 목록 로드 시작 - 사용자 ID: ${currentUser.id}');
 
-      final response = await PetService().getPetsByOwner(currentUser.id.toString());
+      final response = await PetService().getPetsByOwner(
+        currentUser.id.toString(),
+      );
 
       print('🔍 [DEBUG] 펫 목록 응답: $response');
 
@@ -184,32 +186,32 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
   Future<void> _submit() async {
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 날짜를 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 날짜를 선택해 주세요.')));
       return;
     }
 
     if (_selectedTime == null || _selectedTime!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('예약 시간을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('예약 시간을 선택해 주세요.')));
       return;
     }
 
     if (_petProfiles.isNotEmpty && _selectedPetIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('진료 받을 반려동물을 선택해 주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('진료 받을 반려동물을 선택해 주세요.')));
       return;
     }
 
     // 로그인 사용자 확인
     final currentUser = AuthService().currentUser;
     if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('로그인이 필요합니다.')));
       return;
     }
 
@@ -230,7 +232,8 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
       print('🔍 [DEBUG] 선택된 펫 ID 목록: $selectedPets');
 
       // 날짜와 시간 조합
-      final dateTimeStr = '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}T${_selectedTime!}:00.000+09:00';
+      final dateTimeStr =
+          '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}T${_selectedTime!}:00.000+09:00';
 
       // Specialty를 백엔드 enum으로 매핑 (VetSpecialty enum)
       String? vetSpecialtyEnum = _mapSpecialtyToEnum(_selectedSpecialty);
@@ -257,9 +260,11 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           'partner_id': int.parse(widget.vet.id),
           'user_id': currentUser.id,
           'user_type': 'HOSPITAL',
-          'vet_specialties': vetSpecialtyEnum != null ? [vetSpecialtyEnum] : ['GENERAL'],
+          'vet_specialties': vetSpecialtyEnum != null
+              ? [vetSpecialtyEnum]
+              : ['GENERAL'],
           'pets_id': petId,
-          'visit_date_time': dateTimeStr,  // 방문 예약 시간 (사용자가 선택한 날짜/시간)
+          'visit_date_time': dateTimeStr, // 방문 예약 시간 (사용자가 선택한 날짜/시간)
           'resv_urls': [],
           'resv_content': content,
         };
@@ -283,7 +288,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           } else {
             failCount++;
             failedPetNames.add(petName);
-            print('❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}');
+            print(
+              '❌ [FAIL] $petName 예약 실패: ${responseData['error']} - ${responseData['message']}',
+            );
           }
         } else {
           failCount++;
@@ -308,7 +315,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}'
+              '⚠️ ${successCount}마리 성공, ${failCount}마리 실패\n실패: ${failedPetNames.join(", ")}',
             ),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 4),
@@ -329,9 +336,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
       Navigator.of(context).pop();
 
       print('❌ [ERROR] 예약 생성 오류: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ 예약 요청 중 오류 발생: $e')));
     }
   }
 
@@ -360,41 +367,93 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 252, 255, 224),
       appBar: AppBar(
-        title: const Text('예약 신청'),
+        backgroundColor: const Color.fromARGB(255, 252, 255, 224),
+        foregroundColor: const Color.fromARGB(255, 0, 108, 82),
+        title: const Text('방문예약', style: TextStyle(fontSize: 20)),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _VetHeader(vet: widget.vet),
             const SizedBox(height: 24),
-            _buildPetSelectionCard(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildPetSelectionCard(),
+            ),
             const SizedBox(height: 20),
-            _buildScheduleCard(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildScheduleCard(),
+            ),
             const SizedBox(height: 20),
-            _buildSpecialtyCard(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildSpecialtyCard(),
+            ),
             const SizedBox(height: 20),
-            _buildMemoCard(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildMemoCard(),
+            ),
             const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4FC59E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text(
-                  '예약 요청 보내기',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4FC59E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    '예약 요청 보내기',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 달력 날짜 셀 빌더 (발바닥 모양)
+  Widget _buildCalendarDay(DateTime date, bool isSelected, bool isToday) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 배경 (선택된 날짜 또는 오늘 날짜인 경우 발바닥 모양)
+          if (isSelected || isToday)
+            CustomPaint(
+              size: const Size(40, 40),
+              painter: _PawMarkPainter(
+                color: isSelected
+                    ? const Color(0xFF4FC59E)
+                    : const Color(0xFF4FC59E).withOpacity(0.3),
+              ),
+            ),
+          // 날짜 텍스트
+          Text(
+            '${date.day}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected
+                  ? Colors.white
+                  : (isToday ? const Color(0xFF4FC59E) : Colors.black87),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -434,16 +493,22 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               formatButtonVisible: false,
               titleCentered: true,
             ),
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: const Color(0xFF4FC59E).withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: const BoxDecoration(
-                color: Color(0xFF4FC59E),
-                shape: BoxShape.circle,
-              ),
-              weekendTextStyle: const TextStyle(color: Colors.redAccent),
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(color: Colors.transparent),
+              selectedDecoration: BoxDecoration(color: Colors.transparent),
+              weekendTextStyle: TextStyle(color: Colors.redAccent),
+            ),
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, date, _) {
+                return _buildCalendarDay(date, false, false);
+              },
+              selectedBuilder: (context, date, _) {
+                return _buildCalendarDay(date, true, false);
+              },
+              todayBuilder: (context, date, _) {
+                final isSelected = isSameDay(_selectedDate, date);
+                return _buildCalendarDay(date, isSelected, true);
+              },
             ),
             calendarFormat: CalendarFormat.month,
           ),
@@ -451,12 +516,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           DropdownButtonFormField<String>(
             value: _selectedTime,
             items: _generateTimeSlots()
-                .map(
-                  (time) => DropdownMenuItem(
-                    value: time,
-                    child: Text(time),
-                  ),
-                )
+                .map((time) => DropdownMenuItem(value: time, child: Text(time)))
                 .toList(),
             onChanged: (value) => setState(() => _selectedTime = value),
             decoration: const InputDecoration(
@@ -529,7 +589,9 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                             imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              print('❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error');
+                              print(
+                                '❌ [ERROR] 이미지 로드 실패 (${profile.name}): $error',
+                              );
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -548,10 +610,14 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                                 print('✅ [DEBUG] 이미지 로드 완료 (${profile.name})');
                                 return child;
                               }
-                              final progress = loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                              final progress =
+                                  loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
                                   : 0.0;
-                              print('⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%');
+                              print(
+                                '⏳ [DEBUG] 이미지 로딩 중 (${profile.name}): ${(progress * 100).toStringAsFixed(0)}%',
+                              );
                               return const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
@@ -609,9 +675,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  color: isSelected
-                      ? const Color(0xFF003829)
-                      : Colors.black87,
+                  color: isSelected ? const Color(0xFF003829) : Colors.black87,
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
@@ -662,10 +726,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               ),
               child: const Text(
                 '반려동물 정보를 불러오는 중...',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
                 textAlign: TextAlign.center,
               ),
             )
@@ -681,10 +742,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 children: [
                   Text(
                     '❌ $_petLoadError',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      height: 1.5,
-                    ),
+                    style: const TextStyle(color: Colors.red, height: 1.5),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton.icon(
@@ -694,7 +752,10 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4FC59E),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                   ),
                 ],
@@ -710,10 +771,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               ),
               child: const Text(
                 '등록된 반려동물 프로필이 없습니다.\n홈 화면에서 프로필을 추가해 주세요.',
-                style: TextStyle(
-                  color: Color(0xFF2B8C6C),
-                  height: 1.5,
-                ),
+                style: TextStyle(color: Color(0xFF2B8C6C), height: 1.5),
               ),
             )
           else
@@ -758,9 +816,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
                 )
                 .toList(),
             onChanged: (value) => setState(() => _selectedSpecialty = value),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(border: OutlineInputBorder()),
           ),
         ],
       ),
@@ -800,7 +856,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withOpacity(0.06),
@@ -819,53 +875,419 @@ class _VetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundColor: const Color(0xFFE6F7F1),
-          backgroundImage: vet.imageUrl.isNotEmpty ? NetworkImage(vet.imageUrl) : null,
-          child: vet.imageUrl.isNotEmpty
-              ? null
-              : const Icon(Icons.local_hospital_outlined, color: Color(0xFF4FC59E)),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                vet.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                vet.doctorName ?? '',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF4FC59E),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.star, size: 16, color: Colors.amber),
-                  const SizedBox(width: 4),
-                  Text('${vet.rating}점'),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text('${vet.distance}km'),
-                ],
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: const Color(0xFFE6F7F1),
+            backgroundImage: vet.imageUrl.isNotEmpty
+                ? NetworkImage(vet.imageUrl)
+                : null,
+            child: vet.imageUrl.isNotEmpty
+                ? null
+                : const Icon(
+                    Icons.local_hospital_outlined,
+                    color: Color(0xFF4FC59E),
+                  ),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vet.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  vet.doctorName ?? '',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF4FC59E),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text('${vet.rating}점'),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text('${vet.distance}km'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
+}
+
+/// 발바닥 모양을 그리는 CustomPainter
+class _PawMarkPainter extends CustomPainter {
+  final Color color;
+
+  _PawMarkPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+
+    // mark.svg의 path를 40x40 크기에 맞게 스케일 조정
+    final scaleX = size.width / 353;
+    final scaleY = size.height / 342;
+    final offsetY = -size.height * 0.2; // 위로 20% 이동
+
+    // 첫 번째 path (우측 상단 발가락)
+    path.moveTo(350.751 * scaleX, 110.68 * scaleY + offsetY);
+    path.cubicTo(
+      348.418 * scaleX,
+      98.5128 * scaleY + offsetY,
+      335.951 * scaleX,
+      77.4795 * scaleY + offsetY,
+      304.751 * scaleX,
+      90.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      273.551 * scaleX,
+      103.88 * scaleY + offsetY,
+      266.751 * scaleX,
+      137.18 * scaleY + offsetY,
+      267.251 * scaleX,
+      152.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      267.084 * scaleX,
+      163.513 * scaleY + offsetY,
+      271.951 * scaleX,
+      186.88 * scaleY + offsetY,
+      292.751 * scaleX,
+      189.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      318.751 * scaleX,
+      193.18 * scaleY + offsetY,
+      333.751 * scaleX,
+      175.18 * scaleY + offsetY,
+      342.251 * scaleX,
+      161.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      349.051 * scaleX,
+      149.98 * scaleY + offsetY,
+      350.751 * scaleX,
+      140.513 * scaleY + offsetY,
+      350.751 * scaleX,
+      137.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      351.81 * scaleX,
+      131.346 * scaleY + offsetY,
+      353.292 * scaleX,
+      117.88 * scaleY + offsetY,
+      350.751 * scaleX,
+      110.68 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 두 번째 path (중앙 상단 발가락)
+    path.moveTo(256.751 * scaleX, 7.17951 * scaleY + offsetY);
+    path.cubicTo(
+      247.584 * scaleX,
+      -0.487154 * scaleY + offsetY,
+      224.051 * scaleX,
+      -7.92049 * scaleY + offsetY,
+      203.251 * scaleX,
+      23.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      182.451 * scaleX,
+      55.2795 * scaleY + offsetY,
+      189.584 * scaleX,
+      87.5128 * scaleY + offsetY,
+      195.751 * scaleX,
+      99.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      201.251 * scaleX,
+      112.346 * scaleY + offsetY,
+      217.551 * scaleX,
+      134.68 * scaleY + offsetY,
+      238.751 * scaleX,
+      122.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      259.951 * scaleX,
+      110.68 * scaleY + offsetY,
+      271.584 * scaleX,
+      86.0128 * scaleY + offsetY,
+      274.751 * scaleX,
+      75.1795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      276.918 * scaleX,
+      67.3462 * scaleY + offsetY,
+      279.951 * scaleX,
+      48.2795 * scaleY + offsetY,
+      274.751 * scaleX,
+      34.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      269.551 * scaleX,
+      21.0795 * scaleY + offsetY,
+      260.584 * scaleX,
+      10.6795 * scaleY + offsetY,
+      256.751 * scaleX,
+      7.17951 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 세 번째 path (좌측 상단 발가락)
+    path.moveTo(125.751 * scaleX, 1.67951 * scaleY + offsetY);
+    path.cubicTo(
+      114.251 * scaleX,
+      -1.32049 * scaleY + offsetY,
+      88.951 * scaleX,
+      1.07951 * scaleY + offsetY,
+      79.751 * scaleX,
+      34.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      70.551 * scaleX,
+      68.2795 * scaleY + offsetY,
+      88.9177 * scaleX,
+      99.3462 * scaleY + offsetY,
+      99.251 * scaleX,
+      110.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      105.584 * scaleX,
+      118.68 * scaleY + offsetY,
+      122.751 * scaleX,
+      132.28 * scaleY + offsetY,
+      140.751 * scaleX,
+      122.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      158.751 * scaleX,
+      113.08 * scaleY + offsetY,
+      165.584 * scaleX,
+      84.6795 * scaleY + offsetY,
+      166.751 * scaleX,
+      71.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      166.751 * scaleX,
+      59.0128 * scaleY + offsetY,
+      163.451 * scaleX,
+      30.4795 * scaleY + offsetY,
+      150.251 * scaleX,
+      17.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      137.051 * scaleX,
+      4.87951 * scaleY + offsetY,
+      128.418 * scaleX,
+      1.67951 * scaleY + offsetY,
+      125.751 * scaleX,
+      1.67951 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 네 번째 path (좌측 발가락)
+    path.moveTo(21.751 * scaleX, 87.1795 * scaleY + offsetY);
+    path.cubicTo(
+      13.751 * scaleX,
+      89.0128 * scaleY + offsetY,
+      -1.64897 * scaleX,
+      99.1795 * scaleY + offsetY,
+      0.75103 * scaleX,
+      125.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      3.15103 * scaleX,
+      151.18 * scaleY + offsetY,
+      12.4177 * scaleX,
+      164.68 * scaleY + offsetY,
+      16.751 * scaleX,
+      168.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      26.0844 * scaleX,
+      178.513 * scaleY + offsetY,
+      49.951 * scaleX,
+      196.38 * scaleY + offsetY,
+      70.751 * scaleX,
+      185.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      91.551 * scaleX,
+      173.98 * scaleY + offsetY,
+      87.0844 * scaleX,
+      140.513 * scaleY + offsetY,
+      82.251 * scaleX,
+      125.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      78.751 * scaleX,
+      116.346 * scaleY + offsetY,
+      67.651 * scaleX,
+      97.0795 * scaleY + offsetY,
+      51.251 * scaleX,
+      90.6795 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      34.851 * scaleX,
+      84.2795 * scaleY + offsetY,
+      24.751 * scaleX,
+      85.6795 * scaleY + offsetY,
+      21.751 * scaleX,
+      87.1795 * scaleY + offsetY,
+    );
+    path.close();
+
+    // 다섯 번째 path (메인 발바닥)
+    path.moveTo(245.751 * scaleX, 174.68 * scaleY + offsetY);
+    path.cubicTo(
+      239.918 * scaleX,
+      166.18 * scaleY + offsetY,
+      220.651 * scaleX,
+      147.98 * scaleY + offsetY,
+      190.251 * scaleX,
+      143.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      180.418 * scaleX,
+      142.513 * scaleY + offsetY,
+      158.751 * scaleX,
+      142.28 * scaleY + offsetY,
+      150.751 * scaleX,
+      146.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      140.751 * scaleX,
+      152.18 * scaleY + offsetY,
+      133.251 * scaleX,
+      150.18 * scaleY + offsetY,
+      112.251 * scaleX,
+      171.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      110.251 * scaleX,
+      174.68 * scaleY + offsetY,
+      105.951 * scaleX,
+      181.58 * scaleY + offsetY,
+      104.751 * scaleX,
+      185.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      103.551 * scaleX,
+      188.78 * scaleY + offsetY,
+      89.251 * scaleX,
+      203.013 * scaleY + offsetY,
+      82.251 * scaleX,
+      209.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      73.9177 * scaleX,
+      216.513 * scaleY + offsetY,
+      56.651 * scaleX,
+      236.18 * scaleY + offsetY,
+      54.251 * scaleX,
+      260.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      51.851 * scaleX,
+      284.18 * scaleY + offsetY,
+      64.251 * scaleX,
+      306.18 * scaleY + offsetY,
+      70.751 * scaleX,
+      314.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      77.751 * scaleX,
+      324.013 * scaleY + offsetY,
+      99.751 * scaleX,
+      343.08 * scaleY + offsetY,
+      131.751 * scaleX,
+      340.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      137.251 * scaleX,
+      340.013 * scaleY + offsetY,
+      150.951 * scaleX,
+      337.98 * scaleY + offsetY,
+      161.751 * scaleX,
+      335.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      172.551 * scaleX,
+      332.38 * scaleY + offsetY,
+      188.918 * scaleX,
+      334.013 * scaleY + offsetY,
+      195.751 * scaleX,
+      335.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      202.584 * scaleX,
+      337.013 * scaleY + offsetY,
+      219.551 * scaleX,
+      340.68 * scaleY + offsetY,
+      232.751 * scaleX,
+      340.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      249.251 * scaleX,
+      340.68 * scaleY + offsetY,
+      272.751 * scaleX,
+      332.68 * scaleY + offsetY,
+      288.751 * scaleX,
+      307.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      304.751 * scaleX,
+      281.68 * scaleY + offsetY,
+      299.751 * scaleX,
+      254.18 * scaleY + offsetY,
+      296.251 * scaleX,
+      239.68 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      293.451 * scaleX,
+      228.08 * scaleY + offsetY,
+      275.751 * scaleX,
+      209.846 * scaleY + offsetY,
+      267.251 * scaleX,
+      202.18 * scaleY + offsetY,
+    );
+    path.cubicTo(
+      262.418 * scaleX,
+      198.18 * scaleY + offsetY,
+      251.351 * scaleX,
+      187.08 * scaleY + offsetY,
+      245.751 * scaleX,
+      174.68 * scaleY + offsetY,
+    );
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

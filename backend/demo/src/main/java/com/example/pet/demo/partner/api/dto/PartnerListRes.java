@@ -31,6 +31,7 @@ public class PartnerListRes {
     private Double distance;
     private Boolean isOpen;
     private String imageUrl;
+    private List<String> galleryImages;
     private String description;
     private List<String> specialties;
     private List<String> availableTimes;
@@ -58,6 +59,7 @@ public class PartnerListRes {
                 .distance(partner.getDistance())
                 .isOpen(partner.getIsOpen())
                 .imageUrl(partner.getImageUrl())
+                .galleryImages(parseCommaSeparated(partner.getGalleryImages()))
                 .description(partner.getDescription())
                 .specialties(convertSpecialtiesToKorean(parseCommaSeparated(partner.getSpecialties())))
                 .availableTimes(parseCommaSeparated(partner.getAvailableTimes()))
@@ -84,6 +86,7 @@ public class PartnerListRes {
                 .distance(partner.getDistance())
                 .isOpen(partner.getIsOpen())
                 .imageUrl(partner.getImageUrl())
+                .galleryImages(parseCommaSeparated(partner.getGalleryImages()))
                 .description(partner.getDescription())
                 .specialties(convertSpecialtiesToKorean(parseCommaSeparated(partner.getSpecialties())))
                 .availableTimes(parseCommaSeparated(partner.getAvailableTimes()))

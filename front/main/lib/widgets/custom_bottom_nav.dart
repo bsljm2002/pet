@@ -27,13 +27,13 @@ class CustomBottomNav extends StatelessWidget {
         255,
         255,
       ), // 선택된 탭 아이콘/텍스트 색상 (흰색)
-      unselectedItemColor: Colors.grey, // 선택되지 않은 탭 색상 (회색)
-      backgroundColor: const Color.fromARGB(
+      unselectedItemColor: const Color.fromARGB(
         255,
-        0,
-        33,
-        23,
-      ), // 네비게이션 바 배경색 (짙은 녹색)
+        8,
+        66,
+        30,
+      ), // 선택되지 않은 탭 색상 (회색)
+      backgroundColor: const Color(0xFF3BA688), // 네비게이션 바 배경색 (짙은 녹색)
       selectedFontSize: 12, // 선택된 탭 폰트 크기
       unselectedFontSize: 12, // 선택되지 않은 탭 폰트 크기
       items: [
@@ -44,7 +44,9 @@ class CustomBottomNav extends StatelessWidget {
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
-              currentIndex == 0 ? Colors.white : Colors.grey,
+              currentIndex == 0
+                  ? Colors.white
+                  : const Color.fromARGB(255, 8, 66, 30),
               BlendMode.srcIn,
             ),
           ),
@@ -57,7 +59,9 @@ class CustomBottomNav extends StatelessWidget {
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
-              currentIndex == 1 ? Colors.white : Colors.grey,
+              currentIndex == 1
+                  ? Colors.white
+                  : const Color.fromARGB(255, 8, 66, 30),
               BlendMode.srcIn,
             ),
           ),
@@ -70,7 +74,9 @@ class CustomBottomNav extends StatelessWidget {
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
-              currentIndex == 2 ? Colors.white : Colors.grey,
+              currentIndex == 2
+                  ? Colors.white
+                  : const Color.fromARGB(255, 8, 66, 30),
               BlendMode.srcIn,
             ),
           ),
@@ -83,7 +89,9 @@ class CustomBottomNav extends StatelessWidget {
             width: 24,
             height: 24,
             colorFilter: ColorFilter.mode(
-              currentIndex == 3 ? Colors.white : Colors.grey,
+              currentIndex == 3
+                  ? Colors.white
+                  : const Color.fromARGB(255, 8, 66, 30),
               BlendMode.srcIn,
             ),
           ),

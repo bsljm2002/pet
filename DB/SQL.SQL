@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `pets` (
   `species`      ENUM('DOG','CAT') NOT NULL,
   `p_birthdate`  DATE NOT NULL,
   `weight`       DECIMAL(4,1) NOT NULL,
-  `abti_type_code` ENUM('ISTJ','ISFJ','INFJ','INTJ','ISTP','ISFP','INFP','INTP',
+  `abit_type_code` ENUM('ISTJ','ISFJ','INFJ','INTJ','ISTP','ISFP','INFP','INTP',
                         'ESTP','ESFP','ENFP','ENTP','ESTJ','ESFJ','ENFJ','ENTJ') NULL,
   `p_image_url`  VARCHAR(2048) NOT NULL,
   `p_name`       VARCHAR(20) NOT NULL,

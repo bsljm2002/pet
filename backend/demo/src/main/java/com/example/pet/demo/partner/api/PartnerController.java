@@ -1,6 +1,7 @@
 package com.example.pet.demo.partner.api;
 
 import com.example.pet.demo.common.ApiResponse;
+import com.example.pet.demo.media.FileStorageService;
 import com.example.pet.demo.partner.api.dto.PartnerCreateReq;
 import com.example.pet.demo.partner.api.dto.PartnerListRes;
 import com.example.pet.demo.partner.api.dto.PartnerRes;
@@ -8,9 +9,11 @@ import com.example.pet.demo.partner.api.dto.PartnerUpdateReq;
 import com.example.pet.demo.partner.app.PartnerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +29,7 @@ import java.util.Map;
 public class PartnerController {
 
     private final PartnerService partnerService;
+    private final FileStorageService fileStorageService;
 
     /**
      * 파트너 목록 조회
@@ -122,7 +126,25 @@ public class PartnerController {
     }
 
     /**
-     * 파트너 이미지 수정
+     * 파트너 이미지 업로드
+     *
+     * POST /api/v1/partners/image?userId={userId}
+     *
+     * @param userId 사용자 ID
+     * @param file 업로드할 이미지 파일
+     * @return 업로드된 이미지 URL
+     */
+    @PostMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadPartnerImage(
+            @RequestParam("userId") Long userId,
+            @RequestParam("file") MultipartFile file
+    ) throws Exception {
+        String url = fileStorageService.savePartnerImage(userId, file);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("imageUrl", url)));
+    }
+
+    /**
+     * 파트너 이미지 수정 (URL)
      *
      * PATCH /api/v1/partners/{partnerId}/image
      *

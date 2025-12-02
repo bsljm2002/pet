@@ -19,10 +19,9 @@ public class PetService {
 
     public Long create(PetCreateReq req) {
         // Normalize simple fields
-        String species = req.species().toUpperCase();
-        String name = req.name().trim();
-        String abit = req.abitTypeCode().toUpperCase();
-        String gender = req.gender().toUpperCase();
+        String species = req.species() != null ? req.species().toUpperCase() : null;
+        String name = req.name() != null ? req.name().trim() : null;
+        String gender = req.gender() != null ? req.gender().toUpperCase() : null;
         String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
 
         // Use default placeholder if imageUrl is null (for database NOT NULL constraint)
@@ -33,7 +32,6 @@ public class PetService {
                 species,
                 req.birthdate(),
                 req.weight(),
-                abit,
                 imageUrl,
                 name,
                 gender,
@@ -48,6 +46,32 @@ public class PetService {
     public Pet getPetById(Long id) {
         return pets.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pet not found with id:" + id));
+    }
+
+    public void update(Long id, PetCreateReq req) {
+        // 펫이 존재하는지 확인
+        Pet pet = pets.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found with id: " + id));
+
+        // Normalize fields
+        String species = req.species() != null ? req.species().toUpperCase() : null;
+        String name = req.name() != null ? req.name().trim() : null;
+        String gender = req.gender() != null ? req.gender().toUpperCase() : null;
+        String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
+
+        // Use existing imageUrl if not provided
+        String imageUrl = req.imageUrl() != null ? req.imageUrl() : pet.getImageUrl();
+
+        // Update pet
+        pets.update(
+                id,
+                species,
+                req.birthdate(),
+                req.weight(),
+                imageUrl,
+                name,
+                gender,
+                speciesDetail);
     }
 
     public void delete(Long id) {

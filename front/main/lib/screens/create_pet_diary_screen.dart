@@ -44,7 +44,6 @@ class _CreatePetDiaryScreenState extends State<CreatePetDiaryScreen> {
       final response = await LLMService().generateDiary(
         petName: widget.profile.name,
         breed: widget.profile.speciesDetail ?? widget.profile.species,
-        mbti: widget.profile.abtiTypeCode ?? 'ENFP',
         weight: _weight,
         heartRate: _heartRate,
         stressLevel: _stressLevel,

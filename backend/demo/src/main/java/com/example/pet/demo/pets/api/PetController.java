@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 @RestController
 @RequestMapping("/api/v1/pets")
@@ -70,6 +71,14 @@ public class PetController {
     public ResponseEntity<ApiResponse<Pet>> getPetById(@PathVariable Long id) {
         return ResponseEntity.ok(
                 ApiResponse.ok(petService.getPetById(id)));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> updatePet(
+            @PathVariable Long id,
+            @Valid @RequestBody PetCreateReq req) {
+        petService.update(id, req);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("id", id)));
     }
 
     @DeleteMapping("/{id}")

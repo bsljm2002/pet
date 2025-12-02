@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import '../models/pet_profile.dart';
 import '../services/pet_service.dart';
 import '../services/auth_service.dart';
-import 'abti_test_screen.dart';
 
 /// 펫 프로필 수정 화면
 ///
@@ -14,7 +13,6 @@ import 'abti_test_screen.dart';
 /// - 프로필 이미지 변경
 /// - 이름, 생년월일, 품종, 알고 있는 질환 수정
 /// - 성별 변경
-/// - ABTI 테스트 재진행
 class EditPetProfileScreen extends StatefulWidget {
   final PetProfile profile;
 
@@ -31,8 +29,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
   late TextEditingController _breedController;
   late TextEditingController _diseaseController;
   late TextEditingController _weightController;
-
-  String? _selectedAbtiType;
 
   // 선택된 프로필 이미지 URL (임시)
   String? _selectedImageUrl;
@@ -112,7 +108,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
     _weightController =
         TextEditingController(text: widget.profile.weight.toString());
 
-    _selectedAbtiType = widget.profile.abtiTypeCode;
     _selectedImageUrl = widget.profile.imageUrl;
     _selectedGender = widget.profile.gender;
     _selectedSpecies = widget.profile.species.toLowerCase();
@@ -317,7 +312,7 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
                 onTap: _showImageSourceDialog,
                 child: Container(
                   width: 100,
-                  height: 200,
+                  height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.8),
@@ -362,11 +357,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
               _buildGenderButton('FEMALE', Icons.female, Colors.red),
             ],
           ),
-          SizedBox(height: 30),
-          // ABTI 테스트 섹션
-          _buildSectionHeader('ABTI 테스트', isRequired: true),
-          SizedBox(height: 20),
-          _buildAbtiTestSection(),
           SizedBox(height: 100),
         ],
       ),
@@ -816,122 +806,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
     );
   }
 
-  /// ABTI 테스트 섹션
-  Widget _buildAbtiTestSection() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _selectedAbtiType != null
-              ? const Color.fromARGB(255, 0, 108, 82)
-              : Colors.grey.shade300,
-          width: 2,
-        ),
-      ),
-      child: Column(
-        children: [
-          if (_selectedAbtiType != null) ...[
-            // ABTI 결과 표시
-            Icon(
-              Icons.check_circle,
-              size: 48,
-              color: const Color.fromARGB(255, 0, 108, 82),
-            ),
-            SizedBox(height: 12),
-            Text(
-              '테스트 완료',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 108, 82),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'ABTI 유형: $_selectedAbtiType',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 108, 82),
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AbtiTestScreen(
-                      petName: _nameController.text.trim(),
-                      currentAbtiType: _selectedAbtiType,
-                    ),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _selectedAbtiType = result;
-                  });
-                }
-              },
-              icon: Icon(Icons.refresh),
-              label: Text('다시 테스트하기'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ] else ...[
-            // 테스트 시작 안내
-            Icon(Icons.quiz_outlined, size: 48, color: Colors.grey.shade400),
-            SizedBox(height: 12),
-            Text(
-              'ABTI 테스트를 진행해주세요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '반려동물의 성향을 파악하여\n맞춤형 케어를 제공합니다',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AbtiTestScreen(petName: _nameController.text.trim()),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _selectedAbtiType = result;
-                  });
-                }
-              },
-              icon: Icon(Icons.play_arrow),
-              label: Text('테스트 시작하기'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   /// 프로필 저장 버튼
   Widget _buildSaveButton() {
     return Container(
@@ -1006,16 +880,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
             return;
           }
 
-          if (_selectedAbtiType == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('ABTI 테스트를 완료해주세요.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-
           // ===== 2. 로딩 표시 =====
           showDialog(
             context: context,
@@ -1077,7 +941,6 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
               species: _selectedSpecies!.toUpperCase(),
               birthdate: _birthdayController.text.trim(),
               weight: weight,
-              abitTypeCode: _selectedAbtiType!,
               gender: _selectedGender!,
               speciesDetail: _selectedBreed,
               imageUrl: uploadedImageUrl,

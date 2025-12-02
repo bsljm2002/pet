@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import '../../models/partner_profile_model.dart';
 import '../../services/partner_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/image_upload_service.dart';
 import '../../widgets/location_picker_widget.dart';
 
 /// 파트너 프로필 등록/수정 화면
@@ -50,6 +53,15 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
   double? _latitude;
   double? _longitude;
 
+  // 이미지 정보
+  File? _selectedImageFile;
+  String? _selectedImageUrl;
+  final ImagePicker _imagePicker = ImagePicker();
+
+  // 갤러리 이미지 정보 (최대 8개)
+  List<File> _galleryImageFiles = [];
+  List<String> _galleryImageUrls = [];
+
   bool _isLoading = false;
 
   @override
@@ -89,12 +101,170 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
       _experience = profile.experience ?? '';
       _latitude = profile.latitude;
       _longitude = profile.longitude;
+      _selectedImageUrl = profile.imageUrl;
+      _galleryImageUrls = List.from(profile.galleryImages);
 
       // 기존 프로필 수정 시 영업시간 정보 로드
       if (currentUser != null) {
         _loadWorkingHours(int.parse(currentUser.id));
       }
     }
+  }
+
+  /// 이미지 선택 메서드
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImageFile = File(pickedFile.path);
+          _selectedImageUrl = pickedFile.path;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 선택 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 이미지 선택 소스 선택 다이얼로그
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF4FC59E)),
+                title: const Text('갤러리에서 선택'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF4FC59E)),
+                title: const Text('카메라로 촬영'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              if (_selectedImageFile != null || _selectedImageUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('이미지 제거'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _selectedImageFile = null;
+                      _selectedImageUrl = null;
+                    });
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 갤러리 이미지 추가 메서드
+  Future<void> _pickGalleryImage(ImageSource source) async {
+    if (_galleryImageFiles.length + _galleryImageUrls.length >= 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('최대 8개까지 추가할 수 있습니다'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _galleryImageFiles.add(File(pickedFile.path));
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 선택 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 갤러리 이미지 소스 선택 다이얼로그
+  void _showGalleryImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF4FC59E)),
+                title: const Text('갤러리에서 선택'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickGalleryImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF4FC59E)),
+                title: const Text('카메라로 촬영'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickGalleryImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 갤러리 이미지 제거
+  void _removeGalleryImage(int index, bool isFile) {
+    setState(() {
+      if (isFile) {
+        _galleryImageFiles.removeAt(index);
+      } else {
+        _galleryImageUrls.removeAt(index);
+      }
+    });
   }
 
   /// 영업시간 정보 로드 (기존 프로필 수정 시)
@@ -233,6 +403,46 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
     print('전화번호: ${_phoneController.text}');
     print('userId: $userId (${currentUser.username})');
 
+    // 이미지 업로드 (있는 경우)
+    String? uploadedImageUrl;
+    if (_selectedImageFile != null) {
+      try {
+        print('이미지 업로드 중...');
+        final imageService = ImageUploadService();
+        uploadedImageUrl = await imageService.uploadImage(
+          imageFile: _selectedImageFile!,
+          userId: userId,
+        );
+        print('이미지 업로드 성공: $uploadedImageUrl');
+      } catch (e) {
+        print('이미지 업로드 실패: $e');
+        // 이미지 업로드 실패해도 프로필은 등록하도록 함
+      }
+    } else if (_selectedImageUrl != null) {
+      // 기존 이미지 URL 유지
+      uploadedImageUrl = _selectedImageUrl;
+    }
+
+    // 갤러리 이미지 업로드
+    List<String> uploadedGalleryUrls = List.from(_galleryImageUrls);
+    if (_galleryImageFiles.isNotEmpty) {
+      try {
+        print('갤러리 이미지 업로드 중... (${_galleryImageFiles.length}개)');
+        final imageService = ImageUploadService();
+        for (var imageFile in _galleryImageFiles) {
+          final url = await imageService.uploadImage(
+            imageFile: imageFile,
+            userId: userId,
+          );
+          uploadedGalleryUrls.add(url);
+          print('갤러리 이미지 업로드 성공: $url');
+        }
+      } catch (e) {
+        print('갤러리 이미지 업로드 실패: $e');
+        // 갤러리 이미지 업로드 실패해도 프로필은 등록하도록 함
+      }
+    }
+
     // 신규 등록 시 중복 확인
     if (widget.existingProfile == null) {
       print('중복 프로필 확인 중...');
@@ -262,6 +472,8 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
       latitude: _latitude,
       longitude: _longitude,
       phone: _phoneController.text,
+      imageUrl: uploadedImageUrl,
+      galleryImages: uploadedGalleryUrls,
       description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
       specialties: _specialties,
       availableTimes: [], // 영업시간 기반 타임슬롯 생성을 위해 비움
@@ -382,27 +594,87 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: _partnerType == 'HOSPITAL' ? '병원명' : '서비스명',
-                      border: const OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '필수 항목입니다';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _doctorNameController,
-                    decoration: InputDecoration(
-                      labelText: _partnerType == 'HOSPITAL' ? '담당 수의사명 (선택)' : '담당자명 (선택)',
-                      border: const OutlineInputBorder(),
-                    ),
+                  // 서비스명/담당자명과 프로필 이미지를 한 줄에 배치
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 왼쪽: 입력 필드들
+                      Expanded(
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                labelText: _partnerType == 'HOSPITAL' ? '병원명' : '서비스명',
+                                border: const OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return '필수 항목입니다';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _doctorNameController,
+                              decoration: InputDecoration(
+                                labelText: _partnerType == 'HOSPITAL' ? '담당 수의사명 (선택)' : '담당자명 (선택)',
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // 오른쪽: 프로필 이미지
+                      GestureDetector(
+                        onTap: _showImageSourceDialog,
+                        child: Container(
+                          width: 100,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 240, 240, 240),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _selectedImageFile != null || _selectedImageUrl != null
+                                  ? const Color(0xFF4FC59E)
+                                  : const Color.fromARGB(255, 200, 200, 200),
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: _selectedImageFile != null
+                                ? Image.file(
+                                    _selectedImageFile!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : (_selectedImageUrl != null && _selectedImageUrl!.startsWith('http'))
+                                    ? Image.network(
+                                        _selectedImageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Center(
+                                            child: Icon(
+                                              Icons.add_a_photo,
+                                              size: 40,
+                                              color: Color.fromARGB(255, 180, 180, 180),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : const Center(
+                                        child: Icon(
+                                          Icons.add_a_photo,
+                                          size: 40,
+                                          color: Color.fromARGB(255, 180, 180, 180),
+                                        ),
+                                      ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
@@ -668,6 +940,172 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
                           : '펫시터 서비스에 대한 소개를 입력하세요',
                     ),
                     maxLines: 5,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 갤러리 사진
+                  const Text(
+                    '갤러리 사진',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '최대 8개까지 추가할 수 있습니다',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 갤러리 이미지 그리드
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _galleryImageFiles.length + _galleryImageUrls.length + 1,
+                    itemBuilder: (context, index) {
+                      // 추가 버튼
+                      if (index == _galleryImageFiles.length + _galleryImageUrls.length) {
+                        if (_galleryImageFiles.length + _galleryImageUrls.length >= 8) {
+                          return const SizedBox.shrink();
+                        }
+                        return GestureDetector(
+                          onTap: _showGalleryImageSourceDialog,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 2,
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 32,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '추가',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      // 기존 URL 이미지 표시
+                      if (index < _galleryImageUrls.length) {
+                        return Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: const Color(0xFF4FC59E),
+                                  width: 2,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.network(
+                                  _galleryImageUrls[index],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(Icons.error),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () => _removeGalleryImage(index, false),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+
+                      // 새로 추가된 파일 이미지 표시
+                      final fileIndex = index - _galleryImageUrls.length;
+                      return Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF4FC59E),
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.file(
+                                _galleryImageFiles[fileIndex],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _removeGalleryImage(fileIndex, true),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
 

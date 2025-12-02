@@ -13,7 +13,16 @@ public interface PetPersistencePort {
             String species,
             LocalDate birthdate,
             BigDecimal weight,
-            String abitTypeCode,
+            String imageUrl,
+            String name,
+            String gender,
+            String speciesDetail
+    );
+    void update(
+            Long id,
+            String species,
+            LocalDate birthdate,
+            BigDecimal weight,
             String imageUrl,
             String name,
             String gender,

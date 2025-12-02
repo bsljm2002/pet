@@ -14,9 +14,11 @@ class MyConsultationsPage extends StatefulWidget {
   State<MyConsultationsPage> createState() => _MyConsultationsPageState();
 }
 
-class _MyConsultationsPageState extends State<MyConsultationsPage> {
+class _MyConsultationsPageState extends State<MyConsultationsPage>
+    with SingleTickerProviderStateMixin {
   final ConsultationService _consultationService = ConsultationService();
   final AuthService _authService = AuthService();
+  late TabController _tabController;
   List<ConsultationRecord> _consultations = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -24,7 +26,14 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadConsultations();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadConsultations() async {
@@ -61,23 +70,53 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 248, 246, 240),
       appBar: AppBar(
-        title: const Text('내 상담 내역'),
-        backgroundColor: const Color(0xFF4FC59E),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF3BA688)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          '내 상담 내역',
+          style: TextStyle(
+            color: Color(0xFF3BA688),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Color(0xFF3BA688)),
             onPressed: _loadConsultations,
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF3BA688),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF3BA688),
+          tabs: const [
+            Tab(text: '대기중'),
+            Tab(text: '답변완료'),
+          ],
+        ),
       ),
-      body: _buildBody(),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // 대기중 탭
+          _buildBody(isPending: true),
+          // 답변완료 탭
+          _buildBody(isPending: false),
+        ],
+      ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({required bool isPending}) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -116,7 +155,18 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
       );
     }
 
-    if (_consultations.isEmpty) {
+    // isPending 상태에 따라 필터링
+    final filteredConsultations = _consultations.where((consultation) {
+      if (isPending) {
+        // 대기중: PENDING 상태
+        return consultation.status == 'PENDING';
+      } else {
+        // 답변완료: ANSWERED 상태
+        return consultation.status == 'ANSWERED';
+      }
+    }).toList();
+
+    if (filteredConsultations.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -128,7 +178,7 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              '상담 내역이 없습니다',
+              isPending ? '대기중인 상담이 없습니다' : '답변완료된 상담이 없습니다',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey.shade600,
@@ -137,11 +187,14 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '병원이나 펫시터에게 간편 상담을 요청해보세요',
+              isPending
+                  ? '병원이나 펫시터에게 간편 상담을 요청해보세요'
+                  : '답변을 기다리는 상담이 답변완료되면 여기에 표시됩니다',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade500,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -153,9 +206,9 @@ class _MyConsultationsPageState extends State<MyConsultationsPage> {
       color: const Color(0xFF4FC59E),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _consultations.length,
+        itemCount: filteredConsultations.length,
         itemBuilder: (context, index) {
-          final consultation = _consultations[index];
+          final consultation = filteredConsultations[index];
           return _buildConsultationCard(consultation);
         },
       ),

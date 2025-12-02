@@ -11,6 +11,7 @@ class SitterModel {
   final double distance; // 거리 (km)
   final bool isAvailable; // 현재 예약 가능 여부
   final String imageUrl;
+  final List<String> galleryImages; // 갤러리 이미지 목록
   final String description; // 펫시터 소개
   final List<String> certifications; // 자격증/인증 사항
   final String experience; // 경력
@@ -29,6 +30,7 @@ class SitterModel {
     required this.distance,
     required this.isAvailable,
     required this.imageUrl,
+    this.galleryImages = const [],
     required this.description,
     this.certifications = const [],
     this.experience = '',
@@ -62,6 +64,11 @@ class SitterModel {
       distance: (json['distance'] ?? 0.0).toDouble(),
       isAvailable: json['isOpen'] ?? json['isAvailable'] ?? true,  // 백엔드는 isOpen 필드 사용
       imageUrl: json['imageUrl'] ?? '',
+      galleryImages: json['galleryImages'] != null
+          ? (json['galleryImages'] is List
+              ? List<String>.from(json['galleryImages'])
+              : [])
+          : [],
       description: json['description'] ?? '',
       certifications: json['certifications'] != null
           ? (json['certifications'] is List
@@ -88,6 +95,7 @@ class SitterModel {
       'distance': distance,
       'isAvailable': isAvailable,
       'imageUrl': imageUrl,
+      'galleryImages': galleryImages,
       'description': description,
       'certifications': certifications,
       'experience': experience,

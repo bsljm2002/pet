@@ -4,7 +4,7 @@ import '../models/review_model.dart';
 
 /// 리뷰 서비스
 class ReviewService {
-  static const String baseUrl = 'http://223.130.130.225:9075/api/v1/reviews';
+  static const String baseUrl = 'http://10.0.2.2:9075/api/v1/reviews';
 
   /// 파트너별 리뷰 목록 조회
   Future<List<ReviewModel>> getReviewsByPartnerId(int partnerId) async {

@@ -120,29 +120,35 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.chatRoom.partnerName,
-              style: const TextStyle(fontSize: 18),
-            ),
-            Text(
-              widget.chatRoom.serviceTypeLabel,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
-            ),
-          ],
+    return DefaultTabController(
+      length: 1,
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 248, 246, 240),
+        appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: const Color.fromARGB(255, 0, 108, 82),
+          elevation: 0,
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
-      ),
-      body: Column(
-        children: [
-          // 메시지 목록
-          Expanded(
+        body: Column(
+          children: [
+            Container(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              child: const TabBar(
+                labelColor: Color.fromARGB(255, 0, 108, 82),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Color.fromARGB(255, 0, 108, 82),
+                tabs: [
+                  Tab(text: '채팅방'),
+                ],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Column(
+                    children: [
+                      // 메시지 목록
+                      Expanded(
             child: StreamBuilder<List<ChatMessageModel>>(
               stream: _chatService.getMessagesStream(widget.chatRoom.id),
               builder: (context, snapshot) {
@@ -258,7 +264,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ),
             ),
           ),
-        ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -84,10 +84,7 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('이미지 선택 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('이미지 선택 실패: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -113,7 +110,10 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF4FC59E)),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF4FC59E),
+                ),
                 title: const Text('갤러리에서 선택'),
                 onTap: () {
                   Navigator.pop(context);
@@ -179,10 +179,7 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('상담 요청 실패: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('상담 요청 실패: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
@@ -196,11 +193,11 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color.fromARGB(255, 252, 255, 224),
       appBar: AppBar(
-        title: const Text('간편 상담'),
-        backgroundColor: const Color(0xFF4FC59E),
-        foregroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 252, 255, 224),
+        foregroundColor: const Color.fromARGB(255, 0, 108, 82),
+        title: const Text('간편 상담', style: TextStyle(fontSize: 20)),
       ),
       body: Form(
         key: _formKey,
@@ -300,13 +297,9 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(
-                  child: _buildPetTypeChip('강아지', Icons.pets),
-                ),
+                Expanded(child: _buildPetTypeChip('강아지', Icons.pets)),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildPetTypeChip('고양이', Icons.pets),
-                ),
+                Expanded(child: _buildPetTypeChip('고양이', Icons.pets)),
               ],
             ),
 
@@ -334,7 +327,10 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4FC59E), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF4FC59E),
+                    width: 2,
+                  ),
                 ),
                 filled: true,
                 fillColor: Colors.grey.shade50,
@@ -372,7 +368,10 @@ class _SimpleConsultationPageState extends State<SimpleConsultationPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF4FC59E), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF4FC59E),
+                    width: 2,
+                  ),
                 ),
                 filled: true,
                 fillColor: Colors.grey.shade50,

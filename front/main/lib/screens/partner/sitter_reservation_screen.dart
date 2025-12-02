@@ -16,11 +16,13 @@ class SitterReservationScreen extends StatefulWidget {
 class _SitterReservationScreenState extends State<SitterReservationScreen> {
   final AuthService _authService = AuthService();
   final PartnerService _partnerService = PartnerService();
-  final PartnerReservationService _reservationService = PartnerReservationService();
+  final PartnerReservationService _reservationService =
+      PartnerReservationService();
 
   List<PartnerReservationModel> _reservations = [];
   bool _isLoading = true;
-  String _selectedFilter = 'WAITING'; // WAITING, CONFIRMED, COMPLETED, CANCELLED (기본값: 대기중)
+  String _selectedFilter =
+      'WAITING'; // WAITING, CONFIRMED, COMPLETED, CANCELLED (기본값: 대기중)
 
   @override
   void initState() {
@@ -55,8 +57,12 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
           }
 
           // 예약 목록 조회
-          print('📡 [DEBUG] API 호출: /reservations/partner?partnerId=$partnerId');
-          final reservations = await _reservationService.getPartnerReservations(partnerId);
+          print(
+            '📡 [DEBUG] API 호출: /reservations/partner?partnerId=$partnerId',
+          );
+          final reservations = await _reservationService.getPartnerReservations(
+            partnerId,
+          );
           print('✅ [DEBUG] 받은 예약 수: ${reservations.length}');
 
           setState(() {
@@ -82,9 +88,11 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
     if (_selectedFilter == 'CANCELLED') {
       // 취소됨 필터: 사용자 취소, 파트너 거절 모두 포함
       return _reservations
-          .where((reservation) =>
-              reservation.status == 'CANCELLED_BY_USER' ||
-              reservation.status == 'CANCELLED_BY_BIZ')
+          .where(
+            (reservation) =>
+                reservation.status == 'CANCELLED_BY_USER' ||
+                reservation.status == 'CANCELLED_BY_BIZ',
+          )
           .toList();
     }
     // 선택된 필터에 해당하는 예약만 반환
@@ -132,18 +140,19 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : filteredReservations.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _loadReservations,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredReservations.length,
-                          itemBuilder: (context, index) {
-                            return _buildReservationCard(
-                                filteredReservations[index]);
-                          },
-                        ),
-                      ),
+                ? _buildEmptyState()
+                : RefreshIndicator(
+                    onRefresh: _loadReservations,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredReservations.length,
+                      itemBuilder: (context, index) {
+                        return _buildReservationCard(
+                          filteredReservations[index],
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -183,18 +192,12 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
           const SizedBox(height: 16),
           Text(
             _selectedFilter == 'ALL' ? '예약이 없습니다' : '해당 상태의 예약이 없습니다',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 8),
           Text(
             '고객의 예약 요청을 기다리고 있습니다',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -205,9 +208,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           _showReservationDetail(reservation);
@@ -225,10 +226,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                   _buildStatusBadge(reservation.status),
                   Text(
                     reservation.formattedDate,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ),
@@ -237,11 +235,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
               // 고객 정보
               Row(
                 children: [
-                  const Icon(
-                    Icons.person,
-                    size: 20,
-                    color: Color(0xFF4FC59E),
-                  ),
+                  const Icon(Icons.person, size: 20, color: Color(0xFF4FC59E)),
                   const SizedBox(width: 8),
                   Text(
                     reservation.userName,
@@ -272,14 +266,11 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
               const SizedBox(height: 8),
 
               // 펫 정보
-              if (reservation.petName != null && reservation.petName!.isNotEmpty)
+              if (reservation.petName != null &&
+                  reservation.petName!.isNotEmpty)
                 Row(
                   children: [
-                    const Icon(
-                      Icons.pets,
-                      size: 20,
-                      color: Color(0xFF4FC59E),
-                    ),
+                    const Icon(Icons.pets, size: 20, color: Color(0xFF4FC59E)),
                     const SizedBox(width: 8),
                     Text(
                       reservation.petName!,
@@ -434,17 +425,20 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     '예약 상세',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 24),
                   _buildDetailRow('상태', _buildStatusBadge(reservation.status)),
                   _buildDetailRow('고객명', Text(reservation.userName)),
                   _buildDetailRow('예약일', Text(reservation.formattedDate)),
-                  _buildDetailRow('예약시간', Text('${reservation.timeSlot} ${reservation.formattedTime}')),
-                  if (reservation.petName != null && reservation.petName!.isNotEmpty)
+                  _buildDetailRow(
+                    '예약시간',
+                    Text(
+                      '${reservation.timeSlot} ${reservation.formattedTime}',
+                    ),
+                  ),
+                  if (reservation.petName != null &&
+                      reservation.petName!.isNotEmpty)
                     _buildDetailRow('반려동물', Text(reservation.petName!)),
                   if (reservation.specialties.isNotEmpty)
                     _buildDetailRow(
@@ -459,7 +453,9 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF4FC59E).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF4FC59E,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -473,8 +469,12 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                         }).toList(),
                       ),
                     ),
-                  if (reservation.reservationContent != null && reservation.reservationContent!.isNotEmpty)
-                    _buildDetailRow('요청사항', Text(reservation.reservationContent!)),
+                  if (reservation.reservationContent != null &&
+                      reservation.reservationContent!.isNotEmpty)
+                    _buildDetailRow(
+                      '요청사항',
+                      Text(reservation.reservationContent!),
+                    ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -507,10 +507,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
             width: 100,
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ),
           Expanded(child: value),
@@ -525,9 +522,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('예약 확정'),
-        content: Text(
-          '${reservation.userName}님의 예약을 확정하시겠습니까?',
-        ),
+        content: Text('${reservation.userName}님의 예약을 확정하시겠습니까?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -585,10 +580,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('오류가 발생했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -651,9 +643,9 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
 
               if (success) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('예약이 거절되었습니다')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('예약이 거절되었습니다')));
                 }
                 _loadReservations();
               } else {
