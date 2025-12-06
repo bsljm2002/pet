@@ -2,7 +2,10 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../services/ai_diagnosis_service.dart';
+import '../services/pet_service.dart';
+import '../services/auth_service.dart';
 import '../models/ai_diagnosis.dart';
+import '../models/pet_profile.dart';
 
 class AIDiagnosisGalleryScreen extends StatefulWidget {
   const AIDiagnosisGalleryScreen({super.key});
@@ -14,6 +17,7 @@ class AIDiagnosisGalleryScreen extends StatefulWidget {
 
 class _AIDiagnosisGalleryScreenState extends State<AIDiagnosisGalleryScreen> {
   final AIDiagnosisService _diagnosisService = AIDiagnosisService();
+  final PetService _petService = PetService();
   List<AIDiagnosis> _diagnoses = [];
   bool _isLoading = true;
 
@@ -24,11 +28,79 @@ class _AIDiagnosisGalleryScreenState extends State<AIDiagnosisGalleryScreen> {
   }
 
   Future<void> _loadDiagnoses() async {
-    final diagnoses = await _diagnosisService.getAllDiagnoses();
-    setState(() {
-      _diagnoses = diagnoses;
-      _isLoading = false;
-    });
+    try {
+      print('🔍 AI 진단 기록 로드 시작 (갤러리)');
+
+      // 현재 사용자의 모든 반려동물 가져오기
+      final currentUser = AuthService().currentUser;
+      if (currentUser == null) {
+        print('❌ 로그인된 사용자 없음');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await _petService.getPetsByOwner(currentUser.id);
+      if (response['success'] != true) {
+        print('❌ 반려동물 목록 조회 실패');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final List<dynamic> petsData = response['pets'];
+      final List<PetProfile> pets = petsData
+          .map((json) => PetProfile.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      print('✅ 반려동물 ${pets.length}마리 조회됨');
+
+      // 각 반려동물의 AI 진단 기록 가져오기
+      List<AIDiagnosis> allDiagnoses = [];
+      for (var pet in pets) {
+        if (pet.id != null) {
+          print('🔍 반려동물 ${pet.name} (ID: ${pet.id})의 진단 기록 조회');
+          final diagnoses = await _diagnosisService.loadDiagnosesFromBackend(pet.id!);
+          print('✅ ${diagnoses.length}건의 진단 기록 발견');
+
+          // petName 추가
+          for (var diagnosis in diagnoses) {
+            allDiagnoses.add(AIDiagnosis(
+              id: diagnosis.id,
+              imagePath: diagnosis.imagePath,
+              diagnosisDate: diagnosis.diagnosisDate,
+              petName: pet.name,
+              petId: diagnosis.petId,
+              diagnosis: diagnosis.diagnosis,
+              description: diagnosis.description,
+              severity: diagnosis.severity,
+              symptoms: diagnosis.symptoms,
+              recommendations: diagnosis.recommendations,
+              confidence: diagnosis.confidence,
+              diseaseStatus: diagnosis.diseaseStatus,
+            ));
+          }
+        }
+      }
+
+      // 최신순 정렬
+      allDiagnoses.sort((a, b) => b.diagnosisDate.compareTo(a.diagnosisDate));
+
+      print('✅ 총 ${allDiagnoses.length}건의 AI 진단 기록 로드 완료');
+
+      setState(() {
+        _diagnoses = allDiagnoses;
+        _isLoading = false;
+      });
+    } catch (e, stackTrace) {
+      print('❌ AI 진단 기록 로드 오류: $e');
+      print('❌ 스택 트레이스: $stackTrace');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _showDiagnosisDetail(AIDiagnosis diagnosis) {
@@ -156,23 +228,52 @@ class _AIDiagnosisGalleryScreenState extends State<AIDiagnosisGalleryScreen> {
               child: ClipRRect(
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.file(
-                  File(diagnosis.imagePath),
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(
-                          Icons.broken_image,
-                          size: 50,
-                          color: Colors.grey,
-                        ),
+                child: diagnosis.imagePath.startsWith('http')
+                    ? Image.network(
+                        diagnosis.imagePath.replaceAll('localhost', '223.130.130.225'),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF00B27A),
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : Image.file(
+                        File(diagnosis.imagePath),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ),
 
@@ -269,25 +370,57 @@ class _DiagnosisDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 이미지
-            Image.file(
-              File(diagnosis.imagePath),
-              width: double.infinity,
-              height: 300,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 300,
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 80,
-                      color: Colors.grey,
-                    ),
+            diagnosis.imagePath.startsWith('http')
+                ? Image.network(
+                    diagnosis.imagePath.replaceAll('localhost', '223.130.130.225'),
+                    width: double.infinity,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 300,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF00B27A),
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 300,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : Image.file(
+                    File(diagnosis.imagePath),
+                    width: double.infinity,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 300,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
 
             Padding(
               padding: const EdgeInsets.all(24),

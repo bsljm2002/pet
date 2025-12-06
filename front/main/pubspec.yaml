@@ -90,6 +90,9 @@ dependencies:
   # OpenAI API 패키지 (챗봇용)
   dart_openai: ^5.1.0
 
+  # 위치 추적 패키지 (펫시터 위치 공유용)
+  geolocator: ^13.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

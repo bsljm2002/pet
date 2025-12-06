@@ -7,6 +7,7 @@ import '../services/user_reservation_service.dart';
 import '../services/auth_service.dart';
 import '../widgets/ticket_shell.dart';
 import 'write_review_page.dart';
+import 'sitter_reservation_detail_page.dart';
 
 class MyReservation extends StatefulWidget {
   const MyReservation({super.key});
@@ -368,6 +369,18 @@ class _ReservationTicket extends StatelessWidget {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
+      onTap: reservation.serviceType == 'SITTER'
+          ? () {
+              // 펫시터 예약 상세 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      SitterReservationDetailPage(reservation: reservation),
+                ),
+              );
+            }
+          : null,
       upperSection: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

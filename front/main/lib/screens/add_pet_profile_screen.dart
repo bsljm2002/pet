@@ -921,6 +921,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               weight: weight,
               gender: _selectedGender!, // "MALE" 또는 "FEMALE"
               speciesDetail: _selectedBreed, // 품종 (선택사항)
+              disease: _selectedDisease, // 질병 정보 (선택사항)
               imageUrl: uploadedImageUrl, // 업로드된 이미지 URL
             );
 

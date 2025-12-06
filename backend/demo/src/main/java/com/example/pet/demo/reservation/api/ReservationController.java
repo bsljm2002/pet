@@ -18,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.pet.demo.common.ApiResponse;
 import com.example.pet.demo.media.FileStorageService;
+import com.example.pet.demo.reservation.api.dto.CompleteDiagnosisReq;
 import com.example.pet.demo.reservation.api.dto.CompletedReservationRes;
 import com.example.pet.demo.reservation.api.dto.MyReservationRes;
 import com.example.pet.demo.reservation.api.dto.ReservationCreateReq;
@@ -98,6 +99,18 @@ public class ReservationController {
     }
 
     /**
+     * 반려동물의 진료 기록 조회
+     * GET /api/v1/reservations/pet/{petId}/medical-records
+     */
+    @GetMapping("/pet/{petId}/medical-records")
+    public ResponseEntity<ApiResponse<List<CompletedReservationRes>>> getPetMedicalRecords(
+            @PathVariable("petId") Long petId
+    ) {
+        List<CompletedReservationRes> records = reservationService.getPetMedicalRecords(petId);
+        return ResponseEntity.ok(ApiResponse.ok(records));
+    }
+
+    /**
      * 파트너가 받은 예약 목록 조회
      * GET /api/v1/reservations/partner?partnerId={partnerId}
      */
@@ -143,9 +156,18 @@ public class ReservationController {
     @PatchMapping("/{id}/complete")
     public ResponseEntity<ApiResponse<Map<String, Long>>> completeReservation(
         @PathVariable("id") Long reservationId,
-        @RequestParam("partnerId") Long partnerId
+        @RequestParam("partnerId") Long partnerId,
+        @RequestBody(required = false) CompleteDiagnosisReq diagnosisReq
     ) {
-        reservationService.complete(reservationId, partnerId);
+        // 진료 정보가 없으면 null로 전달
+        String diagnosis = diagnosisReq != null ? diagnosisReq.getDiagnosis() : null;
+        String prescription = diagnosisReq != null ? diagnosisReq.getPrescription() : null;
+        String dosageSchedule = diagnosisReq != null ? diagnosisReq.getDosageSchedule() : null;
+        Integer dosageDays = diagnosisReq != null ? diagnosisReq.getDosageDays() : null;
+        String medicalNotes = diagnosisReq != null ? diagnosisReq.getMedicalNotes() : null;
+
+        reservationService.complete(reservationId, partnerId, diagnosis, prescription,
+                                    dosageSchedule, dosageDays, medicalNotes);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("reservation_id", reservationId)));
     }
 

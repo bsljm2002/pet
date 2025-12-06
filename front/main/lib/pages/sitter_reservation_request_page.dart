@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,7 @@ import '../models/sitter_model.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/pet_service.dart';
+import '../services/location_tracking_service.dart';
 import '../widgets/location_picker_widget.dart';
 
 /// 펫시터 예약 신청 페이지
@@ -340,6 +342,12 @@ class _SitterReservationRequestPageState
           'visit_date_time': dateTimeStr, // 방문 예약 시간 (사용자가 선택한 날짜/시간)
           'resv_urls': [],
           'resv_content': content,
+          // 서비스 위치 정보 추가
+          if (_selectedLatitude != null && _selectedLongitude != null) ...{
+            'service_latitude': _selectedLatitude,
+            'service_longitude': _selectedLongitude,
+            'service_address': _locationController.text.trim(),
+          },
         };
 
         print('🔍 [DEBUG] 예약 생성 요청 (펫: $petName, ID: $petId)');
@@ -362,6 +370,40 @@ class _SitterReservationRequestPageState
             successCount++;
             final reservationId = responseData['data']?['reservation_id'];
             print('✅ [SUCCESS] $petName 예약 성공 (ID: $reservationId)');
+
+            // Firebase에 파트너 알림 전송 (실시간 예약 업데이트)
+            try {
+              final partnerId = int.parse(widget.sitter.id);
+              final database = FirebaseDatabase.instance.ref();
+              await database
+                  .child('partner_notifications')
+                  .child(partnerId.toString())
+                  .child('new_reservations')
+                  .set({
+                'reservationId': reservationId,
+                'timestamp': DateTime.now().millisecondsSinceEpoch,
+                'petName': petName,
+              });
+              print('🔔 [알림] 파트너에게 예약 알림 전송 완료');
+            } catch (e) {
+              print('⚠️ [알림] Firebase 알림 전송 실패: $e');
+            }
+
+            // Firebase에 사용자 위치 저장 (예약 시 입력한 주소)
+            if (_selectedLatitude != null && _selectedLongitude != null) {
+              try {
+                final locationService = LocationTrackingService();
+                await locationService.updateUserLocation(
+                  reservationId,
+                  _selectedLatitude!,
+                  _selectedLongitude!,
+                  userId: int.parse(currentUser.id.toString()),
+                );
+                print('📍 [위치] 사용자 위치 Firebase 저장 완료');
+              } catch (e) {
+                print('⚠️ [위치] 사용자 위치 저장 실패: $e');
+              }
+            }
           } else {
             failCount++;
             failedPetNames.add(petName);
@@ -601,7 +643,7 @@ class _SitterReservationRequestPageState
 
     // 상대 경로를 절대 경로로 변환
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://10.0.2.2:9075$imageUrl';
+      imageUrl = 'http://223.130.130.225:9075$imageUrl';
       print('🔍 [DEBUG] 상대 경로 변환: ${profile.imageUrl} -> $imageUrl');
     }
 

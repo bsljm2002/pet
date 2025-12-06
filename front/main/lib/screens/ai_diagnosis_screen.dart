@@ -87,6 +87,8 @@ class _AiDiagnosisScreenState extends State<AiDiagnosisScreen> {
         imagePath: _selectedImage!.path,
         petName: profiles.first.name,
         petId: profiles.first.id?.toString(),
+        userId: profiles.first.userId,
+        saveToBackend: true,
       );
 
       if (!mounted) return;

@@ -271,7 +271,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
   Future<void> _loadWorkingHours(int userId) async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:9075/api/v1/users/$userId'),
+        Uri.parse('http://223.130.130.225:9075/api/v1/users/$userId'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -550,7 +550,7 @@ class _PartnerProfileFormScreenState extends State<PartnerProfileFormScreen> {
       final String endHours = '${_workingEndTime!.hour.toString().padLeft(2, '0')}:${_workingEndTime!.minute.toString().padLeft(2, '0')}';
 
       final response = await http.patch(
-        Uri.parse('http://10.0.2.2:9075/api/v1/users/$userId/working-hours'),
+        Uri.parse('http://223.130.130.225:9075/api/v1/users/$userId/working-hours'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'workingDays': _workingDays.toList(),

@@ -155,19 +155,44 @@ class PartnerReservationService {
   /// 진료/서비스 완료
   Future<bool> completeReservation(
     int reservationId,
-    int partnerId,
-  ) async {
+    int partnerId, {
+    String? diagnosis,
+    String? prescription,
+    String? dosageSchedule,
+    int? dosageDays,
+    String? medicalNotes,
+  }) async {
     try {
       final url = Uri.parse(
         '${ApiService.baseUrl}/reservations/$reservationId/complete?partnerId=$partnerId',
       );
 
+      // 진료 정보 바디 생성
+      final Map<String, dynamic> body = {};
+      if (diagnosis != null && diagnosis.isNotEmpty) {
+        body['diagnosis'] = diagnosis;
+      }
+      if (prescription != null && prescription.isNotEmpty) {
+        body['prescription'] = prescription;
+      }
+      if (dosageSchedule != null && dosageSchedule.isNotEmpty) {
+        body['dosageSchedule'] = dosageSchedule;
+      }
+      if (dosageDays != null) {
+        body['dosageDays'] = dosageDays;
+      }
+      if (medicalNotes != null && medicalNotes.isNotEmpty) {
+        body['medicalNotes'] = medicalNotes;
+      }
+
       print('📡 [DEBUG] 예약 완료 API 호출: $url');
       print('📡 [DEBUG] reservationId: $reservationId, partnerId: $partnerId');
+      print('📡 [DEBUG] 진료 정보: $body');
 
       final response = await http.patch(
         url,
         headers: {'Content-Type': 'application/json'},
+        body: body.isNotEmpty ? jsonEncode(body) : null,
       );
 
       print('📡 [DEBUG] 응답 상태 코드: ${response.statusCode}');

@@ -8,7 +8,7 @@ class AuthService {
   AuthService._internal();
 
   static const String baseUrl =
-      "http://10.0.2.2:9075/api/v1/users"; // Android 에뮬레이터용 localhost
+      "http://223.130.130.225:9075/api/v1/users"; // 클라우드 서버
 
   User? _currentUser;
   User? get currentUser => _currentUser;

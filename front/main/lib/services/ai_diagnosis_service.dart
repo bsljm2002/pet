@@ -1,7 +1,11 @@
 // AI 진단 서비스
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import '../models/ai_diagnosis.dart';
+import 'api_service.dart';
 
 /// 진단 모델 타입
 enum DiagnosisModelType { dogEyes, dogSkin, catEyes, catSkin }
@@ -67,7 +71,9 @@ class AIDiagnosisService {
     required String imagePath,
     required String petName,
     String? petId,
+    int? userId,
     DiagnosisModelType modelType = DiagnosisModelType.dogEyes,
+    bool saveToBackend = true,
   }) async {
     if (!isModelAvailable(modelType)) {
       throw PlatformException(
@@ -85,7 +91,31 @@ class AIDiagnosisService {
       modelType,
     );
 
+    // 메모리에 저장
     await saveDiagnosis(diagnosis);
+
+    // 백엔드에 저장 (옵션)
+    if (saveToBackend && userId != null && petId != null) {
+      try {
+        // 1. 이미지 업로드
+        final imageUrl = await uploadImage(imagePath);
+        if (imageUrl != null) {
+          // 2. AI 진단 결과 저장
+          final diseaseExamId = await saveDiagnosisToBackend(
+            userId: userId,
+            petId: int.parse(petId),
+            diagnosis: diagnosis,
+            imageUrl: imageUrl,
+            modelType: modelType,
+          );
+
+          print('✅ AI 진단 저장 완료 - diseaseExamId: $diseaseExamId');
+        }
+      } catch (e) {
+        print('⚠️ 백엔드 저장 실패 (로컬에만 저장됨): $e');
+      }
+    }
+
     return diagnosis;
   }
 
@@ -455,7 +485,7 @@ class AIDiagnosisService {
     return healthyLabels[modelType]?.contains(rawLabel) ?? false;
   }
 
-  // 진단 결과 저장
+  // 진단 결과 저장 (메모리만)
   Future<void> saveDiagnosis(AIDiagnosis diagnosis) async {
     _diagnoses.insert(0, diagnosis); // 최신 항목을 앞에 추가
   }
@@ -463,5 +493,156 @@ class AIDiagnosisService {
   // 진단 결과 삭제
   Future<void> deleteDiagnosis(String id) async {
     _diagnoses.removeWhere((d) => d.id == id);
+  }
+
+  /// 이미지 업로드
+  Future<String?> uploadImage(String imagePath) async {
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/files/upload');
+
+      var request = http.MultipartRequest('POST', url);
+      request.fields['type'] = 'disease';
+      request.files.add(await http.MultipartFile.fromPath('file', imagePath));
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(responseBody);
+        if (jsonData['ok'] == true && jsonData['data'] != null) {
+          return jsonData['data']['url'];
+        }
+      }
+
+      print('❌ 이미지 업로드 실패: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      print('❌ 이미지 업로드 오류: $e');
+      return null;
+    }
+  }
+
+  /// AI 진단 결과를 백엔드에 저장
+  Future<int?> saveDiagnosisToBackend({
+    required int userId,
+    required int petId,
+    required AIDiagnosis diagnosis,
+    required String imageUrl,
+    required DiagnosisModelType modelType,
+  }) async {
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/disease-exams');
+
+      // requestedType 결정
+      String requestedType;
+      if (modelType == DiagnosisModelType.dogEyes ||
+          modelType == DiagnosisModelType.catEyes) {
+        requestedType = 'EYE';
+      } else {
+        requestedType = 'SKIN';
+      }
+
+      // summaryLabel 결정
+      String summaryLabel;
+      if (diagnosis.diseaseStatus == '정상') {
+        summaryLabel = 'NORMAL';
+      } else if (diagnosis.severity == 'high') {
+        summaryLabel = 'CAUTION';
+      } else {
+        summaryLabel = 'SUSPECT';
+      }
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'userId': userId,
+          'petId': petId,
+          'requestedType': requestedType,
+          'summaryLabel': summaryLabel,
+          'diseaseResult': {
+            'diagnosis': diagnosis.diagnosis,
+            'description': diagnosis.description,
+            'severity': diagnosis.severity,
+            'confidence': diagnosis.confidence,
+            'symptoms': diagnosis.symptoms,
+            'recommendations': diagnosis.recommendations,
+            'diseaseStatus': diagnosis.diseaseStatus,
+          },
+          'imageUrl': imageUrl,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(utf8.decode(response.bodyBytes));
+        if (jsonData['ok'] == true && jsonData['data'] != null) {
+          return jsonData['data']['id'];
+        }
+      }
+
+      print('❌ AI 진단 저장 실패: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      print('❌ AI 진단 저장 오류: $e');
+      return null;
+    }
+  }
+
+  /// 반려동물의 AI 진단 기록 조회
+  Future<List<AIDiagnosis>> loadDiagnosesFromBackend(int petId) async {
+    try {
+      final url = Uri.parse('${ApiService.baseUrl}/disease-exams/pet/$petId');
+      print('🔍 AI 진단 기록 조회 URL: $url');
+
+      final response = await http.get(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('📡 API 응답 상태 코드: ${response.statusCode}');
+      print('📡 API 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(utf8.decode(response.bodyBytes));
+        print('✅ JSON 파싱 성공: $jsonData');
+
+        if (jsonData['ok'] == true && jsonData['data'] != null) {
+          final List<dynamic> examsList = jsonData['data'];
+          print('✅ 진단 기록 개수: ${examsList.length}');
+
+          final diagnoses = examsList.map((exam) {
+            print('📋 진단 기록 항목: $exam');
+            final result = exam['diseaseResult'];
+            return AIDiagnosis(
+              id: exam['id'].toString(),
+              imagePath: exam['imageUrl'] ?? exam['dImageUrl'] ?? '',
+              diagnosisDate: DateTime.parse(exam['createdAt']),
+              petName: '', // petName은 별도 조회 필요
+              petId: exam['petId'].toString(),
+              diagnosis: result['diagnosis'] ?? '',
+              description: result['description'] ?? '',
+              severity: result['severity'] ?? 'none',
+              confidence: (result['confidence'] ?? 0.0).toDouble(),
+              symptoms: List<String>.from(result['symptoms'] ?? []),
+              recommendations: List<String>.from(result['recommendations'] ?? []),
+              diseaseStatus: result['diseaseStatus'] ?? '정상',
+            );
+          }).toList();
+
+          print('✅ 변환 완료: ${diagnoses.length}건');
+          return diagnoses;
+        } else {
+          print('⚠️ 응답 형식 오류: ok=${jsonData['ok']}, data=${jsonData['data']}');
+        }
+      } else {
+        print('❌ HTTP 오류: ${response.statusCode}');
+      }
+
+      return [];
+    } catch (e, stackTrace) {
+      print('❌ AI 진단 기록 조회 오류: $e');
+      print('❌ 스택 트레이스: $stackTrace');
+      return [];
+    }
   }
 }

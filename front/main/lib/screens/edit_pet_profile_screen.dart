@@ -203,8 +203,8 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }
@@ -943,6 +943,7 @@ class _EditPetProfileScreenState extends State<EditPetProfileScreen> {
               weight: weight,
               gender: _selectedGender!,
               speciesDetail: _selectedBreed,
+              disease: _selectedDisease,
               imageUrl: uploadedImageUrl,
             );
 

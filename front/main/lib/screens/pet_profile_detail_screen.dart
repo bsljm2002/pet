@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../models/pet_profile.dart';
 import '../models/pet_diary.dart';
+import '../models/medical_record.dart';
 import '../services/pet_service.dart';
 import '../services/diary_service.dart';
+import '../services/medical_record_service.dart';
 import 'create_pet_diary_screen.dart';
 import 'edit_pet_profile_screen.dart';
+import 'ai_diagnosis_history_screen.dart';
 
 /// 펫 프로필 상세보기 화면
 ///
@@ -42,10 +45,21 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
   final TextEditingController _diaryController = TextEditingController();
   PetDiary? _currentDiary; // 현재 선택된 날짜의 일기
 
+  // 진료 기록 관련 상태
+  List<MedicalRecord> _medicalRecords = [];
+  bool _isLoadingMedicalRecords = true;
+  final MedicalRecordService _medicalRecordService = MedicalRecordService();
+  final PageController _medicalRecordPageController = PageController();
+  int _currentMedicalRecordIndex = 0;
+
+  // 약 복용 체크 상태 (reservationId -> 복용 여부)
+  Map<int, Set<String>> _medicationChecks = {};
+
   @override
   void initState() {
     super.initState();
     _loadPetDetails();
+    _loadMedicalRecords();
   }
 
   Future<void> _loadPetDetails() async {
@@ -92,6 +106,32 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
       await _loadDiary();
     }
   }
+
+  /// 진료 기록 로드
+  Future<void> _loadMedicalRecords() async {
+    if (widget.profile.id == null) {
+      setState(() {
+        _isLoadingMedicalRecords = false;
+      });
+      return;
+    }
+
+    try {
+      final records = await _medicalRecordService.getPetMedicalRecords(
+        widget.profile.id!,
+      );
+      setState(() {
+        _medicalRecords = records;
+        _isLoadingMedicalRecords = false;
+      });
+    } catch (e) {
+      print('진료 기록 로드 오류: $e');
+      setState(() {
+        _isLoadingMedicalRecords = false;
+      });
+    }
+  }
+
 
   /// 삭제 확인 다이얼로그 표시
   Future<void> _showDeleteConfirmDialog() async {
@@ -170,8 +210,8 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }
@@ -318,6 +358,18 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
                         _buildSectionHeader('반려동물 정보'),
                         SizedBox(height: 20),
                         _buildInfoSection(),
+                        SizedBox(height: 40),
+
+                        // 진료 기록 섹션
+                        _buildSectionHeader('병원 진료'),
+                        SizedBox(height: 20),
+                        _buildMedicalRecordsSection(),
+                        SizedBox(height: 40),
+
+                        // AI 진단 기록 섹션
+                        _buildSectionHeader('AI 진단 기록'),
+                        SizedBox(height: 20),
+                        _buildAIDiagnosisSection(),
                         SizedBox(height: 40),
 
                         // 달력 섹션
@@ -986,6 +1038,869 @@ class _PetProfileDetailScreenState extends State<PetProfileDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 진료 기록 섹션
+  Widget _buildMedicalRecordsSection() {
+    if (_isLoadingMedicalRecords) {
+      return Container(
+        height: 100,
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFF4FC59E)),
+        ),
+      );
+    }
+
+    if (_medicalRecords.isEmpty) {
+      return Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            '아직 진료 기록이 없습니다',
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // 진료 기록 카드 (PageView)
+        Container(
+          height: 370,
+          child: Stack(
+            children: [
+              // PageView
+              PageView.builder(
+                controller: _medicalRecordPageController,
+                itemCount: _medicalRecords.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentMedicalRecordIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final record = _medicalRecords[index];
+                  return Center(child: _buildMedicalRecordCard(record));
+                },
+              ),
+
+              // 이전 버튼 (왼쪽) - 카드와 경계선 사이에 배치
+              if (_currentMedicalRecordIndex > 0)
+                Positioned(
+                  left: 10,
+                  top: -10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.chevron_left,
+                        color: Color(0xFF4FC59E),
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        _medicalRecordPageController.previousPage(
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+              // 다음 버튼 (오른쪽) - 카드와 경계선 사이에 배치
+              if (_currentMedicalRecordIndex < _medicalRecords.length - 1)
+                Positioned(
+                  right: 10,
+                  top: -10,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF4FC59E),
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        _medicalRecordPageController.nextPage(
+                          duration: Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // 페이지 인디케이터
+        if (_medicalRecords.length > 1) ...[
+          SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_medicalRecords.length, (index) {
+              return Container(
+                width: 8,
+                height: 8,
+                margin: EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentMedicalRecordIndex == index
+                      ? Color(0xFF4FC59E)
+                      : Colors.grey.shade300,
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 진료 기록 카드
+  Widget _buildMedicalRecordCard(MedicalRecord record) {
+    // 복용 스케줄 파싱
+    List<String> schedules = [];
+    if (record.dosageSchedule != null && record.dosageSchedule!.isNotEmpty) {
+      schedules = record.dosageSchedule!.split(',').map((s) => s.trim()).toList();
+    }
+
+    print('🔍 [DEBUG] 진료 기록 ID ${record.reservationId}:');
+    print('  - prescription: ${record.prescription}');
+    print('  - dosageSchedule: ${record.dosageSchedule}');
+    print('  - dosageDays: ${record.dosageDays}');
+    print('  - schedules: $schedules');
+    print('  - checkedMedicationKeys: ${record.checkedMedicationKeys}');
+
+    // 현재 예약의 약 복용 체크 상태 가져오기 (백엔드 데이터로 초기화)
+    if (_medicationChecks[record.reservationId] == null) {
+      _medicationChecks[record.reservationId] = Set<String>.from(record.checkedMedicationKeys);
+    }
+    final checkedSchedules = _medicationChecks[record.reservationId] ?? {};
+
+    // 일자별 복용 스케줄 생성 (예: 5일 아침,저녁 -> 1일차 아침, 1일차 저녁, 2일차 아침, ...)
+    List<Map<String, dynamic>> dailyMedications = [];
+    if (record.dosageDays != null && record.dosageDays! > 0 && schedules.isNotEmpty) {
+      for (int day = 1; day <= record.dosageDays!; day++) {
+        for (String schedule in schedules) {
+          dailyMedications.add({
+            'day': day,
+            'schedule': schedule,
+            'key': '$day-$schedule', // 고유 키 (예: "1-아침", "2-저녁")
+          });
+        }
+      }
+    }
+
+    print('  - dailyMedications count: ${dailyMedications.length}');
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 진료 기록 카드
+        Container(
+          width: MediaQuery.of(context).size.width - 80,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Color(0xFF4FC59E).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Color(0xFF4FC59E).withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 병원 이름 및 날짜
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      record.partnerName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF003829),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${record.createdAt.year}.${record.createdAt.month.toString().padLeft(2, '0')}.${record.createdAt.day.toString().padLeft(2, '0')}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+
+              // 진단 소견 (항상 표시)
+              Text(
+                '진단',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                (record.diagnosis != null && record.diagnosis!.isNotEmpty)
+                    ? record.diagnosis!
+                    : '없음',
+                style: TextStyle(
+                  fontSize: 13,
+                  color:
+                      (record.diagnosis != null && record.diagnosis!.isNotEmpty)
+                      ? Color(0xFF003829)
+                      : Colors.grey.shade500,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 8),
+
+              // 처방약 (항상 표시)
+              Row(
+                children: [
+                  Icon(Icons.medication, size: 14, color: Color(0xFF4FC59E)),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      (record.prescription != null &&
+                              record.prescription!.isNotEmpty)
+                          ? '처방약: ${record.prescription}'
+                          : '처방약: 없음',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            (record.prescription != null &&
+                                record.prescription!.isNotEmpty)
+                            ? Color(0xFF003829)
+                            : Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4),
+
+              // 복용 스케줄 (항상 표시)
+              Row(
+                children: [
+                  Icon(Icons.schedule, size: 14, color: Color(0xFF4FC59E)),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      (record.dosageSchedule != null &&
+                              record.dosageSchedule!.isNotEmpty)
+                          ? '${record.dosageScheduleFormatted}${record.dosageDays != null ? ' (${record.dosageDays}일간)' : ''}'
+                          : '복용 스케줄: 없음',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            (record.dosageSchedule != null &&
+                                record.dosageSchedule!.isNotEmpty)
+                            ? Color(0xFF003829)
+                            : Colors.grey.shade500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+
+              // 상세보기 버튼
+              SizedBox(height: 8),
+              GestureDetector(
+                onTap: () {
+                  _showMedicalRecordDetail(record);
+                },
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '자세히 보기 →',
+                    style: TextStyle(
+                      color: Color(0xFF4FC59E),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 약 복용 체크 (항상 표시)
+        SizedBox(height: 16),
+        Container(
+          width: MediaQuery.of(context).size.width - 80,
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300, width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    size: 16,
+                    color: Color(0xFF4FC59E),
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    '오늘 약 복용',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF003829),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              // 오늘 복용할 약만 간단하게 표시 (복용 시간만)
+              if (schedules.isNotEmpty)
+                Row(
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: schedules.map((schedule) {
+                          // 오늘 복용했는지 체크 (1일차 기준)
+                          final todayKey = '1-$schedule';
+                          final isChecked = checkedSchedules.contains(todayKey);
+
+                          return GestureDetector(
+                            onTap: () async {
+                              // API 호출하여 체크 상태 토글
+                              if (widget.profile.userId != null && widget.profile.id != null) {
+                                await _medicalRecordService.toggleMedication(
+                                  reservationId: record.reservationId,
+                                  userId: widget.profile.userId!,
+                                  petId: widget.profile.id!,
+                                  medicationKey: todayKey,
+                                );
+                              }
+
+                              setState(() {
+                                if (_medicationChecks[record.reservationId] == null) {
+                                  _medicationChecks[record.reservationId] = {};
+                                }
+                                if (isChecked) {
+                                  _medicationChecks[record.reservationId]!.remove(todayKey);
+                                } else {
+                                  _medicationChecks[record.reservationId]!.add(todayKey);
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isChecked ? Color(0xFF4FC59E) : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isChecked
+                                      ? Color(0xFF4FC59E)
+                                      : Colors.grey.shade400,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isChecked)
+                                    Icon(Icons.check, size: 16, color: Colors.white),
+                                  if (isChecked) SizedBox(width: 4),
+                                  Text(
+                                    schedule,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isChecked
+                                          ? Colors.white
+                                          : Color(0xFF003829),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // 자세히 보기 버튼
+                    if (dailyMedications.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          _showMedicationScheduleDetail(record, dailyMedications);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF4FC59E).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Color(0xFF4FC59E),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            '자세히',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF4FC59E),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                )
+              else
+                Text(
+                  '처방약이 없습니다',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 진료 기록 상세 다이얼로그
+  void _showMedicalRecordDetail(MedicalRecord record) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 400),
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 헤더
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '진료 기록 상세',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF003829),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 16),
+
+              // 병원 정보
+              _buildDetailRow('병원', record.partnerName),
+              SizedBox(height: 12),
+              _buildDetailRow(
+                '진료일',
+                '${record.createdAt.year}년 ${record.createdAt.month}월 ${record.createdAt.day}일',
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 16),
+
+              // 진단 정보
+              if (record.diagnosis != null && record.diagnosis!.isNotEmpty) ...[
+                Text(
+                  '진단 소견',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003829),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    record.diagnosis!,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
+
+              // 처방약 정보
+              if (record.prescription != null &&
+                  record.prescription!.isNotEmpty) ...[
+                Text(
+                  '처방약',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003829),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF4FC59E).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.medication,
+                        size: 20,
+                        color: Color(0xFF4FC59E),
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          record.prescription!,
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+              ],
+
+              // 복용 스케줄
+              if (record.dosageSchedule != null &&
+                  record.dosageSchedule!.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Icon(Icons.schedule, size: 18, color: Color(0xFF4FC59E)),
+                    SizedBox(width: 6),
+                    Text(
+                      record.dosageScheduleFormatted,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    if (record.dosageDays != null) ...[
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF4FC59E),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${record.dosageDays}일간',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: 16),
+              ],
+
+              // 특이사항
+              if (record.medicalNotes != null &&
+                  record.medicalNotes!.isNotEmpty) ...[
+                Text(
+                  '특이사항',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF003829),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    record.medicalNotes!,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 약 복용 일정 자세히 보기 다이얼로그
+  void _showMedicationScheduleDetail(
+    MedicalRecord record,
+    List<Map<String, dynamic>> dailyMedications,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: BoxConstraints(maxWidth: 400, maxHeight: 600),
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 헤더
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '약 복용 일정',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF003829),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '${record.prescription} (${record.dosageDays}일)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Divider(),
+              SizedBox(height: 16),
+
+              // 복용 체크박스 리스트
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: dailyMedications.map((medication) {
+                        final String key = medication['key'];
+                        final int day = medication['day'];
+                        final String schedule = medication['schedule'];
+                        final checkedSchedules =
+                            _medicationChecks[record.reservationId] ?? {};
+                        final isChecked = checkedSchedules.contains(key);
+
+                        return GestureDetector(
+                          onTap: () async {
+                            // API 호출하여 체크 상태 토글
+                            if (widget.profile.userId != null && widget.profile.id != null) {
+                              await _medicalRecordService.toggleMedication(
+                                reservationId: record.reservationId,
+                                userId: widget.profile.userId!,
+                                petId: widget.profile.id!,
+                                medicationKey: key,
+                              );
+                            }
+
+                            setState(() {
+                              if (_medicationChecks[record.reservationId] ==
+                                  null) {
+                                _medicationChecks[record.reservationId] = {};
+                              }
+                              if (isChecked) {
+                                _medicationChecks[record.reservationId]!
+                                    .remove(key);
+                              } else {
+                                _medicationChecks[record.reservationId]!
+                                    .add(key);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isChecked
+                                  ? Color(0xFF4FC59E)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isChecked
+                                    ? Color(0xFF4FC59E)
+                                    : Colors.grey.shade400,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (isChecked)
+                                  Icon(Icons.check,
+                                      size: 18, color: Colors.white),
+                                if (isChecked) SizedBox(width: 6),
+                                Text(
+                                  '$day일차 $schedule',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: isChecked
+                                        ? Colors.white
+                                        : Color(0xFF003829),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF003829),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// AI 진단 기록 섹션
+  Widget _buildAIDiagnosisSection() {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: () {
+          // AI 진단 기록 페이지로 이동
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AIDiagnosisHistoryScreen(
+                profile: _latestProfile ?? widget.profile,
+              ),
+            ),
+          );
+        },
+        icon: Icon(Icons.medical_information, color: Colors.white),
+        label: Text(
+          'AI 진단 결과 보기',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF4FC59E),
+          padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
     );
   }

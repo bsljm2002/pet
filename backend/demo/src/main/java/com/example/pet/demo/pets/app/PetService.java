@@ -23,6 +23,7 @@ public class PetService {
         String name = req.name() != null ? req.name().trim() : null;
         String gender = req.gender() != null ? req.gender().toUpperCase() : null;
         String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
+        String disease = req.disease() == null ? null : req.disease().trim();
 
         // Use default placeholder if imageUrl is null (for database NOT NULL constraint)
         String imageUrl = req.imageUrl() != null ? req.imageUrl() : "/media/default/pet-placeholder.png";
@@ -35,7 +36,8 @@ public class PetService {
                 imageUrl,
                 name,
                 gender,
-                speciesDetail);
+                speciesDetail,
+                disease);
     }
 
     @Transactional(readOnly = true)
@@ -53,25 +55,28 @@ public class PetService {
         Pet pet = pets.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pet not found with id: " + id));
 
-        // Normalize fields
-        String species = req.species() != null ? req.species().toUpperCase() : null;
-        String name = req.name() != null ? req.name().trim() : null;
-        String gender = req.gender() != null ? req.gender().toUpperCase() : null;
-        String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
-
-        // Use existing imageUrl if not provided
+        // Use existing values if not provided (PATCH behavior)
+        String species = req.species() != null ? req.species().toUpperCase() : pet.getSpecies().name();
+        String name = req.name() != null ? req.name().trim() : pet.getName();
+        String gender = req.gender() != null ? req.gender().toUpperCase() : pet.getGender().name();
+        String speciesDetail = req.speciesDetail() != null ? req.speciesDetail().trim() : pet.getSpeciesDetail();
+        String disease = req.disease() != null ? req.disease().trim() : pet.getDisease();
         String imageUrl = req.imageUrl() != null ? req.imageUrl() : pet.getImageUrl();
+
+        java.time.LocalDate birthdate = req.birthdate() != null ? req.birthdate() : pet.getBirthdate();
+        java.math.BigDecimal weight = req.weight() != null ? req.weight() : pet.getWeight();
 
         // Update pet
         pets.update(
                 id,
                 species,
-                req.birthdate(),
-                req.weight(),
+                birthdate,
+                weight,
                 imageUrl,
                 name,
                 gender,
-                speciesDetail);
+                speciesDetail,
+                disease);
     }
 
     public void delete(Long id) {

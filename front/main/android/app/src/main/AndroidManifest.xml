@@ -15,6 +15,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
+    <!-- Android 10 이상 백그라운드 위치 권한 (펫시터 위치 추적용) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
     <application

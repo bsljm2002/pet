@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'dart:async';
 import '../../services/auth_service.dart';
 import '../../services/partner_service.dart';
 import '../../services/partner_reservation_service.dart';
+import '../../services/location_tracking_service.dart';
 import '../../models/partner_reservation_model.dart';
+import 'sitter_customer_location_page.dart';
 
 /// 펫시터 예약 상담 화면
 class SitterReservationScreen extends StatefulWidget {
@@ -18,16 +22,68 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
   final PartnerService _partnerService = PartnerService();
   final PartnerReservationService _reservationService =
       PartnerReservationService();
+  final LocationTrackingService _locationService = LocationTrackingService();
 
   List<PartnerReservationModel> _reservations = [];
   bool _isLoading = true;
   String _selectedFilter =
       'WAITING'; // WAITING, CONFIRMED, COMPLETED, CANCELLED (기본값: 대기중)
 
+  StreamSubscription<DatabaseEvent>? _reservationNotificationSubscription;
+  int? _currentPartnerId;
+
   @override
   void initState() {
     super.initState();
     _loadReservations();
+    _setupReservationListener();
+  }
+
+  @override
+  void dispose() {
+    _reservationNotificationSubscription?.cancel();
+    _locationService.dispose();
+    super.dispose();
+  }
+
+  /// Firebase에서 새 예약 알림을 실시간으로 감지
+  Future<void> _setupReservationListener() async {
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser != null) {
+        final userId = int.parse(currentUser.id);
+        final partners = await _partnerService.getMyPartners(userId);
+
+        if (partners.isNotEmpty && partners.first.id != null) {
+          _currentPartnerId = partners.first.id;
+          final database = FirebaseDatabase.instance.ref();
+
+          // Firebase에서 파트너별 예약 알림 감지
+          _reservationNotificationSubscription = database
+              .child('partner_notifications')
+              .child(_currentPartnerId.toString())
+              .child('new_reservations')
+              .onValue
+              .listen((event) {
+            if (event.snapshot.value != null && mounted) {
+              print('🔔 [예약알림] 새 예약 감지됨! 목록 새로고침...');
+              _loadReservations();
+
+              // 알림 읽음 처리 (선택사항)
+              database
+                  .child('partner_notifications')
+                  .child(_currentPartnerId.toString())
+                  .child('new_reservations')
+                  .remove();
+            }
+          });
+
+          print('✅ [예약알림] 실시간 리스너 설정 완료: Partner ID $_currentPartnerId');
+        }
+      }
+    } catch (e) {
+      print('⚠️ [예약알림] 리스너 설정 실패: $e');
+    }
   }
 
   Future<void> _loadReservations() async {
@@ -45,6 +101,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
         print('🔍 [DEBUG] 조회된 파트너 수: ${partners.length}');
         if (partners.isNotEmpty) {
           final partnerId = partners.first.id;
+          _currentPartnerId = partnerId;
           print('🔍 [DEBUG] 사용 중인 Partner ID: $partnerId');
           print('🔍 [DEBUG] 파트너 이름: ${partners.first.name}');
           if (partnerId == null) {
@@ -476,6 +533,48 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
                       Text(reservation.reservationContent!),
                     ),
                   const SizedBox(height: 24),
+                  // 확정된 예약은 고객 위치 보기 및 작업 완료 버튼 표시
+                  if (reservation.status == 'CONFIRMED') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SitterCustomerLocationPage(reservation: reservation),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.location_on),
+                        label: const Text('고객 위치 보기'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4FC59E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _completeReservation(reservation);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('작업 완료'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -562,6 +661,19 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
       if (!mounted) return;
 
       if (success) {
+        // 위치 추적 시작
+        try {
+          await _locationService.startTracking(
+            reservation.reservationId,
+            partnerId,
+          );
+          print('✅ [위치추적] 예약 ${reservation.reservationId}에 대한 위치 추적 시작');
+        } catch (e) {
+          print('⚠️ [위치추적] 위치 추적 시작 실패: $e');
+          // 위치 추적 실패해도 예약 확정은 유지
+        }
+
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('예약이 확정되었습니다'),
@@ -570,6 +682,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
         );
         await _loadReservations();
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('예약 확정에 실패했습니다'),
@@ -581,6 +694,88 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('오류가 발생했습니다: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _completeReservation(PartnerReservationModel reservation) async {
+    // 확인 다이얼로그
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('작업 완료'),
+        content: Text('${reservation.userName}님의 예약을 완료 처리하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('완료'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // 파트너 ID 가져오기
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) return;
+
+      final userId = int.parse(currentUser.id);
+      final partners = await _partnerService.getMyPartners(userId);
+      if (partners.isEmpty || partners.first.id == null) return;
+
+      final partnerId = partners.first.id!;
+
+      // 예약 완료 API 호출
+      final success = await _reservationService.completeReservation(
+        reservation.reservationId,
+        partnerId,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        // 위치 추적 중지
+        try {
+          await _locationService.stopTracking();
+          print('✅ [위치추적] 예약 ${reservation.reservationId} 완료로 위치 추적 중지');
+        } catch (e) {
+          print('⚠️ [위치추적] 위치 추적 중지 실패: $e');
+        }
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('작업이 완료되었습니다'),
+            backgroundColor: Colors.blue,
+          ),
+        );
+        await _loadReservations();
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('작업 완료 처리에 실패했습니다'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

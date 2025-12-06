@@ -8,7 +8,7 @@ class PetService {
   factory PetService() => _instance;
   PetService._internal();
 
-  static const String baseUrl = "http://10.0.2.2:9075/api/v1/pets";
+  static const String baseUrl = "http://223.130.130.225:9075/api/v1/pets";
 
   /// 펫 프로필 등록 API 호출
   Future<Map<String, dynamic>> createPet({
@@ -18,7 +18,8 @@ class PetService {
     required String birthdate, // "yyyy-MM-dd"
     required double weight, // 몸무게 (kg)
     required String gender, // 성별
-    String? speciesDetail, // 품
+    String? speciesDetail, // 품종
+    String? disease, // 질병 정보
     String? imageUrl, // 나중에 구현
   }) async {
     final url = Uri.parse(baseUrl);
@@ -35,6 +36,7 @@ class PetService {
           "weight": weight,
           "gender": gender,
           "speciesDetail": speciesDetail,
+          "disease": disease,
           "imageUrl": imageUrl, // null이면 백엔드에서 처리
         }),
       );
@@ -180,6 +182,7 @@ class PetService {
     required double weight, // 몸무게 (kg)
     required String gender, // 성별
     String? speciesDetail, // 품종
+    String? disease, // 질병 정보
     String? imageUrl, // 이미지 URL
   }) async {
     final url = Uri.parse('$baseUrl/$petId');
@@ -196,6 +199,7 @@ class PetService {
           "weight": weight,
           "gender": gender,
           "speciesDetail": speciesDetail,
+          "disease": disease,
           "imageUrl": imageUrl,
         }),
       );
@@ -212,6 +216,51 @@ class PetService {
           return {
             "success": false,
             "message": data["message"] ?? "펫 프로필 수정 실패",
+          };
+        }
+      } else {
+        final errorData = jsonDecode(response.body);
+        return {
+          "success": false,
+          "message": errorData["message"] ?? "서버 오류 (${response.statusCode})",
+        };
+      }
+    } catch (e) {
+      return {"success": false, "message": "네트워크 오류: $e"};
+    }
+  }
+
+  /// 펫 의료 정보 부분 업데이트 (몸무게, 질병)
+  Future<Map<String, dynamic>> updatePetMedicalInfo({
+    required int petId,
+    double? weight,
+    String? disease,
+  }) async {
+    final url = Uri.parse('$baseUrl/$petId');
+
+    try {
+      // 업데이트할 필드만 포함
+      final Map<String, dynamic> updateData = {};
+      if (weight != null) updateData['weight'] = weight;
+      if (disease != null) updateData['disease'] = disease;
+
+      final response = await http.patch(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(updateData),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data["ok"] == true) {
+          return {
+            "success": true,
+            "message": "의료 정보가 수정되었습니다.",
+          };
+        } else {
+          return {
+            "success": false,
+            "message": data["message"] ?? "의료 정보 수정 실패",
           };
         }
       } else {

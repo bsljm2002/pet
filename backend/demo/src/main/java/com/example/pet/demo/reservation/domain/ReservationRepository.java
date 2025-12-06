@@ -43,4 +43,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      * 파트너별 예약 목록 조회
      */
     List<Reservation> findByPartnerIdOrderByCreatedAtDesc(Long partnerId);
+
+    /**
+     * 반려동물별 완료된 예약 목록 조회 (진료 기록)
+     */
+    List<Reservation> findByPetIdAndStatusOrderByCreatedAtDesc(
+            Long petId,
+            Reservation.ReservationStatus status
+    );
 }

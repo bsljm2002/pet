@@ -362,7 +362,7 @@ class _HospitalReservationScreenState extends State<HospitalReservationScreen> {
                 ),
               ],
 
-              // 확정된 예약: 진료하기 버튼
+              // 확정된 예약: 진료하기 버튼만 표시
               if (reservation.status == 'CONFIRMED') ...[
                 const SizedBox(height: 12),
                 SizedBox(
@@ -374,6 +374,7 @@ class _HospitalReservationScreenState extends State<HospitalReservationScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4FC59E),
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('진료하기'),
                   ),

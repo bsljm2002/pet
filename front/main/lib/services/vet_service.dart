@@ -11,7 +11,7 @@ class VetService {
   VetService._internal();
 
   // 백엔드 서버 URL
-  static const String baseUrl = "http://10.0.2.2:9075/api/v1/partners";
+  static const String baseUrl = "http://223.130.130.225:9075/api/v1/partners";
 
   /// 수의사 목록 조회
   ///

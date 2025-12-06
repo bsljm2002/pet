@@ -29,7 +29,8 @@ public class PetJpaAdapter implements PetPersistencePort {
             String imageUrl,
             String name,
             String gender,
-            String speciesDetail) {
+            String speciesDetail,
+            String disease) {
 
         User ownerRef = em.getReference(User.class, userId);
 
@@ -42,6 +43,7 @@ public class PetJpaAdapter implements PetPersistencePort {
                 .name(name)
                 .gender(Pet.Gender.valueOf(gender))
                 .speciesDetail(speciesDetail)
+                .disease(disease)
                 .build();
 
         return jpa.save(pet).getId();
@@ -67,7 +69,8 @@ public class PetJpaAdapter implements PetPersistencePort {
             String imageUrl,
             String name,
             String gender,
-            String speciesDetail) {
+            String speciesDetail,
+            String disease) {
 
         Pet pet = jpa.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pet not found with id: " + id));
@@ -79,7 +82,8 @@ public class PetJpaAdapter implements PetPersistencePort {
                 imageUrl,
                 name,
                 Pet.Gender.valueOf(gender),
-                speciesDetail);
+                speciesDetail,
+                disease);
 
         jpa.save(pet);
     }

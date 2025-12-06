@@ -535,7 +535,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
 
     // 상대 경로를 절대 경로로 변환
     if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = 'http://10.0.2.2:9075$imageUrl';
+      imageUrl = 'http://223.130.130.225:9075$imageUrl';
       print('🔍 [DEBUG] 상대 경로 변환: ${profile.imageUrl} -> $imageUrl');
     }
 

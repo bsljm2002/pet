@@ -76,11 +76,20 @@ public class Pet {
     private Gender gender;
 
     @Column(name = "species_detail", length = 30)
-    private String speciesDetail;
+    private String speciesDetail; // 품종
 
-        // JSON 직렬화를 위한 userId getter 추가
+    @Column(name = "disease", length = 500)
+    private String disease; // 질병 정보
+
+    // JSON 직렬화를 위한 userId getter 추가
     public Long getUserId() {
         return owner != null ? owner.getId() : null;
+    }
+
+    // 생년월일에서 나이 계산
+    public Integer getAge() {
+        if (birthdate == null) return null;
+        return java.time.Period.between(birthdate, java.time.LocalDate.now()).getYears();
     }
 
     // 펫 정보 업데이트 메서드
@@ -91,7 +100,8 @@ public class Pet {
             String imageUrl,
             String name,
             Gender gender,
-            String speciesDetail) {
+            String speciesDetail,
+            String disease) {
         this.species = species;
         this.birthdate = birthdate;
         this.weight = weight;
@@ -99,6 +109,17 @@ public class Pet {
         this.name = name;
         this.gender = gender;
         this.speciesDetail = speciesDetail;
+        this.disease = disease;
+    }
+
+    // 의료 정보만 업데이트하는 메서드 (의사용)
+    public void updateMedicalInfo(BigDecimal weight, String disease) {
+        if (weight != null) {
+            this.weight = weight;
+        }
+        if (disease != null) {
+            this.disease = disease;
+        }
     }
 
 

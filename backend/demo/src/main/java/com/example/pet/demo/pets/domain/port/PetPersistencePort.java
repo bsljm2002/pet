@@ -16,7 +16,8 @@ public interface PetPersistencePort {
             String imageUrl,
             String name,
             String gender,
-            String speciesDetail
+            String speciesDetail,
+            String disease
     );
     void update(
             Long id,
@@ -26,7 +27,8 @@ public interface PetPersistencePort {
             String imageUrl,
             String name,
             String gender,
-            String speciesDetail
+            String speciesDetail,
+            String disease
     );
     List<Pet> findByOwnerId(Long ownerId);
     Optional<Pet> findById(Long id);

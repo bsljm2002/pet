@@ -88,7 +88,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 labelColor: Color.fromARGB(255, 0, 108, 82),
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: Color.fromARGB(255, 0, 108, 82),
-                tabs: [Tab(text: '펫홈')],
+                tabs: [
+                  Tab(text: '펫홈'),
+                  Tab(text: '펫 갤러리'),
+                ],
               ),
             ),
             // 탭별 컨텐츠 (스크롤 가능)
@@ -97,13 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // 펫홈 탭
                   SingleChildScrollView(child: _buildPetProfileContent()),
-                  // 일기 탭 (추후 구현)
+                  // 펫 갤러리 탭 (추후 구현)
                   SingleChildScrollView(
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
-                          '일기 기능은 추후 구현 예정입니다.',
+                          '펫 갤러리 기능은 추후 구현 예정입니다.',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
@@ -318,8 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }

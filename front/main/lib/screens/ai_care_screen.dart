@@ -3,10 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:async';
 import 'ai_diagnosis_gallery_screen.dart';
 import '../services/ai_diagnosis_service.dart';
 import '../services/pet_service.dart';
 import '../services/auth_service.dart';
+import '../services/sensor_service.dart';
 import '../models/pet_profile.dart';
 import '../models/ai_diagnosis.dart';
 
@@ -45,10 +47,45 @@ class _AiCareScreenState extends State<AiCareScreen> {
   bool _isAutoMode = true; // 자동/수동 모드 (true: 자동, false: 수동)
   bool _isHeaterOn = true; // 온열 기능 켜짐/꺼짐
 
+  // 센서 자동 업데이트 타이머
+  Timer? _sensorUpdateTimer;
+
   @override
   void initState() {
     super.initState();
     _loadPetProfiles();
+    _loadSensorData();
+    // 1분마다 센서 데이터 자동 업데이트
+    _sensorUpdateTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      _loadSensorData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _sensorUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  // 센서 데이터 로드
+  Future<void> _loadSensorData() async {
+    try {
+      final sensorService = SensorService();
+      final sensorData = await sensorService.getLatestSensorData();
+
+      if (sensorData != null) {
+        setState(() {
+          temperature = sensorData.temperature;
+          humidity = sensorData.humidity;
+          airQuality = sensorData.gasRaw.toInt();
+        });
+        print('✅ [AI케어] 센서 데이터 로드 성공: 온도=${temperature}°C, 습도=${humidity}%, 공기질=${airQuality}');
+      } else {
+        print('⚠️ [AI케어] 센서 데이터를 불러올 수 없습니다');
+      }
+    } catch (e) {
+      print('❌ [AI케어] 센서 데이터 로드 오류: $e');
+    }
   }
 
   // 반려동물 목록 로드
@@ -1179,7 +1216,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
         imagePath: _selectedImage!.path,
         petName: selectedPet.name,
         petId: selectedPet.id?.toString(),
+        userId: selectedPet.userId,
         modelType: modelType,
+        saveToBackend: true,
       );
 
       setState(() {
@@ -1210,8 +1249,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
       return imageUrl;
     }
     if (imageUrl.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$imageUrl';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$imageUrl';
     }
     return imageUrl;
   }

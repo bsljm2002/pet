@@ -68,14 +68,14 @@ public class PetController {
     
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Pet>> getPetById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Pet>> getPetById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(
                 ApiResponse.ok(petService.getPetById(id)));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Long>>> updatePet(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody PetCreateReq req) {
         petService.update(id, req);
         return ResponseEntity.ok(ApiResponse.ok(Map.of("id", id)));

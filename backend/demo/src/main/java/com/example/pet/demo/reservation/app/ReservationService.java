@@ -28,6 +28,7 @@ import com.example.pet.demo.users.app.UserService;
 import com.example.pet.demo.users.domain.User;
 import com.example.pet.demo.chat.domain.ChatRoom;
 import com.example.pet.demo.chat.domain.ChatRoomRepository;
+import com.example.pet.demo.medication.app.MedicationLogService;
 
 import java.util.stream.Collectors;
 
@@ -45,6 +46,7 @@ public class ReservationService {
     private final UserService userService;
     private final PetService petService;
     private final ChatRoomRepository chatRoomRepository;
+    private final MedicationLogService medicationLogService;
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     public Long create(ReservationCreateReq req) {
@@ -310,6 +312,53 @@ public class ReservationService {
     }
 
     /**
+     * 반려동물의 진료 기록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<CompletedReservationRes> getPetMedicalRecords(Long petId) {
+        System.out.println("📋 [DEBUG] 진료 기록 조회 요청 - petId: " + petId);
+
+        List<Reservation> completedReservations = reservationRepository
+            .findByPetIdAndStatusOrderByCreatedAtDesc(petId, ReservationStatus.COMPLETED);
+
+        System.out.println("📋 [DEBUG] 조회된 COMPLETED 예약 수: " + completedReservations.size());
+        completedReservations.forEach(r -> {
+            System.out.println("  - 예약 ID: " + r.getId() + ", petId: " + r.getPetId() +
+                ", 서비스: " + r.getServiceCategorical() + ", 상태: " + r.getStatus() +
+                ", 진단: " + (r.getDiagnosis() != null ? "있음" : "없음"));
+        });
+
+        List<CompletedReservationRes> result = completedReservations.stream()
+            .filter(r -> r.getServiceCategorical() == ServiceCategorical.HOSPITAL)
+            // 완료된 병원 예약은 모두 표시 (진료 정보가 없어도 표시)
+            .map(r -> {
+                System.out.println("  🔍 예약 ID " + r.getId() + "의 Partner User ID: " + r.getPartnerId() + "로 Partner 조회");
+                // Reservation의 partnerId는 실제로는 Partner의 userId
+                // 예약 생성 시: Partner 테이블에서 조회 → userId를 Reservation.partnerId에 저장
+                // 진료 기록 조회 시: Reservation.partnerId(userId)로 Partner 테이블에서 역조회
+                List<Partner> partners = partnerRepository.findByUserId(r.getPartnerId());
+                if (partners.isEmpty()) {
+                    System.out.println("  ❌ Partner User ID " + r.getPartnerId() + "에 해당하는 Partner를 찾을 수 없음!");
+                    return null;
+                }
+                Partner partner = partners.get(0);
+                System.out.println("  ✅ Partner 찾음: " + partner.getName());
+
+                // 체크된 복용 키 목록 조회
+                List<String> checkedKeys = medicationLogService.getCheckedMedicationKeys(r.getId());
+
+                // 진료 기록에는 리뷰 여부가 필요없으므로 false로 설정
+                return CompletedReservationRes.from(r, partner.getName(),
+                    partner.getPartnerType().name(), false, checkedKeys);
+            })
+            .filter(res -> res != null)
+            .collect(Collectors.toList());
+
+        System.out.println("📋 [DEBUG] 최종 반환 진료 기록 수: " + result.size());
+        return result;
+    }
+
+    /**
      * 리뷰 작성 가능 여부 확인
      */
     @Transactional(readOnly = true)
@@ -492,7 +541,8 @@ public class ReservationService {
      * 진료/서비스 완료
      * CHECKED_IN → COMPLETED
      */
-    public void complete(Long reservationId, Long partnerId) {
+    public void complete(Long reservationId, Long partnerId, String diagnosis, String prescription,
+                        String dosageSchedule, Integer dosageDays, String medicalNotes) {
         Reservation reservation = get(reservationId);
 
         // Partner ID로부터 User ID 조회
@@ -513,6 +563,13 @@ public class ReservationService {
         if (reservation.getStatus() != ReservationStatus.CHECKED_IN) {
             throw new IllegalArgumentException("RESERVATION_NOT_CHECKED_IN");
         }
+
+        // 진료 정보 저장
+        reservation.setDiagnosis(diagnosis);
+        reservation.setPrescription(prescription);
+        reservation.setDosageSchedule(dosageSchedule);
+        reservation.setDosageDays(dosageDays);
+        reservation.setMedicalNotes(medicalNotes);
 
         // 상태 변경
         reservation.setStatus(ReservationStatus.COMPLETED);
