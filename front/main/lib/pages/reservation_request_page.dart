@@ -3,14 +3,17 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../models/pet_profile.dart';
 import '../models/vet_model.dart';
+import '../models/ai_diagnosis.dart';
 import '../services/pet_profile_manager.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/pet_service.dart';
+import '../screens/ai_diagnosis_image_picker_screen.dart';
 
 /// 예약 신청 페이지
 /// 선택한 병원/수의사 정보를 표시하고 예약 관련 정보를 입력받는다.
@@ -33,6 +36,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
   final Set<int> _selectedPetIds = {};
   bool _isLoadingPets = true;
   String? _petLoadError;
+  List<AIDiagnosis> _selectedAIDiagnosisImages = []; // AI 진단 정보 목록
 
   @override
   void initState() {
@@ -265,7 +269,8 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
               : ['GENERAL'],
           'pets_id': petId,
           'visit_date_time': dateTimeStr, // 방문 예약 시간 (사용자가 선택한 날짜/시간)
-          'resv_urls': [],
+          'resv_urls': _selectedAIDiagnosisImages.map((d) => d.imagePath).toList(), // AI 진단 이미지 URL 목록
+          'ai_diagnoses': _selectedAIDiagnosisImages.map((d) => d.toJson()).toList(), // AI 진단 정보
           'resv_content': content,
         };
 
@@ -397,6 +402,11 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildMemoCard(),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildAIDiagnosisImagesCard(),
             ),
             const SizedBox(height: 28),
             Padding(
@@ -851,6 +861,169 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
         ],
       ),
     );
+  }
+
+  /// AI 진단 이미지 첨부 카드
+  Widget _buildAIDiagnosisImagesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'AI 진단 이미지 첨부',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF003829),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _selectedPetIds.isEmpty
+                    ? null
+                    : _selectAIDiagnosisImages,
+                icon: Icon(
+                  _selectedAIDiagnosisImages.isEmpty
+                      ? Icons.add_photo_alternate
+                      : Icons.edit,
+                  size: 18,
+                ),
+                label: Text(
+                  _selectedAIDiagnosisImages.isEmpty ? '선택' : '변경',
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF00B27A),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedPetIds.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                '먼저 진료 받을 반려동물을 선택해주세요',
+                style: TextStyle(
+                  color: Color(0xFFE65100),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else if (_selectedAIDiagnosisImages.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F7F1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'AI 진단 기록의 이미지를 선택하여 수의사에게 전달할 수 있습니다',
+                style: TextStyle(
+                  color: Color(0xFF2B8C6C),
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Text(
+                  '선택된 이미지: ${_selectedAIDiagnosisImages.length}개',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF00B27A),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _selectedAIDiagnosisImages.map((diagnosis) {
+                    return Container(
+                      width: (MediaQuery.of(context).size.width - 80) / 4,
+                      height: (MediaQuery.of(context).size.width - 80) / 4,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF00B27A),
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: diagnosis.imagePath.startsWith('http')
+                            ? Image.network(
+                                diagnosis.imagePath,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Image.file(
+                                File(diagnosis.imagePath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// AI 진단 이미지 선택
+  Future<void> _selectAIDiagnosisImages() async {
+    final result = await Navigator.push<List<AIDiagnosis>?>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AIDiagnosisImagePickerScreen(
+          selectedPetIds: _selectedPetIds.toList(),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedAIDiagnosisImages = result;
+      });
+    }
   }
 
   BoxDecoration _cardDecoration() {

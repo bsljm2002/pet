@@ -2,6 +2,7 @@
 // 케이지 센서 모니터링과 AI 진단 기능을 제공
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:io';
 import 'dart:async';
 import 'ai_diagnosis_gallery_screen.dart';
@@ -50,6 +51,15 @@ class _AiCareScreenState extends State<AiCareScreen> {
   // 센서 자동 업데이트 타이머
   Timer? _sensorUpdateTimer;
 
+  // 선택된 센서 타입 (null: 선택 안함, 'temperature', 'humidity', 'air_quality')
+  String? _selectedSensorType;
+
+  // 선택된 기간 (0: 어제, 1: 일주일, 2: 한달)
+  int _selectedPeriod = 0;
+
+  // 집계 데이터
+  Map<String, dynamic>? _aggregateData;
+
   @override
   void initState() {
     super.initState();
@@ -85,6 +95,34 @@ class _AiCareScreenState extends State<AiCareScreen> {
       }
     } catch (e) {
       print('❌ [AI케어] 센서 데이터 로드 오류: $e');
+    }
+  }
+
+  // 센서 선택 토글
+  void _showSensorChart(String sensorType, String sensorLabel, Color sensorColor) {
+    setState(() {
+      // 같은 센서를 다시 클릭하면 닫기
+      if (_selectedSensorType == sensorType) {
+        _selectedSensorType = null;
+      } else {
+        _selectedSensorType = sensorType;
+        // 집계 데이터 로드
+        _loadAggregateData();
+      }
+    });
+  }
+
+  // 집계 데이터 로드
+  Future<void> _loadAggregateData() async {
+    try {
+      final sensorService = SensorService();
+      final data = await sensorService.getAggregateData();
+
+      setState(() {
+        _aggregateData = data;
+      });
+    } catch (e) {
+      print('❌ [센서차트] 데이터 로드 오류: $e');
     }
   }
 
@@ -453,7 +491,6 @@ class _AiCareScreenState extends State<AiCareScreen> {
         // 센서 데이터 표시
         Container(
           width: double.infinity,
-          height: 300,
           color: Colors.transparent,
           child: Column(
             children: [
@@ -464,6 +501,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     ? '${temperature!.toStringAsFixed(1)} °C'
                     : '--',
                 color: Colors.red,
+                onTap: () => _showSensorChart('temperature', '온도', Colors.red),
+                isSelected: _selectedSensorType == 'temperature',
               ),
               // 습도 센서
               _buildSensorCard(
@@ -472,16 +511,23 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     ? '${humidity!.toStringAsFixed(1)} %'
                     : '--',
                 color: Colors.blue,
+                onTap: () => _showSensorChart('humidity', '습도', Colors.blue),
+                isSelected: _selectedSensorType == 'humidity',
               ),
               // 공기질 센서
               _buildSensorCard(
                 label: '공기',
                 value: airQuality != null ? '$airQuality CAI' : '--',
                 color: Colors.green,
+                onTap: () => _showSensorChart('air_quality', '공기질', Colors.green),
+                isSelected: _selectedSensorType == 'air_quality',
               ),
             ],
           ),
         ),
+
+        // 선택된 센서의 그래프 표시
+        if (_selectedSensorType != null) _buildSensorGraph(),
       ],
     );
   }
@@ -490,62 +536,409 @@ class _AiCareScreenState extends State<AiCareScreen> {
     required String label,
     required String value,
     required Color color,
+    VoidCallback? onTap,
+    bool isSelected = false,
   }) {
-    return Container(
-      width: double.infinity,
-      height: 80,
-      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 4,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              width: 55,
-              height: 55,
-              child: Stack(
-                children: [
-                  // 고양이 모양 테두리 (Stroke)
-                  CustomPaint(
-                    size: Size(55, 55),
-                    painter: _CatShapeBorderPainter(color: color),
-                  ),
-                  // 중앙 텍스트
-                  Center(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 80,
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.1) : Colors.white,
+          border: isSelected ? Border.all(color: color, width: 2) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 4,
+              offset: Offset(0, 4),
             ),
           ],
         ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: 55,
+                height: 55,
+                child: Stack(
+                  children: [
+                    // 고양이 모양 테두리 (Stroke)
+                    CustomPaint(
+                      size: Size(55, 55),
+                      painter: _CatShapeBorderPainter(color: color),
+                    ),
+                    // 중앙 텍스트
+                    Center(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Colors.grey[400],
+                    size: 24,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  /// 센서 그래프 표시
+  Widget _buildSensorGraph() {
+    if (_aggregateData == null) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: _getSensorColor(),
+          ),
+        ),
+      );
+    }
+
+    final averages = _aggregateData!['averages'];
+    if (averages == null) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            '데이터를 불러올 수 없습니다',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    // 센서 타입에 맞는 데이터 가져오기
+    String fieldKey;
+    String unit;
+    switch (_selectedSensorType) {
+      case 'temperature':
+        fieldKey = 'temperature';
+        unit = '°C';
+        break;
+      case 'humidity':
+        fieldKey = 'humidity';
+        unit = '%';
+        break;
+      case 'air_quality':
+        fieldKey = 'gas_raw';
+        unit = 'CAI';
+        break;
+      default:
+        return SizedBox();
+    }
+
+    final fieldData = averages[fieldKey];
+    if (fieldData == null) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            '해당 센서의 데이터가 없습니다',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    // 선택된 기간에 맞는 데이터
+    double? value;
+    String periodLabel;
+    switch (_selectedPeriod) {
+      case 0: // 어제 (24시간)
+        value = fieldData['last_day'];
+        periodLabel = '어제 평균';
+        break;
+      case 1: // 일주일
+        value = fieldData['last_week'];
+        periodLabel = '일주일 평균';
+        break;
+      case 2: // 한달
+        value = fieldData['last_month'];
+        periodLabel = '한달 평균';
+        break;
+      default:
+        return SizedBox();
+    }
+
+    if (value == null) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            '해당 기간의 데이터가 없습니다',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    // 모든 기간 데이터 가져오기 (비교용)
+    final List<double> values = [];
+    final List<String> labels = [];
+
+    if (fieldData['last_day'] != null) {
+      values.add(fieldData['last_day'].toDouble());
+      labels.add('어제');
+    }
+    if (fieldData['last_week'] != null) {
+      values.add(fieldData['last_week'].toDouble());
+      labels.add('일주일');
+    }
+    if (fieldData['last_month'] != null) {
+      values.add(fieldData['last_month'].toDouble());
+      labels.add('한달');
+    }
+
+    if (values.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(
+          child: Text(
+            '데이터가 없습니다',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ),
+      );
+    }
+
+    final sensorColor = _getSensorColor();
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 기간 선택 탭
+          Row(
+            children: [
+              Expanded(child: _buildPeriodTab('어제', 0)),
+              SizedBox(width: 8),
+              Expanded(child: _buildPeriodTab('일주일', 1)),
+              SizedBox(width: 8),
+              Expanded(child: _buildPeriodTab('한달', 2)),
+            ],
+          ),
+          SizedBox(height: 20),
+
+          // 현재 값 표시
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: sensorColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  periodLabel,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '${value.toStringAsFixed(1)} $unit',
+                  style: TextStyle(
+                    fontSize: 32,
+                    color: sensorColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 20),
+
+          // 막대 그래프
+          SizedBox(
+            height: 200,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: (values.reduce((a, b) => a > b ? a : b) * 1.2),
+                minY: 0,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
+                    tooltipPadding: EdgeInsets.all(8),
+                    tooltipMargin: 8,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        '${rod.toY.toStringAsFixed(1)} $unit',
+                        TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                          return Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              labels[value.toInt()],
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          );
+                        }
+                        return SizedBox();
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[600],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: (values.reduce((a, b) => a > b ? a : b) * 1.2) / 5,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey[300],
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(
+                  values.length,
+                  (index) => BarChartGroupData(
+                    x: index,
+                    barRods: [
+                      BarChartRodData(
+                        toY: values[index],
+                        color: sensorColor,
+                        width: 40,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 기간 선택 탭 버튼
+  Widget _buildPeriodTab(String label, int index) {
+    final isSelected = _selectedPeriod == index;
+    final sensorColor = _getSensorColor();
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedPeriod = index;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? sensorColor : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: sensorColor,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : sensorColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 선택된 센서의 색상 가져오기
+  Color _getSensorColor() {
+    switch (_selectedSensorType) {
+      case 'temperature':
+        return Colors.red;
+      case 'humidity':
+        return Colors.blue;
+      case 'air_quality':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 
   /// AI 진단 컨텐츠
@@ -879,42 +1272,72 @@ class _AiCareScreenState extends State<AiCareScreen> {
               const SizedBox(height: 16),
 
               // 이미지 선택 영역
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // 이미지 미리보기
-                    _selectedImage != null
-                        ? ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            child: Image.file(
-                              _selectedImage!,
-                              width: double.infinity,
-                              height: 300,
-                              fit: BoxFit.cover,
-                            ),
+              GestureDetector(
+                onTap: _isAnalyzing ? null : _showImageSourceDialog,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: _selectedImage != null
+                        ? Stack(
+                            children: [
+                              Image.file(
+                                _selectedImage!,
+                                width: double.infinity,
+                                height: 300,
+                                fit: BoxFit.cover,
+                              ),
+                              // 재선택 힌트
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.edit,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '사진 변경',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           )
                         : Container(
                             width: double.infinity,
                             height: 300,
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12),
-                              ),
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -930,60 +1353,21 @@ class _AiCareScreenState extends State<AiCareScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '탭하여 카메라 또는 갤러리 선택',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[400],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-
-                    // 카메라/갤러리 버튼
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isAnalyzing ? null : _takePicture,
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text('카메라'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00B27A),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isAnalyzing ? null : _pickFromGallery,
-                              icon: const Icon(Icons.photo_library),
-                              label: const Text('갤러리'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF00B27A),
-                                side: const BorderSide(
-                                  color: Color(0xFF00B27A),
-                                  width: 2,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
 
@@ -1123,6 +1507,103 @@ class _AiCareScreenState extends State<AiCareScreen> {
           height: 1.5,
         ),
       ),
+    );
+  }
+
+  // 이미지 소스 선택 다이얼로그
+  Future<void> _showImageSourceDialog() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 핸들바
+                Container(
+                  margin: EdgeInsets.only(top: 12, bottom: 20),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // 타이틀
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    '사진 선택',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF006C52),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                // 카메라 옵션
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF00B27A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: Color(0xFF00B27A),
+                    ),
+                  ),
+                  title: Text(
+                    '카메라로 촬영',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _takePicture();
+                  },
+                ),
+                // 갤러리 옵션
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF00B27A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.photo_library,
+                      color: Color(0xFF00B27A),
+                    ),
+                  ),
+                  title: Text(
+                    '갤러리에서 선택',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickFromGallery();
+                  },
+                ),
+                SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

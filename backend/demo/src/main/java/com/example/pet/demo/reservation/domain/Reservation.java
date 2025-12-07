@@ -106,6 +106,10 @@ public class Reservation {
     @Column(name = "disease_exam_id")
     private Long diseaseExamId; // AI 진단 기록 ID (disease_exam 테이블 참조)
 
+    // AI 진단 정보 (JSON 형태로 저장)
+    @Column(name = "ai_diagnosis_data", columnDefinition = "text")
+    private String aiDiagnosisData; // AI 진단 정보 목록 (JSON 배열)
+
     public enum ServiceCategorical {
         HOSPITAL, GROOMING, CAFE, SITTER
     }

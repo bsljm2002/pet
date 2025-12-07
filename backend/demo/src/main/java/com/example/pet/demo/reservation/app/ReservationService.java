@@ -15,9 +15,12 @@ import com.example.pet.demo.partner.domain.Partner;
 import com.example.pet.demo.partner.domain.PartnerRepository;
 import com.example.pet.demo.pets.domain.Pet;
 import com.example.pet.demo.pets.app.PetService;
+import com.example.pet.demo.reservation.api.dto.AIDiagnosisDto;
 import com.example.pet.demo.reservation.api.dto.CompletedReservationRes;
 import com.example.pet.demo.reservation.api.dto.MyReservationRes;
 import com.example.pet.demo.reservation.api.dto.ReservationCreateReq;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.pet.demo.reservation.domain.Reservation;
 import com.example.pet.demo.reservation.domain.Reservation.ReservationStatus;
 import com.example.pet.demo.reservation.domain.Reservation.ServiceCategorical;
@@ -47,6 +50,7 @@ public class ReservationService {
     private final PetService petService;
     private final ChatRoomRepository chatRoomRepository;
     private final MedicationLogService medicationLogService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     public Long create(ReservationCreateReq req) {
@@ -60,6 +64,17 @@ public class ReservationService {
         }
 
         String imageCsv = toCsv(req.reservationImageUrls());
+
+        // AI 진단 정보를 JSON으로 변환
+        String aiDiagnosisJson = null;
+        if (req.aiDiagnoses() != null && !req.aiDiagnoses().isEmpty()) {
+            try {
+                aiDiagnosisJson = objectMapper.writeValueAsString(req.aiDiagnoses());
+            } catch (Exception e) {
+                System.out.println("⚠️ AI 진단 정보 JSON 변환 실패: " + e.getMessage());
+            }
+        }
+
         Reservation reservation = Reservation.builder()
             .userId(req.userId())
             .partnerId(partnerUserId)  // Partner의 User ID 사용
@@ -73,6 +88,7 @@ public class ReservationService {
             .petId(req.petId())
             .vetSpecialtyCsv(toCsv(req.vetSpecialties()))
             .petsitterWorkCsv(toCsv(req.petsitterWorks()))
+            .aiDiagnosisData(aiDiagnosisJson)  // AI 진단 정보 저장
             .build();
 
         Reservation savedReservation = reservations.save(reservation);
@@ -240,6 +256,12 @@ public class ReservationService {
             hasReview = reviewRepository.existsByReservationId(r.getId());
         }
 
+        // AI 진단 이미지 URL 목록 파싱
+        List<String> resvUrls = parseResvUrls(r.getReservationImageUrl());
+
+        // AI 진단 정보 파싱
+        List<AIDiagnosisDto> aiDiagnoses = parseAIDiagnosisData(r.getAiDiagnosisData());
+
         return new MyReservationRes(
         r.getId(),
         r.getUserId(),
@@ -256,7 +278,9 @@ public class ReservationService {
         specialties,
         r.getStatus().name(),
         r.getReservationContent(),
-        hasReview
+        hasReview,
+        resvUrls,  // AI 진단 이미지 URL 목록
+        aiDiagnoses  // AI 진단 정보 목록
 );
     }
 
@@ -436,6 +460,12 @@ public class ReservationService {
         System.out.println("⚠️ 파트너 이름 조회 실패: " + e.getMessage());
     }
 
+    // AI 진단 이미지 URL 목록 파싱
+    List<String> resvUrls = parseResvUrls(r.getReservationImageUrl());
+
+    // AI 진단 정보 파싱
+    List<AIDiagnosisDto> aiDiagnoses = parseAIDiagnosisData(r.getAiDiagnosisData());
+
     return new MyReservationRes(
             r.getId(),
             r.getUserId(),
@@ -452,8 +482,72 @@ public class ReservationService {
             specialties,
             r.getStatus().name(),
             r.getReservationContent(),
-            false                    // hasReview - 파트너용 예약에서는 불필요
+            false,                   // hasReview - 파트너용 예약에서는 불필요
+            resvUrls,                // AI 진단 이미지 URL 목록
+            aiDiagnoses              // AI 진단 정보 목록
     );
+}
+
+/**
+ * 예약 이미지 URL 문자열을 리스트로 파싱
+ * JSON 배열 형태 또는 쉼표로 구분된 문자열을 리스트로 변환
+ */
+private List<String> parseResvUrls(String reservationImageUrl) {
+    if (reservationImageUrl == null || reservationImageUrl.trim().isEmpty()) {
+        return List.of();
+    }
+
+    String trimmed = reservationImageUrl.trim();
+
+    // JSON 배열 형태인 경우 ("[url1", "url2"]")
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+            // 간단한 JSON 파싱 (ObjectMapper 사용 가능하지만 간단하게 처리)
+            String content = trimmed.substring(1, trimmed.length() - 1);
+            if (content.trim().isEmpty()) {
+                return List.of();
+            }
+            return java.util.Arrays.stream(content.split(","))
+                    .map(String::trim)
+                    .map(s -> s.replaceAll("^\"|\"$", ""))  // 앞뒤 따옴표 제거
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        } catch (Exception e) {
+            System.out.println("⚠️ JSON 배열 파싱 실패: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    // 쉼표로 구분된 문자열인 경우
+    if (trimmed.contains(",")) {
+        return java.util.Arrays.stream(trimmed.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    // 단일 URL인 경우
+    return List.of(trimmed);
+}
+
+/**
+ * AI 진단 데이터 JSON 문자열을 리스트로 파싱
+ */
+private List<AIDiagnosisDto> parseAIDiagnosisData(String aiDiagnosisData) {
+    if (aiDiagnosisData == null || aiDiagnosisData.trim().isEmpty()) {
+        return List.of();
+    }
+
+    try {
+        // JSON 배열을 AIDiagnosisDto 리스트로 파싱
+        return objectMapper.readValue(
+            aiDiagnosisData,
+            new TypeReference<List<AIDiagnosisDto>>() {}
+        );
+    } catch (Exception e) {
+        System.out.println("⚠️ AI 진단 데이터 파싱 실패: " + e.getMessage());
+        return List.of();
+    }
 }
 
     /**

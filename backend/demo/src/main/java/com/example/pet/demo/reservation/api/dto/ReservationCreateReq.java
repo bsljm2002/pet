@@ -42,7 +42,10 @@ public record ReservationCreateReq (
 
     @JsonProperty("resv_urls")
     List<String> reservationImageUrls,
-    
+
+    @JsonProperty("ai_diagnoses")
+    List<AIDiagnosisDto> aiDiagnoses,
+
     @NotBlank @Size(max = 2000) @JsonProperty("resv_content") String reservationContent
     ) {
     @AssertTrue(message = "vet_specialties는 HOSPITAL 예약에서 필수입니다.")

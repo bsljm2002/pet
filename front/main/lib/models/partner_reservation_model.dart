@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'ai_diagnosis.dart';
 
 /// 파트너용 예약 모델 (병원/시터가 받은 예약)
 class PartnerReservationModel {
@@ -12,6 +13,8 @@ class PartnerReservationModel {
   final DateTime createdAt;
   final String? reservationContent;
   final List<String> specialties;
+  final List<String> resvUrls; // AI 진단 이미지 URL 목록
+  final List<AIDiagnosis> aiDiagnoses; // AI 진단 정보 목록
 
   PartnerReservationModel({
     required this.reservationId,
@@ -24,6 +27,8 @@ class PartnerReservationModel {
     required this.createdAt,
     this.reservationContent,
     this.specialties = const [],
+    this.resvUrls = const [],
+    this.aiDiagnoses = const [],
   });
 
   factory PartnerReservationModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +47,18 @@ class PartnerReservationModel {
       specialties: json['specialties'] != null
           ? (json['specialties'] is List
               ? List<String>.from(json['specialties'])
+              : [])
+          : [],
+      resvUrls: json['resvUrls'] != null
+          ? (json['resvUrls'] is List
+              ? List<String>.from(json['resvUrls'])
+              : [])
+          : [],
+      aiDiagnoses: json['aiDiagnoses'] != null
+          ? (json['aiDiagnoses'] is List
+              ? (json['aiDiagnoses'] as List)
+                  .map((d) => AIDiagnosis.fromJson(d as Map<String, dynamic>))
+                  .toList()
               : [])
           : [],
     );

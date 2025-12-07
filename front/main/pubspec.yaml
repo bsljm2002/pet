@@ -93,6 +93,9 @@ dependencies:
   # 위치 추적 패키지 (펫시터 위치 공유용)
   geolocator: ^13.0.2
 
+  # 차트 라이브러리 (센서 데이터 그래프용)
+  fl_chart: ^0.69.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

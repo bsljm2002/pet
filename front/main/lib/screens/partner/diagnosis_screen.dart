@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
 import '../../models/partner_reservation_model.dart';
 import '../../models/pet_profile.dart';
 import '../../services/partner_reservation_service.dart';
@@ -53,6 +54,13 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
   void initState() {
     super.initState();
     _currentStatus = widget.reservation.status; // 초기 상태 설정
+    print('🔍 [DiagnosisScreen] resvUrls: ${widget.reservation.resvUrls}');
+    print('🔍 [DiagnosisScreen] resvUrls.length: ${widget.reservation.resvUrls.length}');
+    print('🔍 [DiagnosisScreen] aiDiagnoses: ${widget.reservation.aiDiagnoses}');
+    print('🔍 [DiagnosisScreen] aiDiagnoses.length: ${widget.reservation.aiDiagnoses.length}');
+    print('🔍 [DiagnosisScreen] symptoms: ${widget.symptoms}');
+    print('🔍 [DiagnosisScreen] symptoms.length: ${widget.symptoms.length}');
+    print('🔍 [DiagnosisScreen] initialNotes: ${widget.initialNotes}');
     _loadPetProfile();
   }
 
@@ -539,85 +547,15 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
             else if (_petProfile != null)
               _buildPetInfoSection(),
 
+            // AI 진단 이미지 섹션 (반려동물 상세정보 아래로 이동)
+            if (widget.reservation.resvUrls.isNotEmpty)
+              _buildAIDiagnosisImagesSection(),
+
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 주요 증상
-                  const Text(
-                    '주요 증상',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF003829),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (widget.symptoms.isEmpty)
-                    const Text(
-                      '체크된 증상이 없습니다',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: widget.symptoms.map((symptom) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4FC59E).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF4FC59E),
-                            ),
-                          ),
-                          child: Text(
-                            symptom,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF003829),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                  // 초기 증상 메모
-                  if (widget.initialNotes != null &&
-                      widget.initialNotes!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      '추가 증상 메모',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF003829),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        widget.initialNotes!,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
-
                   // 보호자 요청사항
                   if (widget.reservation.reservationContent != null &&
                       widget.reservation.reservationContent!.isNotEmpty) ...[
@@ -1331,6 +1269,359 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  /// AI 진단 이미지 섹션
+  Widget _buildAIDiagnosisImagesSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F7F1),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade200,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B27A),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'AI 진단 이미지',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF003829),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B27A),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${widget.reservation.resvUrls.length}개',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            '보호자가 전달한 AI 진단 이미지입니다',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF2B8C6C),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: widget.reservation.resvUrls.map((imageUrl) {
+              return GestureDetector(
+                onTap: () => _showImageDialog(imageUrl),
+                child: Container(
+                  width: (MediaQuery.of(context).size.width - 88) / 4,
+                  height: (MediaQuery.of(context).size.width - 88) / 4,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF00B27A),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: imageUrl.startsWith('http')
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 24,
+                                  color: Colors.grey[400],
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Image.file(
+                            File(imageUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 24,
+                                  color: Colors.grey[400],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 이미지와 AI 진단 정보 표시 다이얼로그
+  void _showImageDialog(String imageUrl) {
+    print('🖼️ [이미지 다이얼로그] imageUrl: $imageUrl');
+    print('🖼️ [이미지 다이얼로그] aiDiagnoses.length: ${widget.reservation.aiDiagnoses.length}');
+
+    final matchingDiagnoses = widget.reservation.aiDiagnoses.where((d) => d.imagePath == imageUrl).toList();
+    print('🖼️ [이미지 다이얼로그] matchingDiagnoses.length: ${matchingDiagnoses.length}');
+
+    if (matchingDiagnoses.isNotEmpty) {
+      print('✅ [이미지 다이얼로그] 매칭된 진단 정보:');
+      for (var diagnosis in matchingDiagnoses) {
+        print('   - petName: ${diagnosis.petName}');
+        print('   - diagnosis: ${diagnosis.diagnosis}');
+        print('   - imagePath: ${diagnosis.imagePath}');
+      }
+    } else {
+      print('❌ [이미지 다이얼로그] 매칭되는 진단 정보 없음');
+      print('   전체 aiDiagnoses:');
+      for (var diagnosis in widget.reservation.aiDiagnoses) {
+        print('   - imagePath: ${diagnosis.imagePath}');
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 헤더
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF00B27A),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'AI 진단 이미지',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            // 이미지
+            Flexible(
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: imageUrl.startsWith('http')
+                    ? Image.network(
+                        imageUrl,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 300,
+                            height: 300,
+                            color: Colors.grey[200],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '이미지를 불러올 수 없습니다',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    : Image.file(
+                        File(imageUrl),
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 300,
+                            height: 300,
+                            color: Colors.grey[200],
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  '이미지를 불러올 수 없습니다',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ),
+            // AI 진단 정보 섹션
+            if (widget.reservation.aiDiagnoses.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6F7F1),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AI 진단 상세 정보',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF003829),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // 이미지 URL로 해당 진단 정보 찾아서 표시
+                    ...widget.reservation.aiDiagnoses.where((d) => d.imagePath == imageUrl).map((diagnosis) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDiagnosisInfoRow('반려동물', diagnosis.petName),
+                        _buildDiagnosisInfoRow('진단명', diagnosis.diagnosis),
+                        _buildDiagnosisInfoRow('심각도', diagnosis.getSeverityText()),
+                        if (diagnosis.description.isNotEmpty)
+                          _buildDiagnosisInfoRow('설명', diagnosis.description),
+                        if (diagnosis.symptoms.isNotEmpty)
+                          _buildDiagnosisInfoRow('증상', diagnosis.symptoms.join(', ')),
+                        if (diagnosis.recommendations.isNotEmpty)
+                          _buildDiagnosisInfoRow('권장사항', diagnosis.recommendations.join(', ')),
+                      ],
+                    )),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiagnosisInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2B8C6C),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF003829),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

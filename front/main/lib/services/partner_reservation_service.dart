@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/partner_reservation_model.dart';
+import '../models/ai_diagnosis.dart';
 import 'api_service.dart';
 
 class PartnerReservationService {
@@ -25,7 +26,11 @@ class PartnerReservationService {
 
         if (jsonData['ok'] == true && jsonData['data'] != null) {
           final List<dynamic> reservationsList = jsonData['data'];
+          print('🔍 [DEBUG] 예약 목록 원본 데이터: $reservationsList');
           return reservationsList.map((item) {
+            print('🔍 [DEBUG] 예약 항목: $item');
+            print('🔍 [DEBUG] resvUrls 필드: ${item['resvUrls']}');
+            print('🔍 [DEBUG] aiDiagnoses 필드: ${item['aiDiagnoses']}');
             // MyReservationRes를 PartnerReservationModel로 변환
             return PartnerReservationModel(
               reservationId: item['reservationId'] ?? 0,
@@ -39,6 +44,18 @@ class PartnerReservationService {
               reservationContent: item['reservationContent'],
               specialties: item['specialties'] != null
                   ? List<String>.from(item['specialties'])
+                  : [],
+              resvUrls: item['resvUrls'] != null
+                  ? (item['resvUrls'] is List
+                      ? List<String>.from(item['resvUrls'])
+                      : [])
+                  : [],
+              aiDiagnoses: item['aiDiagnoses'] != null
+                  ? (item['aiDiagnoses'] is List
+                      ? (item['aiDiagnoses'] as List)
+                          .map((d) => AIDiagnosis.fromJson(d as Map<String, dynamic>))
+                          .toList()
+                      : [])
                   : [],
             );
           }).toList();

@@ -18,5 +18,7 @@ public record MyReservationRes(
     List<String> specialties,
     String status,
     String reservationContent,
-    Boolean hasReview  // 리뷰 작성 여부
+    Boolean hasReview,  // 리뷰 작성 여부
+    List<String> resvUrls,  // AI 진단 이미지 URL 목록
+    List<AIDiagnosisDto> aiDiagnoses  // AI 진단 정보 목록
 ) {}
