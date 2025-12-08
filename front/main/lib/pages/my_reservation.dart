@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/user_reservation_model.dart';
 import '../services/user_reservation_service.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import '../widgets/ticket_shell.dart';
 import 'write_review_page.dart';
 import 'sitter_reservation_detail_page.dart';
@@ -19,6 +20,7 @@ class MyReservation extends StatefulWidget {
 class _MyReservationState extends State<MyReservation> {
   final UserReservationService _reservationService = UserReservationService();
   final AuthService _authService = AuthService();
+  final FCMService _fcmService = FCMService();
 
   List<UserReservationModel> _reservations = [];
   bool _isLoading = false;
@@ -33,6 +35,58 @@ class _MyReservationState extends State<MyReservation> {
     Intl.defaultLocale ??= 'ko_KR';
     initializeDateFormatting('ko_KR', null);
     _loadReservations();
+    _setupFCMListeners();
+  }
+
+  /// FCM 메시지 리스너 설정
+  void _setupFCMListeners() {
+    // 포그라운드 메시지 수신 시
+    _fcmService.onMessageReceived = (data) {
+      print('📩 [My Reservation] FCM 메시지 수신: $data');
+
+      // 예약 관련 알림인 경우 목록 새로고침
+      if (data['type'] == 'reservation_update' ||
+          data['type'] == 'reservation_accepted' ||
+          data['type'] == 'reservation_rejected' ||
+          data['type'] == 'reservation_confirmed' ||
+          data['type'] == 'reservation_completed') {
+        print('🔄 [My Reservation] 예약 목록 자동 새로고침');
+        _loadReservations();
+
+        // 사용자에게 알림 표시
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? '예약 정보가 업데이트되었습니다'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: const Color(0xFF4FC59E),
+            ),
+          );
+        }
+      }
+    };
+
+    // 백그라운드 알림 클릭 시
+    _fcmService.onMessageOpenedApp = (data) {
+      print('🔔 [My Reservation] 알림 클릭: $data');
+
+      // 예약 관련 알림인 경우 목록 새로고침
+      if (data['type'] == 'reservation_update' ||
+          data['type'] == 'reservation_accepted' ||
+          data['type'] == 'reservation_rejected' ||
+          data['type'] == 'reservation_confirmed' ||
+          data['type'] == 'reservation_completed') {
+        _loadReservations();
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    // 리스너 해제
+    _fcmService.onMessageReceived = null;
+    _fcmService.onMessageOpenedApp = null;
+    super.dispose();
   }
 
   Future<void> _loadReservations() async {

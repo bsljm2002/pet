@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import '../services/openai_service.dart';
+import '../services/chat_history_service.dart';
+import '../services/auth_service.dart';
+import '../services/pet_service.dart';
+import '../services/medical_record_service.dart';
+import '../models/pet_profile.dart';
+import '../models/medical_record.dart';
+import 'chat_history_screen.dart';
 
 /// AI 챗봇 화면
 class ChatbotScreen extends StatefulWidget {
@@ -14,7 +21,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<ChatMessage> _messages = [];
   final ScrollController _scrollController = ScrollController();
   final OpenAIService _openAIService = OpenAIService();
+  final ChatHistoryService _chatHistoryService = ChatHistoryService();
+  final AuthService _authService = AuthService();
+  final PetService _petService = PetService();
+  final MedicalRecordService _medicalRecordService = MedicalRecordService();
   bool _isLoading = false;
+  String? _currentSessionId;
+  String? _petContext; // 반려동물 정보 컨텍스트
 
   @override
   void initState() {
@@ -25,6 +38,129 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     } catch (e) {
       print('OpenAI 초기화 실패: $e');
     }
+    // 사용자 ID 설정 및 세션 생성
+    _initializeChatSession();
+  }
+
+  Future<void> _initializeChatSession() async {
+    // 로그인한 사용자 ID를 ChatHistoryService에 설정
+    if (_authService.currentUser != null) {
+      final userId = int.tryParse(_authService.currentUser!.id);
+      _chatHistoryService.setUserId(userId);
+      print('✅ ChatHistoryService - 사용자 ID 설정: $userId');
+
+      // 반려동물 정보 및 진료 기록 로드
+      await _loadPetContext(userId!);
+    } else {
+      print('⚠️ ChatHistoryService - 로그인되지 않음, 로컬 저장 모드');
+    }
+
+    // 1. 먼저 저장된 세션 목록 확인
+    final sessions = await _chatHistoryService.getAllSessions();
+
+    if (sessions.isNotEmpty) {
+      // 가장 최근 세션의 ID만 설정 (화면에는 표시 안 함)
+      final latestSession = sessions.first;
+      setState(() {
+        _currentSessionId = latestSession.id;
+        // _messages는 비워둠 - 깨끗한 UI
+      });
+      print('✅ 기존 세션 연결: ${latestSession.title} (ID: ${latestSession.id})');
+      print('💡 화면은 비어있지만 AI는 이전 대화를 기억합니다');
+      return;
+    }
+
+    // 2. 기존 세션이 없으면 새 세션 생성
+    print('🆕 새 세션 생성 중...');
+    final session = await _chatHistoryService.createSession();
+    setState(() {
+      _currentSessionId = session.id;
+    });
+    print('✅ 새 챗봇 세션 생성: ${session.id}');
+  }
+
+  /// 반려동물 정보 및 진료 기록 로드
+  Future<void> _loadPetContext(int userId) async {
+    try {
+      // 1. 사용자의 반려동물 목록 조회
+      final petResult = await _petService.getPetsByOwner(userId.toString());
+
+      if (petResult['success'] != true || petResult['pets'] == null) {
+        print('⚠️ 등록된 반려동물이 없습니다');
+        return;
+      }
+
+      final List<dynamic> petsData = petResult['pets'];
+      if (petsData.isEmpty) {
+        print('⚠️ 반려동물 목록이 비어있습니다');
+        return;
+      }
+
+      // 2. 첫 번째 반려동물 정보 가져오기 (여러 마리인 경우 첫 번째만)
+      final PetProfile pet = PetProfile.fromJson(petsData.first);
+
+      // 3. 해당 반려동물의 진료 기록 조회
+      final List<MedicalRecord> medicalRecords =
+          await _medicalRecordService.getPetMedicalRecords(pet.id!);
+
+      // 4. 컨텍스트 문자열 생성
+      String context = _buildPetContextString(pet, medicalRecords);
+
+      setState(() {
+        _petContext = context;
+      });
+
+      print('✅ 반려동물 정보 로드 완료: ${pet.name}');
+      print('📋 진료 기록: ${medicalRecords.length}건');
+    } catch (e) {
+      print('❌ 반려동물 정보 로드 실패: $e');
+    }
+  }
+
+  /// 반려동물 정보를 AI가 이해할 수 있는 텍스트로 변환
+  String _buildPetContextString(PetProfile pet, List<MedicalRecord> medicalRecords) {
+    StringBuffer context = StringBuffer();
+
+    context.writeln('=== 사용자의 반려동물 정보 ===');
+    context.writeln('이름: ${pet.name}');
+    context.writeln('종: ${pet.species == "DOG" ? "강아지" : "고양이"}');
+    if (pet.speciesDetail != null && pet.speciesDetail!.isNotEmpty) {
+      context.writeln('품종: ${pet.speciesDetail}');
+    }
+    if (pet.age != null) {
+      context.writeln('나이: ${pet.age}살');
+    }
+    context.writeln('생일: ${pet.birthdate}');
+    context.writeln('성별: ${pet.gender == "MALE" ? "수컷" : "암컷"}');
+    context.writeln('몸무게: ${pet.weight}kg');
+    if (pet.disease != null && pet.disease!.isNotEmpty) {
+      context.writeln('질병/특이사항: ${pet.disease}');
+    }
+
+    // 진료 기록 추가 (최근 3개만)
+    if (medicalRecords.isNotEmpty) {
+      context.writeln('\n=== 최근 진료 기록 ===');
+      final recentRecords = medicalRecords.take(3).toList();
+
+      for (int i = 0; i < recentRecords.length; i++) {
+        final record = recentRecords[i];
+        context.writeln('${i + 1}. ${record.createdAt.toString().substring(0, 10)} - ${record.partnerName}');
+
+        if (record.diagnosis != null && record.diagnosis!.isNotEmpty) {
+          context.writeln('   진단: ${record.diagnosis}');
+        }
+        if (record.prescription != null && record.prescription!.isNotEmpty) {
+          context.writeln('   처방약: ${record.prescription}');
+        }
+        if (record.dosageSchedule != null && record.dosageDays != null) {
+          context.writeln('   복용: ${record.dosageScheduleFormatted} / ${record.dosageDaysFormatted}');
+        }
+      }
+    }
+
+    context.writeln('\n위 정보를 참고하여 ${pet.name}에 대한 개인화된 조언을 제공해주세요.');
+
+    return context.toString();
   }
 
   @override
@@ -35,7 +171,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || _isLoading) return;
+    if (_messageController.text.trim().isEmpty || _isLoading || _currentSessionId == null) return;
 
     final userMessage = _messageController.text.trim();
     _messageController.clear();
@@ -49,18 +185,41 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isLoading = true;
     });
 
+    // DB에 사용자 메시지 저장
+    try {
+      print('💾 메시지 저장 시도 - 세션: $_currentSessionId, 사용자ID: ${_chatHistoryService.currentUserId}');
+      await _chatHistoryService.addMessage(
+        _currentSessionId!,
+        ChatMessageData(
+          text: userMessage,
+          isUser: true,
+          timestamp: DateTime.now(),
+        ),
+      );
+      print('✅ 사용자 메시지 저장 완료');
+    } catch (e) {
+      print('❌ 사용자 메시지 저장 실패: $e');
+    }
+
     _scrollToBottom();
 
     try {
-      // 대화 히스토리 구성 (최근 10개만)
+      // DB에서 현재 세션의 전체 대화 히스토리 가져오기
       List<Map<String, String>> conversationHistory = [];
-      int startIndex = _messages.length > 10 ? _messages.length - 10 : 0;
 
-      for (int i = startIndex; i < _messages.length - 1; i++) {
-        conversationHistory.add({
-          'role': _messages[i].isUser ? 'user' : 'assistant',
-          'content': _messages[i].text,
-        });
+      final session = await _chatHistoryService.getSession(_currentSessionId!);
+      if (session != null && session.messages.isNotEmpty) {
+        // DB에서 가져온 메시지를 OpenAI 형식으로 변환 (최근 20개만)
+        final recentMessages = session.messages.length > 20
+            ? session.messages.sublist(session.messages.length - 20)
+            : session.messages;
+
+        conversationHistory = recentMessages.map((msg) => {
+          'role': msg.isUser ? 'user' : 'assistant',
+          'content': msg.text,
+        }).toList();
+
+        print('💬 DB에서 불러온 대화 히스토리: ${conversationHistory.length}개');
       }
 
       // OpenAI API 호출 (스트리밍)
@@ -79,6 +238,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       await for (final chunk in _openAIService.sendMessageStream(
         message: userMessage,
         conversationHistory: conversationHistory,
+        petContext: _petContext, // 반려동물 정보 전달
       )) {
         if (mounted) {
           setState(() {
@@ -90,6 +250,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             );
           });
           _scrollToBottom();
+        }
+      }
+
+      // AI 응답 완료 후 DB에 저장
+      if (aiResponse.isNotEmpty) {
+        try {
+          await _chatHistoryService.addMessage(
+            _currentSessionId!,
+            ChatMessageData(
+              text: aiResponse,
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+        } catch (e) {
+          print('AI 응답 저장 실패: $e');
         }
       }
     } catch (e) {
@@ -183,6 +359,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           ],
         ),
         centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChatHistoryScreen(),
+                ),
+              );
+            },
+            tooltip: '대화 기록',
+          ),
+        ],
       ),
       body: Column(
         children: [

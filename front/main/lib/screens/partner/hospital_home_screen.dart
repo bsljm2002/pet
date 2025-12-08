@@ -5,6 +5,8 @@ import 'partner_consultations_screen.dart';
 import 'partner_profile_form_screen.dart';
 import '../../services/auth_service.dart';
 import '../../services/partner_service.dart';
+import '../../services/notification_badge_service.dart';
+import '../../services/fcm_service.dart';
 import '../../models/partner_profile_model.dart';
 
 class HospitalHomeScreen extends StatefulWidget {
@@ -16,6 +18,11 @@ class HospitalHomeScreen extends StatefulWidget {
 
 class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
   int _currentIndex = 0;
+  final NotificationBadgeService _badgeService = NotificationBadgeService();
+  final FCMService _fcmService = FCMService();
+
+  int _reservationBadgeCount = 0;
+  int _consultationBadgeCount = 0;
 
   final List<Widget> _pages = [
     const HospitalMainPage(),
@@ -23,6 +30,46 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
     const PartnerConsultationsScreen(),
     const HospitalSettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBadgeCounts();
+    _setupFCMListeners();
+  }
+
+  @override
+  void dispose() {
+    _fcmService.onMessageReceived = null;
+    super.dispose();
+  }
+
+  /// 뱃지 카운트 로드
+  Future<void> _loadBadgeCounts() async {
+    final reservationCount = await _badgeService.getReservationCount();
+    final consultationCount = await _badgeService.getConsultationCount();
+
+    setState(() {
+      _reservationBadgeCount = reservationCount;
+      _consultationBadgeCount = consultationCount;
+    });
+  }
+
+  /// FCM 리스너 설정 (새 예약/상담 시 뱃지 증가)
+  void _setupFCMListeners() {
+    _fcmService.onMessageReceived = (data) {
+      // 새 예약 알림
+      if (data['type'] == 'new_reservation') {
+        _badgeService.incrementReservationCount();
+        _loadBadgeCounts();
+      }
+      // 새 상담 알림
+      else if (data['type'] == 'new_consultation') {
+        _badgeService.incrementConsultationCount();
+        _loadBadgeCounts();
+      }
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,31 +80,56 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
         onTap: (index) {
           setState(() {
             _currentIndex = index;
+
+            // 예약 관리 페이지로 이동 시 뱃지 리셋
+            if (index == 1) {
+              _badgeService.resetReservationCount();
+              _loadBadgeCounts();
+            }
+            // 상담 관리 페이지로 이동 시 뱃지 리셋
+            else if (index == 2) {
+              _badgeService.resetConsultationCount();
+              _loadBadgeCounts();
+            }
           });
         },
         backgroundColor: Colors.white,
         selectedItemColor: const Color(0xFF3BA688),
         unselectedItemColor: const Color(0xFF5A6C6D),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: '홈',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
+            icon: _buildBadgeIcon(Icons.calendar_month, _reservationBadgeCount),
             label: '예약 관리',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services_outlined),
+            icon: _buildBadgeIcon(Icons.medical_services_outlined, _consultationBadgeCount),
             label: '상담 관리',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: '설정',
           ),
         ],
       ),
+    );
+  }
+
+  /// 뱃지가 있는 아이콘 생성
+  Widget _buildBadgeIcon(IconData icon, int count) {
+    if (count == 0) {
+      return Icon(icon);
+    }
+
+    return Badge(
+      label: Text(count > 99 ? '99+' : count.toString()),
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      child: Icon(icon),
     );
   }
 }

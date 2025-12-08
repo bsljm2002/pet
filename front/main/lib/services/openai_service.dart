@@ -101,16 +101,13 @@ class OpenAIService {
   Stream<String> sendMessageStream({
     required String message,
     List<Map<String, String>>? conversationHistory,
+    String? petContext,
   }) async* {
     try {
       if (!_initialized) initialize();
 
-      // 대화 히스토리 구성
-      List<OpenAIChatCompletionChoiceMessageModel> messages = [
-        OpenAIChatCompletionChoiceMessageModel(
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              '''당신은 반려동물 케어 전문 AI 어시스턴트입니다.
+      // 시스템 프롬프트 구성
+      String systemPrompt = '''당신은 반려동물 케어 전문 AI 어시스턴트입니다.
 사용자의 반려동물(강아지, 고양이 등)에 관한 질문에 친절하고 전문적으로 답변해주세요.
 
 답변 가이드라인:
@@ -119,8 +116,18 @@ class OpenAIService {
 3. 필요한 경우 구체적인 예시를 들어주세요
 4. 응급 상황이나 심각한 증상인 경우 반드시 동물병원 방문을 권유하세요
 5. 한국어로 답변하세요
-6. 답변은 간결하게 3-4문장 정도로 작성하세요''',
-            ),
+6. 답변은 간결하게 3-4문장 정도로 작성하세요''';
+
+      // 반려동물 정보가 있으면 추가
+      if (petContext != null && petContext.isNotEmpty) {
+        systemPrompt += '\n\n$petContext';
+      }
+
+      // 대화 히스토리 구성
+      List<OpenAIChatCompletionChoiceMessageModel> messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(systemPrompt),
           ],
           role: OpenAIChatMessageRole.system,
         ),

@@ -1,4 +1,4 @@
-// Flutter 앱의 메인 진입점 파일
+﻿// Flutter 앱의 메인 진입점 파일
 // '피터펫' 반려동물 케어 애플리케이션의 루트 구성을 담당
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

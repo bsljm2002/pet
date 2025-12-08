@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../services/partner_service.dart';
 import '../../services/partner_reservation_service.dart';
 import '../../services/location_tracking_service.dart';
+import '../../services/fcm_service.dart';
 import '../../models/partner_reservation_model.dart';
 import 'sitter_customer_location_page.dart';
 
@@ -23,6 +24,7 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
   final PartnerReservationService _reservationService =
       PartnerReservationService();
   final LocationTrackingService _locationService = LocationTrackingService();
+  final FCMService _fcmService = FCMService();
 
   List<PartnerReservationModel> _reservations = [];
   bool _isLoading = true;
@@ -37,13 +39,58 @@ class _SitterReservationScreenState extends State<SitterReservationScreen> {
     super.initState();
     _loadReservations();
     _setupReservationListener();
+    _setupFCMListeners();
   }
 
   @override
   void dispose() {
     _reservationNotificationSubscription?.cancel();
     _locationService.dispose();
+    // FCM 리스너 해제
+    _fcmService.onMessageReceived = null;
+    _fcmService.onMessageOpenedApp = null;
     super.dispose();
+  }
+
+  /// FCM 메시지 리스너 설정
+  void _setupFCMListeners() {
+    // 포그라운드 메시지 수신 시
+    _fcmService.onMessageReceived = (data) {
+      print('📩 [Sitter Reservation] FCM 메시지 수신: $data');
+
+      // 예약 관련 알림인 경우 목록 새로고침
+      if (data['type'] == 'reservation_update' ||
+          data['type'] == 'reservation_accepted' ||
+          data['type'] == 'reservation_rejected' ||
+          data['type'] == 'new_reservation') {
+        print('🔄 [Sitter Reservation] 예약 목록 자동 새로고침');
+        _loadReservations();
+
+        // 사용자에게 알림 표시
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(data['message'] ?? '예약 정보가 업데이트되었습니다'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: const Color(0xFF4FC59E),
+            ),
+          );
+        }
+      }
+    };
+
+    // 백그라운드 알림 클릭 시
+    _fcmService.onMessageOpenedApp = (data) {
+      print('🔔 [Sitter Reservation] 알림 클릭: $data');
+
+      // 예약 관련 알림인 경우 목록 새로고침
+      if (data['type'] == 'reservation_update' ||
+          data['type'] == 'reservation_accepted' ||
+          data['type'] == 'reservation_rejected' ||
+          data['type'] == 'new_reservation') {
+        _loadReservations();
+      }
+    };
   }
 
   /// Firebase에서 새 예약 알림을 실시간으로 감지
