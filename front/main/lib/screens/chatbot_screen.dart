@@ -96,32 +96,48 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         return;
       }
 
-      // 2. 첫 번째 반려동물 정보 가져오기 (여러 마리인 경우 첫 번째만)
-      final PetProfile pet = PetProfile.fromJson(petsData.first);
+      // 2. 모든 반려동물 정보 가져오기
+      StringBuffer allPetsContext = StringBuffer();
 
-      // 3. 해당 반려동물의 진료 기록 조회
-      final List<MedicalRecord> medicalRecords =
-          await _medicalRecordService.getPetMedicalRecords(pet.id!);
+      for (int i = 0; i < petsData.length; i++) {
+        final PetProfile pet = PetProfile.fromJson(petsData[i]);
 
-      // 4. 컨텍스트 문자열 생성
-      String context = _buildPetContextString(pet, medicalRecords);
+        // 3. 해당 반려동물의 진료 기록 조회
+        final List<MedicalRecord> medicalRecords =
+            await _medicalRecordService.getPetMedicalRecords(pet.id!);
+
+        // 4. 각 반려동물의 컨텍스트 문자열 생성
+        String petContext = _buildPetContextString(pet, medicalRecords, i + 1);
+        allPetsContext.write(petContext);
+
+        // 마지막이 아니면 구분선 추가
+        if (i < petsData.length - 1) {
+          allPetsContext.write('\n${'=' * 50}\n\n');
+        }
+
+        print('✅ 반려동물 정보 로드 완료 ${i + 1}: ${pet.name}');
+        print('📋 진료 기록: ${medicalRecords.length}건');
+      }
 
       setState(() {
-        _petContext = context;
+        _petContext = allPetsContext.toString();
       });
 
-      print('✅ 반려동물 정보 로드 완료: ${pet.name}');
-      print('📋 진료 기록: ${medicalRecords.length}건');
+      print('✅ 총 ${petsData.length}마리의 반려동물 정보 로드 완료');
     } catch (e) {
       print('❌ 반려동물 정보 로드 실패: $e');
     }
   }
 
   /// 반려동물 정보를 AI가 이해할 수 있는 텍스트로 변환
-  String _buildPetContextString(PetProfile pet, List<MedicalRecord> medicalRecords) {
+  String _buildPetContextString(PetProfile pet, List<MedicalRecord> medicalRecords, [int? petNumber]) {
     StringBuffer context = StringBuffer();
 
-    context.writeln('=== 사용자의 반려동물 정보 ===');
+    if (petNumber != null) {
+      context.writeln('=== 반려동물 #$petNumber 정보 ===');
+    } else {
+      context.writeln('=== 사용자의 반려동물 정보 ===');
+    }
     context.writeln('이름: ${pet.name}');
     context.writeln('종: ${pet.species == "DOG" ? "강아지" : "고양이"}');
     if (pet.speciesDetail != null && pet.speciesDetail!.isNotEmpty) {

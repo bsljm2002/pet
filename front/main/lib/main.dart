@@ -146,26 +146,198 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _currentIndex, // 현재 선택된 탭 인덱스 전달
         onTap: _onTabTapped, // 탭 클릭 시 호출될 콜백 함수 전달
       ),
-      // 플로팅 챗봇 버튼
+      // 플로팅 챗봇 버튼 (고양이 모양)
       floatingActionButton: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        child: FloatingActionButton(
-          onPressed: () {
+        child: GestureDetector(
+          onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ChatbotScreen()),
             );
           },
-          backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-          elevation: 6,
-          child: const Icon(
-            Icons.chat_bubble_outline,
-            color: Colors.white,
-            size: 28,
+          child: Container(
+            width: 70,
+            height: 76,
+            child: Stack(
+              children: [
+                // 강아지 모양 배경
+                CustomPaint(
+                  size: Size(70, 76),
+                  painter: _DogShapeBorderPainter(
+                    color: Colors.white,
+                    fillColor: const Color.fromARGB(255, 0, 108, 82),
+                  ),
+                ),
+                // 아이콘
+                Center(
+                  child: Icon(
+                    Icons.chat_bubble_outline,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
+}
+
+/// 강아지 모양 테두리 페인터
+class _DogShapeBorderPainter extends CustomPainter {
+  final Color color;
+  final Color? fillColor;
+
+  _DogShapeBorderPainter({required this.color, this.fillColor});
+
+  Path _getDogPath(Size size) {
+    final path = Path();
+    final scaleX = size.width / 302;
+    final scaleY = size.height / 325;
+
+    // dog_i.svg 경로: M111 30.1659C123.333 25.8325 156.6 19.7659 191 30.1659...
+    path.moveTo(111 * scaleX, 30.1659 * scaleY);
+    path.cubicTo(
+      123.333 * scaleX,
+      25.8325 * scaleY,
+      156.6 * scaleX,
+      19.7659 * scaleY,
+      191 * scaleX,
+      30.1659 * scaleY,
+    );
+    path.cubicTo(
+      193.833 * scaleX,
+      22.1659 * scaleY,
+      204.5 * scaleX,
+      5.16587 * scaleY,
+      224.5 * scaleX,
+      1.16587 * scaleY,
+    );
+    path.cubicTo(
+      244.5 * scaleX,
+      -2.83413 * scaleY,
+      260.833 * scaleX,
+      12.1659 * scaleY,
+      266.5 * scaleX,
+      20.1659 * scaleY,
+    );
+    path.cubicTo(
+      274.667 * scaleX,
+      30.9992 * scaleY,
+      287.3 * scaleX,
+      59.3659 * scaleY,
+      272.5 * scaleX,
+      86.1659 * scaleY,
+    );
+    path.cubicTo(
+      282.833 * scaleX,
+      99.4992 * scaleY,
+      303 * scaleX,
+      136.666 * scaleY,
+      301 * scaleX,
+      178.666 * scaleY,
+    );
+    path.cubicTo(
+      299.333 * scaleX,
+      197.499 * scaleY,
+      291.3 * scaleX,
+      240.766 * scaleY,
+      272.5 * scaleX,
+      263.166 * scaleY,
+    );
+    path.cubicTo(
+      261 * scaleX,
+      277.499 * scaleY,
+      228.6 * scaleX,
+      308.766 * scaleY,
+      191 * scaleX,
+      319.166 * scaleY,
+    );
+    path.cubicTo(
+      177.667 * scaleX,
+      322.833 * scaleY,
+      143 * scaleX,
+      327.966 * scaleY,
+      111 * scaleX,
+      319.166 * scaleY,
+    );
+    path.cubicTo(
+      94.6667 * scaleX,
+      314.999 * scaleY,
+      55.6 * scaleX,
+      297.966 * scaleY,
+      30 * scaleX,
+      263.166 * scaleY,
+    );
+    path.cubicTo(
+      20.3333 * scaleX,
+      252.333 * scaleY,
+      0.9 * scaleX,
+      220.266 * scaleY,
+      0.5 * scaleX,
+      178.666 * scaleY,
+    );
+    path.cubicTo(
+      0.833333 * scaleX,
+      159.666 * scaleY,
+      7.2 * scaleX,
+      114.566 * scaleY,
+      30 * scaleX,
+      86.1659 * scaleY,
+    );
+    path.cubicTo(
+      23.5 * scaleX,
+      76.1659 * scaleY,
+      15.5 * scaleX,
+      48.9659 * scaleY,
+      35.5 * scaleX,
+      20.1659 * scaleY,
+    );
+    path.cubicTo(
+      40 * scaleX,
+      12.6659 * scaleY,
+      54.7 * scaleX,
+      -1.63412 * scaleY,
+      77.5 * scaleX,
+      1.16587 * scaleY,
+    );
+    path.cubicTo(
+      85.6667 * scaleX,
+      2.49921 * scaleY,
+      103.8 * scaleX,
+      10.1659 * scaleY,
+      111 * scaleX,
+      30.1659 * scaleY,
+    );
+    path.close();
+
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _getDogPath(size);
+
+    // 내부 채우기 (fillColor가 있는 경우)
+    if (fillColor != null) {
+      final fillPaint = Paint()
+        ..color = fillColor!
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+    }
+
+    // 테두리 그리기
+    final strokePaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+    canvas.drawPath(path, strokePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

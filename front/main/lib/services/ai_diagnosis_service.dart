@@ -211,6 +211,7 @@ class AIDiagnosisService {
           'entropion': '안검내반증',
           'eyelid_tumor': '안검종양',
           'mastopathy': '유방병증',
+          'healthy': '정상',
         };
       case DiagnosisModelType.dogSkin:
         return {
@@ -258,6 +259,8 @@ class AIDiagnosisService {
           return ['눈꺼풀에 종괴 발견', '종괴 주변 부종', '눈물 분비 증가', '눈 깜빡임 이상'];
         case 'mastopathy':
           return ['유선 조직 비대', '유선 주변 종괴', '피부 변색 가능', '통증 또는 불편감'];
+        case 'healthy':
+          return ['정상적인 눈 상태', '건강한 눈'];
       }
     }
 
@@ -358,6 +361,8 @@ class AIDiagnosisService {
             '중성화 수술 고려',
             '종양 가능성 배제를 위한 조직검사',
           ];
+        case 'healthy':
+          return ['현재 눈 상태가 건강합니다', '정기적인 건강 검진 유지', '눈 주변 청결 유지'];
       }
     }
 
@@ -478,8 +483,7 @@ class AIDiagnosisService {
       DiagnosisModelType.dogSkin: ['healthy'],
       DiagnosisModelType.catSkin: ['Health'],
       DiagnosisModelType.catEyes: ['Health'],
-      // 강아지 눈 모델은 정상 라벨이 없음 (모든 결과가 질병)
-      DiagnosisModelType.dogEyes: <String>[],
+      DiagnosisModelType.dogEyes: ['healthy'], // 정상 라벨 추가
     };
 
     return healthyLabels[modelType]?.contains(rawLabel) ?? false;

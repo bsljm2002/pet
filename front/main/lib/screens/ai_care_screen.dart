@@ -43,10 +43,10 @@ class _AiCareScreenState extends State<AiCareScreen> {
   List<PetProfile> _petProfiles = [];
   bool _isPetLoading = false;
 
-  // 온도 조절 관련 변수
-  double _targetTemperature = 22.0; // 목표 온도
-  bool _isAutoMode = true; // 자동/수동 모드 (true: 자동, false: 수동)
-  bool _isHeaterOn = true; // 온열 기능 켜짐/꺼짐
+  // 온열패드/환기 제어 관련 변수
+  bool _isHeaterOn = false; // 온열패드 켜짐/꺼짐
+  bool _isCoolerOn = false; // 환기 켜짐/꺼짐
+  bool _showHeater = true; // true: 온열패드 표시, false: 환기 표시
 
   // 센서 자동 업데이트 타이머
   Timer? _sensorUpdateTimer;
@@ -65,8 +65,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
     super.initState();
     _loadPetProfiles();
     _loadSensorData();
-    // 1분마다 센서 데이터 자동 업데이트
-    _sensorUpdateTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+    // 20초마다 센서 데이터 자동 업데이트
+    _sensorUpdateTimer = Timer.periodic(Duration(seconds: 20), (timer) {
       _loadSensorData();
     });
   }
@@ -89,7 +89,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
           humidity = sensorData.humidity;
           airQuality = sensorData.gasRaw.toInt();
         });
-        print('✅ [AI케어] 센서 데이터 로드 성공: 온도=${temperature}°C, 습도=${humidity}%, 공기질=${airQuality}');
+        print(
+          '✅ [AI케어] 센서 데이터 로드 성공: 온도=${temperature}°C, 습도=${humidity}%, 공기질=${airQuality}',
+        );
       } else {
         print('⚠️ [AI케어] 센서 데이터를 불러올 수 없습니다');
       }
@@ -99,7 +101,11 @@ class _AiCareScreenState extends State<AiCareScreen> {
   }
 
   // 센서 선택 토글
-  void _showSensorChart(String sensorType, String sensorLabel, Color sensorColor) {
+  void _showSensorChart(
+    String sensorType,
+    String sensorLabel,
+    Color sensorColor,
+  ) {
     setState(() {
       // 같은 센서를 다시 클릭하면 닫기
       if (_selectedSensorType == sensorType) {
@@ -218,10 +224,17 @@ class _AiCareScreenState extends State<AiCareScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color.fromARGB(255, 0, 63, 43),
-                Color.fromARGB(255, 172, 255, 230),
-              ],
+              colors: _showHeater
+                  ? [
+                      // 온열패드: 주황색 → 노란색
+                      Color.fromARGB(255, 199, 78, 34), // 진한 주황색
+                      Color.fromARGB(255, 255, 242, 189), // 밝은 노란색
+                    ]
+                  : [
+                      // 환기: 청록색 그라데이션
+                      Color.fromARGB(255, 8, 178, 93), // 진한 청록색
+                      Color.fromARGB(255, 188, 247, 255), // 밝은 청록색
+                    ],
             ),
             boxShadow: [
               BoxShadow(
@@ -234,58 +247,79 @@ class _AiCareScreenState extends State<AiCareScreen> {
           ),
           child: Stack(
             children: [
-              // 중앙 온도 표시 원
+              // 중앙 온열패드/환기 상태 표시 (고양이 모양)
               Center(
-                child: Container(
+                child: SizedBox(
                   width: 240,
                   height: 240,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.3),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      width: 3,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Stack(
                     children: [
-                      Text(
-                        '${_targetTemperature.toStringAsFixed(1)}°C',
-                        style: TextStyle(
-                          fontSize: 56,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.3),
-                              offset: Offset(0, 2),
-                              blurRadius: 4,
-                            ),
-                          ],
+                      // 고양이 모양 테두리 및 배경
+                      CustomPaint(
+                        size: Size(240, 240),
+                        painter: _CatShapeBorderPainter(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fillColor: Colors.white.withValues(alpha: 0.3),
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        '목표 온도',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
-                          fontWeight: FontWeight.w500,
+                      // 내용
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _showHeater ? Icons.wb_sunny : Icons.ac_unit,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              _showHeater ? '온열패드' : '환기',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              _showHeater
+                                  ? (_isHeaterOn ? 'ON' : 'OFF')
+                                  : (_isCoolerOn ? 'ON' : 'OFF'),
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: _showHeater
+                                    ? (_isHeaterOn
+                                          ? Color(0xFFFF6B6B)
+                                          : Colors.grey)
+                                    : (_isCoolerOn
+                                          ? Color(0xFF4ECDC4)
+                                          : Colors.grey),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              // 온열 ON/OFF 버튼 (작동 버튼)
+              // 온열패드/환기 전환 버튼
               Positioned(
                 right: 20,
                 bottom: 20,
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      _isHeaterOn = !_isHeaterOn;
+                      _showHeater = !_showHeater;
                     });
                   },
                   child: Container(
@@ -293,47 +327,33 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     height: 90,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _isHeaterOn ? Color(0xFFFF6B6B) : Colors.grey[400],
+                      color: _showHeater
+                          ? Color(0xFFFF6B6B)
+                          : Color(0xFF4ECDC4),
                       boxShadow: [
                         BoxShadow(
-                          color: (_isHeaterOn ? Color(0xFFFF6B6B) : Colors.grey)
-                              .withOpacity(0.4),
+                          color:
+                              (_showHeater
+                                      ? Color(0xFFFF6B6B)
+                                      : Color(0xFF4ECDC4))
+                                  .withOpacity(0.4),
                           blurRadius: 8,
                           offset: Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isHeaterOn ? Icons.pets : Icons.power_settings_new,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          _isHeaterOn ? 'ON' : 'OFF',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: Icon(Icons.pets, color: Colors.white, size: 50),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        // 온도 조절 컨트롤 패널
+        // ON/OFF 컨트롤 패널
         Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -344,42 +364,61 @@ class _AiCareScreenState extends State<AiCareScreen> {
           ),
           child: Row(
             children: [
-              // 고정/수동 버튼
+              // 온열패드 ON/OFF 버튼
               Expanded(
                 child: GestureDetector(
-                  onTap: () {
+                  onTap: () async {
+                    final newState = !_isHeaterOn;
                     setState(() {
-                      _isAutoMode = !_isAutoMode;
+                      _isHeaterOn = newState;
                     });
+
+                    // 클라우드 서버에 제어 명령 전송
+                    final sensorService = SensorService();
+                    final success = await sensorService.controlHeater(
+                      isOn: newState,
+                    );
+
+                    if (!success) {
+                      // 실패 시 상태 되돌리기
+                      setState(() {
+                        _isHeaterOn = !newState;
+                      });
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('온열패드 제어 실패. 다시 시도해주세요.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
                   },
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: _isAutoMode ? Color(0xFF3BA688) : Colors.white,
+                      color: _isHeaterOn ? Color(0xFFFF6B6B) : Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Color(0xFF3BA688), width: 2),
+                      border: Border.all(color: Color(0xFFFF6B6B), width: 2),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _isAutoMode
-                              ? Icons.settings_suggest
-                              : Icons.touch_app,
-                          color: _isAutoMode
-                              ? Colors.white
-                              : Color.fromARGB(255, 0, 108, 82),
+                          Icons.wb_sunny,
+                          color: _isHeaterOn ? Colors.white : Color(0xFFFF6B6B),
                           size: 20,
                         ),
                         SizedBox(width: 6),
                         Text(
-                          _isAutoMode ? '고정' : '수동',
+                          _isHeaterOn ? '온열 ON' : '온열 OFF',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: _isAutoMode
+                            color: _isHeaterOn
                                 ? Colors.white
-                                : Color.fromARGB(255, 0, 108, 82),
+                                : Color(0xFFFF6B6B),
                           ),
                         ),
                       ],
@@ -388,72 +427,61 @@ class _AiCareScreenState extends State<AiCareScreen> {
                 ),
               ),
               SizedBox(width: 16),
-              // 온도 올리기 버튼 (고양이 모양)
-              GestureDetector(
-                onTap: _isAutoMode
-                    ? null
-                    : () {
-                        setState(() {
-                          if (_targetTemperature < 30.0) {
-                            _targetTemperature += 0.5;
-                          }
-                        });
-                      },
-                child: Opacity(
-                  opacity: _isAutoMode ? 0.4 : 1.0,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    child: Stack(
-                      children: [
-                        ClipPath(
-                          clipper: _CatShapeClipper(),
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            color: Color.fromARGB(255, 255, 133, 165),
+              // 환기 ON/OFF 버튼
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    final newState = !_isCoolerOn;
+                    setState(() {
+                      _isCoolerOn = newState;
+                    });
+
+                    // 클라우드 서버에 제어 명령 전송
+                    final sensorService = SensorService();
+                    final success = await sensorService.controlCooler(
+                      isOn: newState,
+                    );
+
+                    if (!success) {
+                      // 실패 시 상태 되돌리기
+                      setState(() {
+                        _isCoolerOn = !newState;
+                      });
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('환기 제어 실패. 다시 시도해주세요.'),
+                            backgroundColor: Colors.red,
                           ),
-                        ),
-                        Center(
-                          child: Icon(Icons.add, color: Colors.white, size: 24),
-                        ),
-                      ],
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: _isCoolerOn ? Color(0xFF4ECDC4) : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Color(0xFF4ECDC4), width: 2),
                     ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 12),
-              // 온도 내리기 버튼 (고양이 모양)
-              GestureDetector(
-                onTap: _isAutoMode
-                    ? null
-                    : () {
-                        setState(() {
-                          if (_targetTemperature > 15.0) {
-                            _targetTemperature -= 0.5;
-                          }
-                        });
-                      },
-                child: Opacity(
-                  opacity: _isAutoMode ? 0.4 : 1.0,
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    child: Stack(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ClipPath(
-                          clipper: _CatShapeClipper(),
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            color: Color.fromARGB(255, 142, 214, 255),
-                          ),
+                        Icon(
+                          Icons.ac_unit,
+                          color: _isCoolerOn ? Colors.white : Color(0xFF4ECDC4),
+                          size: 20,
                         ),
-                        Center(
-                          child: Icon(
-                            Icons.remove,
-                            color: Colors.white,
-                            size: 24,
+                        SizedBox(width: 6),
+                        Text(
+                          _isCoolerOn ? '환기 ON' : '환기 OFF',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _isCoolerOn
+                                ? Colors.white
+                                : Color(0xFF4ECDC4),
                           ),
                         ),
                       ],
@@ -519,7 +547,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
                 label: '공기',
                 value: airQuality != null ? '$airQuality CAI' : '--',
                 color: Colors.green,
-                onTap: () => _showSensorChart('air_quality', '공기질', Colors.green),
+                onTap: () =>
+                    _showSensorChart('air_quality', '공기질', Colors.green),
                 isSelected: _selectedSensorType == 'air_quality',
               ),
             ],
@@ -596,11 +625,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     ),
                   ),
                   SizedBox(width: 8),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey[400],
-                    size: 24,
-                  ),
+                  Icon(Icons.chevron_right, color: Colors.grey[400], size: 24),
                 ],
               ),
             ],
@@ -616,9 +641,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
       return Padding(
         padding: EdgeInsets.all(20),
         child: Center(
-          child: CircularProgressIndicator(
-            color: _getSensorColor(),
-          ),
+          child: CircularProgressIndicator(color: _getSensorColor()),
         ),
       );
     }
@@ -722,10 +745,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
       return Padding(
         padding: EdgeInsets.all(20),
         child: Center(
-          child: Text(
-            '데이터가 없습니다',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
+          child: Text('데이터가 없습니다', style: TextStyle(color: Colors.grey[600])),
         ),
       );
     }
@@ -760,33 +780,48 @@ class _AiCareScreenState extends State<AiCareScreen> {
           ),
           SizedBox(height: 20),
 
-          // 현재 값 표시
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: sensorColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  periodLabel,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
+          // 현재 값 표시 (고양이 모양)
+          Center(
+            child: SizedBox(
+              width: 200,
+              height: 220,
+              child: Stack(
+                children: [
+                  // 고양이 모양 배경
+                  CustomPaint(
+                    size: Size(200, 220),
+                    painter: _CatShapeBorderPainter(
+                      color: Colors.transparent,
+                      fillColor: sensorColor.withValues(alpha: 0.1),
+                    ),
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '${value.toStringAsFixed(1)} $unit',
-                  style: TextStyle(
-                    fontSize: 32,
-                    color: sensorColor,
-                    fontWeight: FontWeight.bold,
+                  // 내용
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          periodLabel,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '${value.toStringAsFixed(1)} $unit',
+                          style: TextStyle(
+                            fontSize: 32,
+                            color: sensorColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -803,7 +838,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
+                    getTooltipColor: (group) =>
+                        Colors.black.withValues(alpha: 0.8),
                     tooltipPadding: EdgeInsets.all(8),
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -823,7 +859,8 @@ class _AiCareScreenState extends State<AiCareScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < labels.length) {
                           return Padding(
                             padding: EdgeInsets.only(top: 8),
                             child: Text(
@@ -855,18 +892,20 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       },
                     ),
                   ),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: (values.reduce((a, b) => a > b ? a : b) * 1.2) / 5,
+                  horizontalInterval:
+                      (values.reduce((a, b) => a > b ? a : b) * 1.2) / 5,
                   getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey[300],
-                      strokeWidth: 1,
-                    );
+                    return FlLine(color: Colors.grey[300], strokeWidth: 1);
                   },
                 ),
                 borderData: FlBorderData(show: false),
@@ -879,7 +918,9 @@ class _AiCareScreenState extends State<AiCareScreen> {
                         toY: values[index],
                         color: sensorColor,
                         width: 40,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(4),
+                        ),
                       ),
                     ],
                   ),
@@ -908,10 +949,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
         decoration: BoxDecoration(
           color: isSelected ? sensorColor : Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: sensorColor,
-            width: 2,
-          ),
+          border: Border.all(color: sensorColor, width: 2),
         ),
         child: Center(
           child: Text(
@@ -1336,9 +1374,7 @@ class _AiCareScreenState extends State<AiCareScreen> {
                         : Container(
                             width: double.infinity,
                             height: 300,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                            ),
+                            decoration: BoxDecoration(color: Colors.grey[100]),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1556,17 +1592,11 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       color: Color(0xFF00B27A).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Color(0xFF00B27A),
-                    ),
+                    child: Icon(Icons.camera_alt, color: Color(0xFF00B27A)),
                   ),
                   title: Text(
                     '카메라로 촬영',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -1581,17 +1611,11 @@ class _AiCareScreenState extends State<AiCareScreen> {
                       color: Color(0xFF00B27A).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      Icons.photo_library,
-                      color: Color(0xFF00B27A),
-                    ),
+                    child: Icon(Icons.photo_library, color: Color(0xFF00B27A)),
                   ),
                   title: Text(
                     '갤러리에서 선택',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   onTap: () {
                     Navigator.pop(context);
@@ -1994,102 +2018,12 @@ class _DiagnosisResultSheet extends StatelessWidget {
   }
 }
 
-/// 고양이 모양 클리퍼
-class _CatShapeClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    // SVG path를 50x50 크기로 스케일 조정
-    final scaleX = size.width / 302;
-    final scaleY = size.height / 331;
-
-    path.moveTo(186.347 * scaleX, 35.1901 * scaleY);
-    path.cubicTo(
-      172.847 * scaleX,
-      32.0235 * scaleY,
-      139.547 * scaleX,
-      27.5901 * scaleY,
-      114.347 * scaleX,
-      35.1901 * scaleY,
-    );
-    path.cubicTo(
-      108.18 * scaleX,
-      26.0235 * scaleY,
-      94.047 * scaleX,
-      6.29012 * scaleY,
-      86.847 * scaleX,
-      0.690125 * scaleY,
-    );
-    path.cubicTo(
-      76.1803 * scaleX,
-      9.52346 * scaleY,
-      52.547 * scaleX,
-      36.8901 * scaleY,
-      43.347 * scaleX,
-      75.6901 * scaleY,
-    );
-    path.cubicTo(
-      11.0136 * scaleX,
-      109.19 * scaleY,
-      -34.253 * scaleX,
-      198.09 * scaleY,
-      43.347 * scaleX,
-      285.69 * scaleY,
-    );
-    path.cubicTo(
-      56.347 * scaleX,
-      300.023 * scaleY,
-      94.5469 * scaleX,
-      328.99 * scaleY,
-      143.347 * scaleX,
-      330.19 * scaleY,
-    );
-    path.cubicTo(
-      167.014 * scaleX,
-      331.19 * scaleY,
-      223.047 * scaleX,
-      323.69 * scaleY,
-      257.847 * scaleX,
-      285.69 * scaleY,
-    );
-    path.cubicTo(
-      290.18 * scaleX,
-      254.523 * scaleY,
-      335.447 * scaleX,
-      168.89 * scaleY,
-      257.847 * scaleX,
-      75.6901 * scaleY,
-    );
-    path.cubicTo(
-      252.347 * scaleX,
-      58.5235 * scaleY,
-      235.847 * scaleX,
-      19.4901 * scaleY,
-      213.847 * scaleX,
-      0.690125 * scaleY,
-    );
-    path.cubicTo(
-      206.18 * scaleX,
-      8.85679 * scaleY,
-      189.947 * scaleX,
-      27.1901 * scaleY,
-      186.347 * scaleX,
-      35.1901 * scaleY,
-    );
-    path.close();
-
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
 /// 고양이 모양 테두리 페인터
 class _CatShapeBorderPainter extends CustomPainter {
   final Color color;
+  final Color? fillColor; // 내부 채우기 색상 (선택사항)
 
-  _CatShapeBorderPainter({required this.color});
+  _CatShapeBorderPainter({required this.color, this.fillColor});
 
   Path _getCatPath(Size size) {
     final path = Path();
@@ -2176,13 +2110,22 @@ class _CatShapeBorderPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final path = _getCatPath(size);
+
+    // 내부 채우기 (fillColor가 있는 경우)
+    if (fillColor != null) {
+      final fillPaint = Paint()
+        ..color = fillColor!
+        ..style = PaintingStyle.fill;
+      canvas.drawPath(path, fillPaint);
+    }
+
+    // 테두리 그리기
+    final strokePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5;
-
-    final path = _getCatPath(size);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, strokePaint);
   }
 
   @override
