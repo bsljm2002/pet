@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/favorite_service.dart';
+import '../services/auth_service.dart';
 import '../providers/hospital_provider.dart';
 import '../models/vet_model.dart';
 import '../models/sitter_model.dart';
@@ -22,6 +23,7 @@ class _MyFavoritesPageState extends State<MyFavoritesPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FavoriteService _favoriteService = FavoriteService();
+  final AuthService _authService = AuthService();
   Set<String> _favoritedVets = {};
   Set<String> _favoritedSitters = {};
   bool _isLoading = true;
@@ -35,13 +37,20 @@ class _MyFavoritesPageState extends State<MyFavoritesPage>
 
   /// 즐겨찾기 목록 로드
   Future<void> _loadFavorites() async {
-    final vets = await _favoriteService.getVetFavorites();
-    final sitters = await _favoriteService.getSitterFavorites();
-    setState(() {
-      _favoritedVets = vets;
-      _favoritedSitters = sitters;
-      _isLoading = false;
-    });
+    final userId = _authService.currentUser?.id;
+    if (userId != null) {
+      final vets = await _favoriteService.getVetFavorites(userId);
+      final sitters = await _favoriteService.getSitterFavorites(userId);
+      setState(() {
+        _favoritedVets = vets;
+        _favoritedSitters = sitters;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -268,10 +277,13 @@ class _MyFavoritesPageState extends State<MyFavoritesPage>
                 color: Color(0xFFFF6B9D),
               ),
               onPressed: () async {
-                await _favoriteService.removeVetFavorite(vet.id);
-                setState(() {
-                  _favoritedVets.remove(vet.id);
-                });
+                final userId = _authService.currentUser?.id;
+                if (userId != null) {
+                  await _favoriteService.removeVetFavorite(userId, vet.id);
+                  setState(() {
+                    _favoritedVets.remove(vet.id);
+                  });
+                }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -372,10 +384,13 @@ class _MyFavoritesPageState extends State<MyFavoritesPage>
                 color: Color(0xFFFF6B9D),
               ),
               onPressed: () async {
-                await _favoriteService.removeSitterFavorite(sitter.id);
-                setState(() {
-                  _favoritedSitters.remove(sitter.id);
-                });
+                final userId = _authService.currentUser?.id;
+                if (userId != null) {
+                  await _favoriteService.removeSitterFavorite(userId, sitter.id);
+                  setState(() {
+                    _favoritedSitters.remove(sitter.id);
+                  });
+                }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

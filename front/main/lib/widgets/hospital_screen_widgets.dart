@@ -6,6 +6,7 @@ import '../models/sitter_model.dart';
 import '../pages/vet_profile_page.dart';
 import '../pages/sitter_profile_page.dart';
 import '../services/favorite_service.dart';
+import '../services/auth_service.dart';
 
 /// 동물병원 화면에서 사용되는 위젯들을 모아둔 클래스
 ///
@@ -666,6 +667,7 @@ class _SitterStackedListState extends State<_SitterStackedList>
   int _expandedIndex = 0;
   Set<String> _favoritedSitters = {}; // 즐겨찾기된 펫시터 ID 목록
   final FavoriteService _favoriteService = FavoriteService();
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -676,10 +678,13 @@ class _SitterStackedListState extends State<_SitterStackedList>
 
   /// 즐겨찾기 목록 로드
   Future<void> _loadFavorites() async {
-    final favorites = await _favoriteService.getSitterFavorites();
-    setState(() {
-      _favoritedSitters = favorites;
-    });
+    final userId = _authService.currentUser?.id;
+    if (userId != null) {
+      final favorites = await _favoriteService.getSitterFavorites(userId);
+      setState(() {
+        _favoritedSitters = favorites;
+      });
+    }
   }
 
   @override
@@ -808,18 +813,22 @@ class _SitterStackedListState extends State<_SitterStackedList>
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () async {
+                          final userId = _authService.currentUser?.id;
+                          if (userId == null) return;
+
                           final isFavorited = _favoritedSitters.contains(
                             sitter.id,
                           );
                           if (isFavorited) {
                             await _favoriteService.removeSitterFavorite(
+                              userId,
                               sitter.id,
                             );
                             setState(() {
                               _favoritedSitters.remove(sitter.id);
                             });
                           } else {
-                            await _favoriteService.addSitterFavorite(sitter.id);
+                            await _favoriteService.addSitterFavorite(userId, sitter.id);
                             setState(() {
                               _favoritedSitters.add(sitter.id);
                             });
@@ -970,6 +979,7 @@ class _VetStackedListState extends State<_VetStackedList>
   int _expandedIndex = 0;
   Set<String> _favoritedVets = {}; // 즐겨찾기된 수의사 ID 목록
   final FavoriteService _favoriteService = FavoriteService();
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -980,10 +990,13 @@ class _VetStackedListState extends State<_VetStackedList>
 
   /// 즐겨찾기 목록 로드
   Future<void> _loadFavorites() async {
-    final favorites = await _favoriteService.getVetFavorites();
-    setState(() {
-      _favoritedVets = favorites;
-    });
+    final userId = _authService.currentUser?.id;
+    if (userId != null) {
+      final favorites = await _favoriteService.getVetFavorites(userId);
+      setState(() {
+        _favoritedVets = favorites;
+      });
+    }
   }
 
   @override
@@ -1110,14 +1123,17 @@ class _VetStackedListState extends State<_VetStackedList>
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () async {
+                          final userId = _authService.currentUser?.id;
+                          if (userId == null) return;
+
                           final isFavorited = _favoritedVets.contains(vet.id);
                           if (isFavorited) {
-                            await _favoriteService.removeVetFavorite(vet.id);
+                            await _favoriteService.removeVetFavorite(userId, vet.id);
                             setState(() {
                               _favoritedVets.remove(vet.id);
                             });
                           } else {
-                            await _favoriteService.addVetFavorite(vet.id);
+                            await _favoriteService.addVetFavorite(userId, vet.id);
                             setState(() {
                               _favoritedVets.add(vet.id);
                             });
