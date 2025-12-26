@@ -3,7 +3,6 @@ package com.example.pet.demo.users.api.dto;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.example.pet.demo.users.domain.User;
 import com.example.pet.demo.users.domain.User.CaCategorical;
 import com.example.pet.demo.users.domain.User.Gender;
 import com.example.pet.demo.users.domain.User.PetsitterWork;
@@ -11,8 +10,6 @@ import com.example.pet.demo.users.domain.User.UserType;
 import com.example.pet.demo.users.domain.User.VetSpecialty;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -61,14 +58,10 @@ public record UserSignupReq(
     CaCategorical caCategorical,                  // "dog" | "cat" | "both"
 
     // 병원 전용
-    // VetSpecialty vetSpecialty,                    // "surgery" 등
-    @ArraySchema(schema = @Schema(implementation = User.VetSpecialty.class))
-    List<User.VetSpecialty> vetSpecialty, 
+    VetSpecialty vetSpecialty,                    // "surgery" 등
 
     // 펫시터 전용
-    // PetsitterWork petsitterWork,                  // "walk" 등
-    @ArraySchema(schema = @Schema(implementation = User.PetsitterWork.class))
-    List<User.PetsitterWork> petsitterWork, 
+    PetsitterWork petsitterWork,                  // "walk" 등
 
     // 근무 정보(선택)
     List<String> workingDays,
@@ -77,7 +70,11 @@ public record UserSignupReq(
     String workingStartHours,
 
     @Pattern(regexp = "^\\d{2}:\\d{2}(:\\d{2})?$", message = "working_end_hours는 HH:mm 또는 HH:mm:ss 형식")
-    String workingEndHours
+    String workingEndHours,
+
+    // FCM 토큰 (선택적)
+    @Size(max = 255, message = "fcmToken은 최대 255자입니다.")
+    String fcmToken
 
 ) {
 //     @AssertTrue(message = "HOSPITAL은 tin, ca_categorical, vet_specialty가 필수입니다.")

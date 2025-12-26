@@ -1,6 +1,5 @@
 package com.example.pet.demo.users.app;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,30 +42,27 @@ public class UserService {
         UserType type = req.userType();
         String tin = null;
         User.CaCategorical caCat = null;
-        // User.VetSpecialty vet = null;
-        // User.PetsitterWork sitterWork = null;
-        String vetCsv = null;
-        String sitterCsv = null;
-
+        User.VetSpecialty vet = null;
+        User.PetsitterWork sitterWork = null;
         String start = null;
         String end = null;
 
         switch (type) {
             case GENERAL -> {
-                // tin = null; caCat = null; vet = null; sitterWork = null;
-                // start = null; end = null; // 근무시간 저장 금지
+                tin = null; caCat = null; vet = null; sitterWork = null;
+                start = null; end = null; // 근무시간 저장 금지
             }
             case HOSPITAL -> {
                 tin = req.tin();
-                caCat = req.caCategorical();           // 단일 enum 그대로
-                vetCsv = toCsv(req.vetSpecialty());    // List<String> -> CSV
+                caCat = req.caCategorical();
+                vet = req.vetSpecialty();
                 start = req.workingStartHours();
                 end = req.workingEndHours();
             }
             case SITTER -> {
                 tin = req.tin();
                 caCat = req.caCategorical();
-                sitterCsv = toCsv(req.petsitterWork()); // List<String> -> CSV
+                sitterWork = req.petsitterWork();
                 start = req.workingStartHours();
                 end = req.workingEndHours();
             }
@@ -87,13 +83,14 @@ public class UserService {
                 .address(req.address())
                 .userType(type)                  // 기본값 GENERAL이지만 DTO에 맞춰 설정
                 .status(UserStatus.ACTIVE)       // 기본 활성
-                .tin(tin)        
+                .tin(tin)
                 .caCategorical(caCat)
-                .vetSpecialtyCsv(vetCsv)       
-                .petsitterWorkCsv(sitterCsv) 
+                .vetSpecialty(vet)
+                .petsitterWork(sitterWork)
                 .workingDays(workingDaysCsv)
                 .workingStartHours(req.workingStartHours())
                 .workingEndHours(req.workingEndHours())
+                .fcmToken(req.fcmToken())        // FCM 토큰 저장
                 .build();
 
         // (선택) 근무시간 논리 검증이 필요하면 여기서 수행(HH:mm[:ss] 비교)
@@ -136,9 +133,9 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
     }
 
-    // private String toCsv(List<String> days) {
-    //     return (days == null || days.isEmpty()) ? null : String.join(",", days);
-    // }
+    private String toCsv(List<String> days) {
+        return (days == null || days.isEmpty()) ? null : String.join(",", days);
+    }
 
     public boolean checkEmailExists(String email) {
         return users.existsByEmail(email);
@@ -154,15 +151,17 @@ public class UserService {
         users.updateProfileUrl(userId, imageUrl);
     }
 
-    private String toCsv(Collection<?> values) {
-        return (values == null || values.isEmpty())
-                ? null
-                : values.stream()
-                        .map(Object::toString)
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(String::toUpperCase)
-                        .reduce((a, b) -> a + "," + b)
-                        .orElse(null);
+    @Transactional
+    public void updateWorkingHours(Long userId, List<String> workingDays, String workingStartHours, String workingEndHours) {
+        User user = users.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("USER_NOT_FOUND"));
+
+        // User 엔티티의 working hours 필드 업데이트
+        String workingDaysCsv = toCsv(workingDays);
+        user.setWorkingDays(workingDaysCsv);
+        user.setWorkingStartHours(workingStartHours);
+        user.setWorkingEndHours(workingEndHours);
+
+        users.save(user);
     }
 }

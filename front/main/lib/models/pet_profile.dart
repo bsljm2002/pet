@@ -7,9 +7,9 @@ class PetProfile {
   final String? imageUrl; // 사진
   final String birthdate; // 생일
   final double weight; //몸무게
-  final String? speciesDetail;
+  final String? speciesDetail; // 품종
   final String? gender;
-  final String? abtiTypeCode;
+  final String? disease; // 질병
 
   PetProfile({
     this.id, // nullable (백엔드에서 자동 생성)
@@ -18,11 +18,26 @@ class PetProfile {
     required this.species, // 필수
     required this.birthdate, // 필수
     required this.weight, // 필수
-    this.abtiTypeCode, // nullable로 변경 (백엔드 데이터에 없을 수 있음)
     this.gender, // nullable로 변경
-    this.speciesDetail, // 선택사항
+    this.speciesDetail, // 품종
     this.imageUrl, // 선택사항
+    this.disease, // 질병
   });
+
+  // 생년월일에서 나이 계산
+  int? get age {
+    try {
+      final birth = DateTime.parse(birthdate);
+      final now = DateTime.now();
+      int age = now.year - birth.year;
+      if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) {
+        age--;
+      }
+      return age;
+    } catch (e) {
+      return null;
+    }
+  }
 
   // PetProfile 객체 -> JSON 변환 (백엔드 요청 전송용)
   Map<String, dynamic> toJson() {
@@ -33,10 +48,10 @@ class PetProfile {
       'species': species,
       'birthdate': birthdate,
       'weight': weight,
-      'abitTypeCode': abtiTypeCode,
       'gender': gender,
       'speciesDetail': speciesDetail,
       'imageUrl': imageUrl,
+      'disease': disease,
     };
   }
 
@@ -49,10 +64,10 @@ class PetProfile {
       species: json['species'] as String? ?? '', // null일 경우 빈 문자열
       birthdate: json['birthdate'] as String? ?? '', // null일 경우 빈 문자열
       weight: (json['weight'] as num?)?.toDouble() ?? 0.0, // null일 경우 0.0
-      abtiTypeCode: json['abitTypeCode'] as String?, // nullable
       gender: json['gender'] as String?, // nullable
-      speciesDetail: json['speciesDetail'] as String?, // nullable
+      speciesDetail: json['speciesDetail'] as String?, // 품종
       imageUrl: json['imageUrl'] as String?, // nullable
+      disease: json['disease'] as String?, // 질병
     );
   }
 
@@ -64,10 +79,10 @@ class PetProfile {
     String? species,
     String? birthdate,
     double? weight,
-    String? abtiTypeCode,
     String? gender,
     String? speciesDetail,
     String? imageUrl,
+    String? disease,
   }) {
     return PetProfile(
       id: id ?? this.id,
@@ -76,10 +91,10 @@ class PetProfile {
       species: species ?? this.species,
       birthdate: birthdate ?? this.birthdate,
       weight: weight ?? this.weight,
-      abtiTypeCode: abtiTypeCode ?? this.abtiTypeCode,
       gender: gender ?? this.gender,
       speciesDetail: speciesDetail ?? this.speciesDetail,
       imageUrl: imageUrl ?? this.imageUrl,
+      disease: disease ?? this.disease,
     );
   }
 }

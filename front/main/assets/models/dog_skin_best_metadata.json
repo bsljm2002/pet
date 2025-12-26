@@ -1,0 +1,29 @@
+{
+  "model_name": "dog_skin_best",
+  "original_file": "dog_skin_best.pt",
+  "converted_file": "dog_skin_best.ptl",
+  "conversion_date": "2025-11-26T09:05:29.427643",
+  "pytorch_version": "2.6.0+cu124",
+  "training_config": {
+    "task": "classify",
+    "model_architecture": "yolo11s-cls.pt",
+    "epochs": 100,
+    "batch_size": 32,
+    "image_size": 224,
+    "optimizer": "auto",
+    "learning_rate": 0.01,
+    "project": "model_yolo11s_cls",
+    "name": "dog-skin-classifier"
+  },
+  "class_names": {
+    "0": "bacterial dermatosis",
+    "1": "fungal infection",
+    "2": "healthy",
+    "3": "hypersensitivity dermatitis"
+  },
+  "num_classes": 4,
+  "file_size_bytes": 11048212,
+  "file_size_mb": 10.54,
+  "converted_file_size_bytes": 21799331,
+  "converted_file_size_mb": 20.79
+}

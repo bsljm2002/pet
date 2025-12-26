@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/vet_model.dart';
+import '../models/sitter_model.dart';
 import '../models/reservation_model.dart';
 
 class ApiService {
-  // 백엔드 서버 URL (실제 서버 주소로 변경 필요)
-  static const String baseUrl = 'https://your-api-server.com/api';
+  // 백엔드 서버 URL
+  static const String baseUrl = 'http://223.130.130.225:9075/api/v1';
 
   // 수의사 목록 조회
   static Future<List<VetModel>> getVets({
@@ -15,29 +16,43 @@ class ApiService {
   }) async {
     try {
       // 쿼리 파라미터 구성
-      Map<String, String> queryParams = {};
-      if (petType != null) queryParams['petType'] = petType;
-      if (specialty != null) queryParams['specialty'] = specialty;
-      if (timeSlot != null) queryParams['timeSlot'] = timeSlot;
+      Map<String, String> queryParams = {'type': 'HOSPITAL'};
+      if (specialty != null && specialty.isNotEmpty) {
+        queryParams['specialty'] = specialty;
+      }
 
       Uri uri = Uri.parse(
-        '$baseUrl/vets',
+        '$baseUrl/partners',
       ).replace(queryParameters: queryParams);
+
+      print('수의사 목록 조회 - URL: $uri');
 
       final response = await http.get(
         uri,
         headers: {'Content-Type': 'application/json'},
       );
 
+      print('수의사 목록 조회 - 상태 코드: ${response.statusCode}');
+      print('수의사 목록 조회 - 응답: ${response.body}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((json) => VetModel.fromJson(json)).toList();
-      } else {
-        throw Exception('수의사 목록을 불러오는데 실패했습니다');
+        final data = json.decode(response.body);
+        if (data['ok'] == true) {
+          final List<dynamic> jsonData = data['data'] as List;
+          print('수의사 데이터 샘플: ${jsonData.isNotEmpty ? jsonData[0] : "empty"}');
+          final vets = jsonData.map((json) => VetModel.fromJson(json)).toList();
+          print('수의사 ${vets.length}개 로드 성공');
+          if (vets.isNotEmpty) {
+            print('첫 번째 수의사 galleryImages: ${vets[0].galleryImages}');
+          }
+          return vets;
+        }
       }
+      throw Exception('수의사 목록을 불러오는데 실패했습니다: ${response.statusCode}');
     } catch (e) {
-      // 임시 더미 데이터 반환 (개발용)
-      return _getDummyVets();
+      print('수의사 목록 조회 오류: $e');
+      // API 오류 시 빈 리스트 반환 (더미 데이터 대신)
+      return [];
     }
   }
 
@@ -61,7 +76,7 @@ class ApiService {
   static Future<List<ReservationModel>> getMyReservations() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/reservations/my'),
+        Uri.parse('$baseUrl/reservations/mine'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -73,6 +88,52 @@ class ApiService {
       }
     } catch (e) {
       return _getDummyReservations();
+    }
+  }
+
+  // 펫시터 목록 조회
+  static Future<List<SitterModel>> getSitters({
+    String? petType,
+    String? service,
+    String? timeSlot,
+  }) async {
+    try {
+      // 쿼리 파라미터 구성
+      Map<String, String> queryParams = {'type': 'SITTER'};
+      if (service != null && service.isNotEmpty) {
+        queryParams['specialty'] = service;
+      }
+
+      Uri uri = Uri.parse(
+        '$baseUrl/partners',
+      ).replace(queryParameters: queryParams);
+
+      print('펫시터 목록 조회 - URL: $uri');
+
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('펫시터 목록 조회 - 상태 코드: ${response.statusCode}');
+      print('펫시터 목록 조회 - 응답: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['ok'] == true) {
+          final List<dynamic> jsonData = data['data'] as List;
+          final sitters = jsonData
+              .map((json) => SitterModel.fromJson(json))
+              .toList();
+          print('펫시터 ${sitters.length}개 로드 성공');
+          return sitters;
+        }
+      }
+      throw Exception('펫시터 목록을 불러오는데 실패했습니다: ${response.statusCode}');
+    } catch (e) {
+      print('펫시터 목록 조회 오류: $e');
+      // API 오류 시 빈 리스트 반환 (더미 데이터 대신)
+      return [];
     }
   }
 
@@ -422,6 +483,172 @@ class ApiService {
         timeSlot: '14:00',
         status: '예약완료',
         memo: '감기 증상으로 진료 예약',
+      ),
+    ];
+  }
+
+  // 더미 펫시터 데이터 (개발용)
+  static List<SitterModel> _getDummySitters() {
+    return [
+      SitterModel(
+        id: 's1',
+        name: '루나 펫케어',
+        sitterName: '김루나',
+        address: '서울특별시 강남구 테헤란로 218',
+        phone: '02-501-1200',
+        rating: 4.9,
+        services: ['방문 돌봄', '산책 서비스', '놀이/훈련'],
+        availableTimes: ['09:00', '10:30', '14:00', '16:30'],
+        distance: 0.6,
+        isAvailable: true,
+        imageUrl: '',
+        description: '10년 경력의 전문 펫시터입니다. 강아지와 고양이 모두 케어 가능합니다.',
+        certifications: ['반려동물 관리사 1급', '애견 훈련사 자격증'],
+        experience: '10년',
+      ),
+      SitterModel(
+        id: 's2',
+        name: '해피독 펫시터',
+        sitterName: '이도현',
+        address: '서울특별시 서초구 사임당로 174',
+        phone: '02-586-7700',
+        rating: 4.7,
+        services: ['산책 서비스', '방문 돌봄'],
+        availableTimes: ['10:00', '12:00', '15:00', '18:00'],
+        distance: 1.1,
+        isAvailable: true,
+        imageUrl: '',
+        description: '강아지 산책 전문 펫시터입니다. 대형견도 안전하게 산책시킵니다.',
+        certifications: ['반려동물 관리사 2급', '동물 행동 교정사'],
+        experience: '5년',
+      ),
+      SitterModel(
+        id: 's3',
+        name: '고양이 전문 펫시터',
+        sitterName: '박해리',
+        address: '서울특별시 송파구 백제고분로 358',
+        phone: '02-414-9901',
+        rating: 4.8,
+        services: ['방문 돌봄', '목욕/미용'],
+        availableTimes: ['09:30', '11:00', '15:30', '19:00'],
+        distance: 2.3,
+        isAvailable: true,
+        imageUrl: '',
+        description: '고양이 전문 펫시터입니다. 예민한 고양이도 잘 케어합니다.',
+        certifications: ['반려동물 관리사 1급', '고양이 행동 전문가'],
+        experience: '7년',
+      ),
+      SitterModel(
+        id: 's4',
+        name: '24시 펫케어',
+        sitterName: '윤강민',
+        address: '서울특별시 마포구 월드컵북로 78',
+        phone: '02-3152-7575',
+        rating: 4.6,
+        services: ['방문 돌봄', '호텔/위탁', '응급 케어'],
+        availableTimes: ['00:00', '06:00', '12:00', '18:00'],
+        distance: 3.1,
+        isAvailable: true,
+        imageUrl: '',
+        description: '24시간 펫 케어 서비스를 제공합니다. 긴급 상황 대응 가능합니다.',
+        certifications: ['반려동물 관리사 1급', '응급처치 자격증'],
+        experience: '8년',
+      ),
+      SitterModel(
+        id: 's5',
+        name: '스마일 펫시터',
+        sitterName: '최유진',
+        address: '서울특별시 용산구 한강대로 210',
+        phone: '02-798-9005',
+        rating: 4.4,
+        services: ['산책 서비스', '놀이/훈련'],
+        availableTimes: ['10:00', '13:00', '17:00', '20:00'],
+        distance: 2.9,
+        isAvailable: false,
+        imageUrl: '',
+        description: '반려견 훈련과 산책을 전문으로 합니다. 문제행동 교정도 가능합니다.',
+        certifications: ['애견 훈련사 1급', '반려동물 행동 상담사'],
+        experience: '6년',
+      ),
+      SitterModel(
+        id: 's6',
+        name: '분당 펫케어센터',
+        sitterName: '신민아',
+        address: '경기도 성남시 분당구 황새울로 330',
+        phone: '031-702-5588',
+        rating: 4.9,
+        services: ['호텔/위탁', '방문 돌봄', '목욕/미용'],
+        availableTimes: ['09:00', '10:30', '13:30', '17:30'],
+        distance: 12.2,
+        isAvailable: true,
+        imageUrl: '',
+        description: '넓은 공간의 펫 호텔을 운영합니다. 미용 서비스도 함께 제공합니다.',
+        certifications: ['반려동물 관리사 1급', '펫 미용사 자격증'],
+        experience: '12년',
+      ),
+      SitterModel(
+        id: 's7',
+        name: '수원 로얄펫시터',
+        sitterName: '이재훈',
+        address: '경기도 수원시 영통구 광교호수공원로 190',
+        phone: '031-217-7008',
+        rating: 4.2,
+        services: ['산책 서비스', '방문 돌봄'],
+        availableTimes: ['09:30', '12:00', '16:30', '19:30'],
+        distance: 27.6,
+        isAvailable: true,
+        imageUrl: '',
+        description: '노령견 케어에 특화된 펫시터입니다. 약 복용 관리도 가능합니다.',
+        certifications: ['반려동물 관리사 2급', '노령견 케어 전문가'],
+        experience: '9년',
+      ),
+      SitterModel(
+        id: 's8',
+        name: '일산 라이트 펫시터',
+        sitterName: '정은별',
+        address: '경기도 고양시 일산동구 중앙로 1354',
+        phone: '031-908-1199',
+        rating: 4.5,
+        services: ['방문 돌봄', '산책 서비스', '놀이/훈련'],
+        availableTimes: ['08:30', '11:30', '14:30', '18:30'],
+        distance: 25.8,
+        isAvailable: true,
+        imageUrl: '',
+        description: '소형견과 고양이 돌봄을 전문으로 합니다. 세심한 케어를 약속드립니다.',
+        certifications: ['반려동물 관리사 1급'],
+        experience: '4년',
+      ),
+      SitterModel(
+        id: 's9',
+        name: '부천 리버 펫케어',
+        sitterName: '문지후',
+        address: '경기도 부천시 부흥로 157',
+        phone: '032-612-7555',
+        rating: 4.1,
+        services: ['방문 돌봄', '목욕/미용'],
+        availableTimes: ['09:00', '12:30', '15:00', '18:30'],
+        distance: 20.9,
+        isAvailable: false,
+        imageUrl: '',
+        description: '고양이 전문 펫시터입니다. 미용과 건강 관리를 함께 합니다.',
+        certifications: ['고양이 관리사 1급', '펫 미용사'],
+        experience: '5년',
+      ),
+      SitterModel(
+        id: 's10',
+        name: '해운대 오션 펫시터',
+        sitterName: '배서현',
+        address: '부산광역시 해운대구 센텀2로 32',
+        phone: '051-922-3650',
+        rating: 4.8,
+        services: ['방문 돌봄', '산책 서비스', '응급 케어'],
+        availableTimes: ['00:00', '08:00', '16:00', '22:00'],
+        distance: 325.4,
+        isAvailable: true,
+        imageUrl: '',
+        description: '부산 지역 최고의 펫시터입니다. 응급 상황 대처 능력이 뛰어납니다.',
+        certifications: ['반려동물 관리사 1급', '응급처치 자격증', '반려동물 행동 상담사'],
+        experience: '15년',
       ),
     ];
   }

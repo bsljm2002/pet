@@ -1,1 +1,5 @@
+# Firebase Admin SDK keys (secret)
 backend/demo/src/main/resources/firebase/*.json
+
+# Google Services (contains API keys)
+front/main/android/app/google-services.json

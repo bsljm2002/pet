@@ -19,11 +19,11 @@ public class PetService {
 
     public Long create(PetCreateReq req) {
         // Normalize simple fields
-        String species = req.species().toUpperCase();
-        String name = req.name().trim();
-        String abit = req.abitTypeCode().toUpperCase();
-        String gender = req.gender().toUpperCase();
+        String species = req.species() != null ? req.species().toUpperCase() : null;
+        String name = req.name() != null ? req.name().trim() : null;
+        String gender = req.gender() != null ? req.gender().toUpperCase() : null;
         String speciesDetail = req.speciesDetail() == null ? null : req.speciesDetail().trim();
+        String disease = req.disease() == null ? null : req.disease().trim();
 
         // Use default placeholder if imageUrl is null (for database NOT NULL constraint)
         String imageUrl = req.imageUrl() != null ? req.imageUrl() : "/media/default/pet-placeholder.png";
@@ -33,11 +33,11 @@ public class PetService {
                 species,
                 req.birthdate(),
                 req.weight(),
-                abit,
                 imageUrl,
                 name,
                 gender,
-                speciesDetail);
+                speciesDetail,
+                disease);
     }
 
     @Transactional(readOnly = true)
@@ -48,6 +48,35 @@ public class PetService {
     public Pet getPetById(Long id) {
         return pets.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Pet not found with id:" + id));
+    }
+
+    public void update(Long id, PetCreateReq req) {
+        // 펫이 존재하는지 확인
+        Pet pet = pets.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Pet not found with id: " + id));
+
+        // Use existing values if not provided (PATCH behavior)
+        String species = req.species() != null ? req.species().toUpperCase() : pet.getSpecies().name();
+        String name = req.name() != null ? req.name().trim() : pet.getName();
+        String gender = req.gender() != null ? req.gender().toUpperCase() : pet.getGender().name();
+        String speciesDetail = req.speciesDetail() != null ? req.speciesDetail().trim() : pet.getSpeciesDetail();
+        String disease = req.disease() != null ? req.disease().trim() : pet.getDisease();
+        String imageUrl = req.imageUrl() != null ? req.imageUrl() : pet.getImageUrl();
+
+        java.time.LocalDate birthdate = req.birthdate() != null ? req.birthdate() : pet.getBirthdate();
+        java.math.BigDecimal weight = req.weight() != null ? req.weight() : pet.getWeight();
+
+        // Update pet
+        pets.update(
+                id,
+                species,
+                birthdate,
+                weight,
+                imageUrl,
+                name,
+                gender,
+                speciesDetail,
+                disease);
     }
 
     public void delete(Long id) {

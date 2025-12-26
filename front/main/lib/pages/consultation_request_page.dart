@@ -7,8 +7,8 @@ import '../models/pet_profile.dart';
 import '../models/vet_model.dart';
 import '../services/pet_profile_manager.dart';
 
-/// 상담 신청 페이지
-/// 병원/수의사 정보와 함께 상담 관련 정보를 입력할 수 있는 화면.
+/// 상세 상담 신청 페이지
+/// 병원/수의사 정보와 함께 상세한 상담 관련 정보를 입력할 수 있는 화면.
 class ConsultationRequestPage extends StatefulWidget {
   final VetModel vet;
 
@@ -97,7 +97,9 @@ class _ConsultationRequestPageState extends State<ConsultationRequestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('상담 신청'),
+        title: const Text('상세 상담'),
+        backgroundColor: const Color(0xFF4FC59E),
+        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

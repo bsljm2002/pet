@@ -29,20 +29,23 @@ public record ReservationCreateReq (
     @JsonProperty("petsitter_works")
     List<PetsitterWork> petsitterWorks,
 
-    @NotNull @JsonProperty("pets_id") 
+    @NotNull @JsonProperty("pets_id")
     Long petId,
-    
+
     @NotNull
-    @JsonProperty("created_at")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    OffsetDateTime createdAt,
+    @JsonProperty("visit_date_time")  // 프론트엔드에서 visit_date_time으로 전송
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    OffsetDateTime visitDateTime,
     
     // @Size(max = 2048) @JsonProperty("resv_url") 
     // String reservationImageUrl,
 
     @JsonProperty("resv_urls")
     List<String> reservationImageUrls,
-    
+
+    @JsonProperty("ai_diagnoses")
+    List<AIDiagnosisDto> aiDiagnoses,
+
     @NotBlank @Size(max = 2000) @JsonProperty("resv_content") String reservationContent
     ) {
     @AssertTrue(message = "vet_specialties는 HOSPITAL 예약에서 필수입니다.")

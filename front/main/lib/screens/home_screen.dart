@@ -1,29 +1,22 @@
 // 홈 화면 위젯
-// 반려동물 프로필 관리 및 펫 일기 화면
+// 반려동물 프로필 관리 화면
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import '../services/pet_service.dart';
 import '../services/auth_service.dart';
 import 'add_pet_profile_screen.dart';
 import 'pet_profile_detail_screen.dart';
-import 'pet_diary_screen.dart';
-import '../services/pet_profile_manager.dart';
 import '../models/pet_profile.dart';
 
 /// 홈 화면
-/// 반려동물 프로필 목록과 펫 일기를 표시하는 화면
+/// 반려동물 프로필 목록을 표시하는 화면
 class HomeScreen extends StatefulWidget {
-  final int initialTabIndex; // 초기 탭 인덱스 (0: 펫 프로필, 1: 펫 일기)
-
-  const HomeScreen({super.key, this.initialTabIndex = 0});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late int _selectedTabIndex; // 0: 펫 프로필, 1: 펫 일기
-
   List<PetProfile> _petProfiles = []; // 펫 목록 데이터
   bool _isLoading = true; // 로딩 상태
   String? _errorMessage; // 에러 메세지
@@ -77,101 +70,56 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedTabIndex = widget.initialTabIndex; // 초기 탭 설정
     _loadPetProfiles(); // 화면 로드 시 펫 목록 조회
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // 상단 헤더 - 펫 프로필 / 펫 일기 탭
-          Container(
-            width: double.infinity,
-            height: 30,
-            color: const Color.fromARGB(255, 212, 244, 228),
-            child: Row(
-              children: [
-                // 펫 프로필 탭
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTabIndex = 0;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          style: TextStyle(
-                            color: const Color.fromARGB(255, 0, 108, 82),
-                            fontSize: 16,
-                            fontWeight: _selectedTabIndex == 0
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          '펫 프로필',
-                        ),
-                        SizedBox(height: 3),
-                        Container(
-                          height: 3,
-                          width: 80,
-                          color: _selectedTabIndex == 0
-                              ? const Color.fromARGB(255, 0, 108, 82)
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // 펫 일기 탭
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTabIndex = 1;
-                      });
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          style: TextStyle(
-                            color: const Color.fromARGB(255, 0, 108, 82),
-                            fontSize: 16,
-                            fontWeight: _selectedTabIndex == 1
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                          ),
-                          '펫 일기',
-                        ),
-                        SizedBox(height: 3),
-                        Container(
-                          height: 3,
-                          width: 60,
-                          color: _selectedTabIndex == 1
-                              ? const Color.fromARGB(255, 0, 108, 82)
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 248, 246, 240),
+        body: Column(
+          children: [
+            // 상단 탭바 (고정)
+            Container(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              child: const TabBar(
+                labelColor: Color.fromARGB(255, 0, 108, 82),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Color.fromARGB(255, 0, 108, 82),
+                tabs: [
+                  Tab(text: '펫홈'),
+                  Tab(text: '펫 갤러리'),
+                ],
+              ),
             ),
-          ),
-
-          // 선택된 탭에 따라 컨텐츠 표시
-          if (_selectedTabIndex == 0) ...[
-            // 펫 프로필 탭 컨텐츠
-            _buildPetProfileContent(),
-          ] else ...[
-            // 펫 일기 탭 컨텐츠
-            PetDiaryContent(),
+            // 탭별 컨텐츠 (스크롤 가능)
+            Expanded(
+              child: TabBarView(
+                children: [
+                  // 펫홈 탭
+                  SingleChildScrollView(child: _buildPetProfileContent()),
+                  // 펫 갤러리 탭 (추후 구현)
+                  SingleChildScrollView(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          '펫 갤러리 기능은 추후 구현 예정입니다.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -180,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPetProfileContent() {
     return Column(
       children: [
-        // 펫 프로필 섹션
+        // 나의 반려동물 헤더
         Container(
           width: double.infinity,
           height: 50,
@@ -193,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: const Color.fromARGB(255, 0, 108, 82),
                   fontSize: 16,
                 ),
-                '펫 프로필',
+                '나의 반려동물',
               ),
               SizedBox(height: 8),
               Container(
@@ -209,10 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: EdgeInsets.all(16),
           width: double.infinity,
-          color: Colors.transparent,
           child: Column(
             children: [
-              SizedBox(height: 20),
               // 로딩 중일 때
               if (_isLoading)
                 Padding(
@@ -232,29 +178,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               // 정상적으로 데이터를 불러왔을 때
               else
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    // 한 줄에 4개 표시, spacing 고려
-                    final itemWidth = (constraints.maxWidth - (3 * 20)) / 4;
-                    return Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      alignment: WrapAlignment.start,
-                      children: [
-                        ..._petProfiles.map((profile) {
-                          return SizedBox(
-                            width: itemWidth,
-                            child: _buildPetProfile(context, profile: profile),
-                          );
-                        }),
-                        // 새로운 펫 추가 버튼
-                        SizedBox(
-                          width: itemWidth,
-                          child: _buildAddPetButton(context),
-                        ),
-                      ],
-                    );
-                  },
+                Column(
+                  children: [
+                    ..._petProfiles.map((profile) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildPetProfile(context, profile: profile),
+                      );
+                    }),
+                    // 새로운 펫 추가 버튼
+                    _buildAddPetButton(context),
+                  ],
                 ),
               SizedBox(height: 20),
             ],
@@ -276,42 +210,98 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         await _loadPetProfiles();
       },
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // 프로필 이미지
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
-              ],
+                color: Color(0xFFE5E7EB),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+                child: _isValidNetworkUrl(profile.imageUrl)
+                    ? Image.network(
+                        _getFullImageUrl(profile.imageUrl),
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.pets,
+                              size: 45,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Icon(Icons.pets, size: 45, color: Colors.grey),
+                      ),
+              ),
             ),
-            child: CircleAvatar(
-              radius: 40,
-              backgroundColor: Color(0xFFE5E7EB),
-              backgroundImage: _isValidNetworkUrl(profile.imageUrl)
-                  ? NetworkImage(_getFullImageUrl(profile.imageUrl))
-                  : null,
-              child: !_isValidNetworkUrl(profile.imageUrl)
-                  ? Icon(Icons.pets, size: 40, color: Colors.grey)
-                  : null,
+            // 펫 정보
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      profile.name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 0, 108, 82),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      profile.speciesDetail ?? profile.species,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '몸무게: ${profile.weight}kg',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            profile.name,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color.fromARGB(255, 0, 108, 82),
+            // 화살표 아이콘
+            Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                color: Color.fromARGB(255, 0, 108, 82),
+                size: 20,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -319,7 +309,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 유효한 네트워크 URL인지 확인
   bool _isValidNetworkUrl(String? url) {
     if (url == null || url.isEmpty) return false;
-    return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/media/');
+    return url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('/media/');
   }
 
   /// 이미지 URL을 전체 경로로 변환
@@ -329,8 +321,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return url;
     }
     if (url.startsWith('/media/')) {
-      // 백엔드 서버 주소 추가 (Android 에뮬레이터: 10.0.2.2)
-      return 'http://10.0.2.2:9075$url';
+      // 백엔드 서버 주소 추가
+      return 'http://223.130.130.225:9075$url';
     }
     return url;
   }
@@ -347,48 +339,64 @@ class _HomeScreenState extends State<HomeScreen> {
           await _loadPetProfiles();
         }
       },
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(color: Color(0xFFD1D5DB), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color.fromARGB(255, 255, 255, 255),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // 추가 아이콘
+            Container(
+              width: 100,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 255, 255, 255),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
-              ],
+              ),
+              alignment: Alignment.center,
+              child: Icon(Icons.add, size: 40, color: Color(0xFF3BA688)),
             ),
-            child: Icon(Icons.add, size: 40, color: Color(0xFF9CA3AF)),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Member',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF9CA3AF),
+            // 텍스트
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Text(
+                  '새 반려동물 추가',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3BA688),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+            // 화살표 아이콘
+            Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF3BA688),
+                size: 20,
+              ),
+            ),
+          ],
+        ),
       ),
     );
-  }
-}
-
-/// 펫 일기 컨텐츠 (별도 위젯으로 분리)
-class PetDiaryContent extends StatelessWidget {
-  const PetDiaryContent({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // PetDiaryScreen의 내용을 그대로 표시
-    // PetDiaryScreen의 Scaffold를 제외한 body 부분만 사용
-    return PetDiaryScreen();
   }
 }

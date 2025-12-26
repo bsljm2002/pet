@@ -5,7 +5,6 @@ import '../services/auth_service.dart';
 import '../models/user.dart';
 import '../main.dart';
 import 'login_screen.dart';
-import 'community_screen.dart';
 
 // 설정 화면
 // 사용자 프로필, 바로가기 메뉴, 로그아웃 기능 제공
@@ -23,29 +22,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final User? currentUser = _authService.currentUser;
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(height: 0),
+    return Container(
+      color: const Color.fromARGB(255, 248, 246, 240), // 원하는 배경색
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(height: 0),
 
-          // 사용자 프로필 섹션
-          _buildUserProfileSection(currentUser),
+            // 사용자 프로필 섹션
+            _buildUserProfileSection(currentUser),
 
-          SizedBox(height: 30),
+            SizedBox(height: 30),
 
-          // 섹션 구분선
-          _buildSectionDivider('바로가기'),
+            // 섹션 구분선
+            _buildSectionDivider('바로가기'),
 
-          // 바로가기 메뉴
-          _buildShortcutSection(context),
+            // 바로가기 메뉴
+            _buildShortcutSection(context),
 
-          SizedBox(height: 30),
+            SizedBox(height: 30),
 
-          // 로그아웃 버튼
-          _buildLogoutButton(context),
+            // 로그아웃 버튼
+            _buildLogoutButton(context),
 
-          SizedBox(height: 40),
-        ],
+            SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
@@ -166,7 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: double.infinity,
       child: Column(
         children: [
-          // 홈 섹션 (펫 프로필 + 펫 일기)
+          // 홈 섹션 (펫 프로필)
           _buildExpandableShortcutCard(
             context,
             icon: Icons.home,
@@ -176,12 +178,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'icon': Icons.pets,
                 'title': '펫 프로필',
                 'subtitle': '반려동물 프로필 관리',
-                'tabIndex': 0,
-              },
-              {
-                'icon': Icons.book,
-                'title': '펫 일기',
-                'subtitle': '오늘의 기록 남기기',
                 'tabIndex': 0,
               },
             ],
@@ -200,12 +196,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 'title': '케이지 센서',
                 'subtitle': '온도, 습도, 공기질 확인',
                 'tabIndex': 1,
+                'aiTab': 0,
               },
               {
                 'icon': Icons.camera_alt,
                 'title': 'AI 진단',
                 'subtitle': '사진으로 건강 체크',
                 'tabIndex': 1,
+                'aiTab': 1,
               },
             ],
             mainTabIndex: 1,
@@ -239,14 +237,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
             mainTabIndex: 2,
           ),
-          SizedBox(height: 12),
-
-          // 펫샵 섹션
-          _buildPetShopCard(context),
-          SizedBox(height: 12),
-
-          // 커뮤니티 섹션
-          _buildCommunityCard(context),
         ],
       ),
     );
@@ -462,163 +452,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case UserType.cafe:
         return '카페';
     }
-  }
-
-  /// 펫샵 카드
-  Widget _buildPetShopCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _navigateToTab(context, 3),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Container(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // 아이콘
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color.fromARGB(255, 212, 244, 228),
-                ),
-                child: Icon(
-                  Icons.shopping_bag,
-                  color: Color.fromARGB(255, 0, 108, 82),
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: 16),
-
-              // 타이틀과 설명
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '펫샵',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 0, 56, 41),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '반려동물 용품을 쇼핑하세요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 화살표 아이콘
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 커뮤니티 카드 (별도 화면으로 이동)
-  Widget _buildCommunityCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _navigateToCommunity(context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 6,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Container(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // 아이콘
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color.fromARGB(255, 212, 244, 228),
-                ),
-                child: Icon(
-                  Icons.forum,
-                  color: Color.fromARGB(255, 0, 108, 82),
-                  size: 28,
-                ),
-              ),
-              SizedBox(width: 16),
-
-              // 타이틀과 설명
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '커뮤니티',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color.fromARGB(255, 0, 56, 41),
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '반려동물 정보를 공유하고 소통해보세요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // 화살표 아이콘
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 커뮤니티로 이동
-  void _navigateToCommunity(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CommunityScreen(),
-      ),
-    );
   }
 
   /// 탭 이동 처리

@@ -82,19 +82,13 @@ public class User {
     @Column(name = "ca_categorical", length = 10)
     private CaCategorical caCategorical;
 
-    // @Enumerated(EnumType.STRING)
-    // @Column(name = "vet_specialty", length = 30)
-    // private VetSpecialty vetSpecialty;   
+    @Enumerated(EnumType.STRING)
+    @Column(name = "vet_specialty", length = 30)
+    private VetSpecialty vetSpecialty;   
 
-    // @Enumerated(EnumType.STRING)
-    // @Column(name = "petsitter_work", length = 20)
-    // private PetsitterWork petsitterWork;
-
-    @Column(name = "vet_specialty", length = 255)
-    private String vetSpecialtyCsv;      // 예: "SURGERY,DERMATOLOGY"
-
-    @Column(name = "petsitter_work", length = 255)
-    private String petsitterWorkCsv;  
+    @Enumerated(EnumType.STRING)
+    @Column(name = "petsitter_work", length = 20)
+    private PetsitterWork petsitterWork;
 
     @Column(name = "working_days")
     private String workingDays;
@@ -147,7 +141,11 @@ public class User {
         OPHTHALMOLOGY,        // 안과
         DENTISTRY,            // 치과
         DERMATOLOGY,          // 피부과
+        NEUROLOGY,            // 신경과
+        ONCOLOGY,             // 종양학
+        CARDIOLOGY,           // 심장학
         EMERGENCY_MEDICINE,   // 응급의학과
+        VACCINATION,          // 예방접종
         GENERAL               // 기타/전체
     }
     

@@ -30,8 +30,10 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
   Widget build(BuildContext context) {
     final reservation = widget.reservation;
     final accentColor = _statusColor(reservation.status);
-    final formattedDate =
-        DateFormat('yyyy.MM.dd (E)', 'ko_KR').format(reservation.reservationDate);
+    final formattedDate = DateFormat(
+      'yyyy.MM.dd (E)',
+      'ko_KR',
+    ).format(reservation.reservationDate);
     final appointmentDateTime = _combineDateTime(
       reservation.reservationDate,
       reservation.timeSlot,
@@ -63,7 +65,11 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
             _buildMemoCard(reservation.memo),
             const SizedBox(height: 24),
             _buildSectionTitle('담당 수의사 & 예약 시간'),
-            _buildDoctorCard(reservation.vetName, reservation.timeSlot, formattedDate),
+            _buildDoctorCard(
+              reservation.vetName,
+              reservation.timeSlot,
+              formattedDate,
+            ),
             const SizedBox(height: 24),
             _buildSectionTitle('병원 위치'),
             _buildMapPlaceholder(),
@@ -102,10 +108,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
           children: [
             Text(
               petName,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
@@ -147,12 +150,11 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (ageLabel != null) _detailRow('나이', ageLabel),
-          if (profile.speciesDetail != null && profile.speciesDetail!.trim().isNotEmpty)
+          if (profile.speciesDetail != null &&
+              profile.speciesDetail!.trim().isNotEmpty)
             _detailRow('품종', profile.speciesDetail!),
           if (profile.gender != null && profile.gender!.trim().isNotEmpty)
             _detailRow('성별', profile.gender!),
-          if (profile.abtiTypeCode != null && profile.abtiTypeCode!.trim().isNotEmpty)
-            _detailRow('성격 유형', profile.abtiTypeCode!),
           if (profile.imageUrl != null && profile.imageUrl!.trim().isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -167,7 +169,10 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                     height: 140,
                     color: Colors.grey.shade200,
                     alignment: Alignment.center,
-                    child: const Icon(Icons.broken_image_outlined, color: Colors.grey),
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ),
@@ -263,9 +268,9 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('예약이 취소되었습니다.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('예약이 취소되었습니다.')));
           Navigator.of(context).pop();
         },
         style: ElevatedButton.styleFrom(
@@ -301,12 +306,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14.5),
-            ),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14.5))),
         ],
       ),
     );
@@ -328,9 +328,9 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
 
   PetProfile? _findPetProfile(String petName) {
     try {
-      return PetProfileManager()
-          .getAllProfiles()
-          .firstWhere((profile) => profile.name == petName);
+      return PetProfileManager().getAllProfiles().firstWhere(
+        (profile) => profile.name == petName,
+      );
     } catch (e) {
       return null;
     }
@@ -413,10 +413,7 @@ class _HeaderCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            accentColor.withOpacity(0.12),
-            Colors.white,
-          ],
+          colors: [accentColor.withOpacity(0.12), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -447,7 +444,10 @@ class _HeaderCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(16),

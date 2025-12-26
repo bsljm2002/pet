@@ -57,10 +57,6 @@ public class Pet {
     @Column(precision = 4, scale = 1, nullable = false)
     private BigDecimal weight;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "abit_type_code", nullable = false, length = 4)
-    private AbitTypeCode abitTypeCode;
-
     @Column(name = "p_image_url", length = 2048)
     private String imageUrl;
 
@@ -80,11 +76,50 @@ public class Pet {
     private Gender gender;
 
     @Column(name = "species_detail", length = 30)
-    private String speciesDetail;
+    private String speciesDetail; // 품종
 
-        // JSON 직렬화를 위한 userId getter 추가
+    @Column(name = "disease", length = 500)
+    private String disease; // 질병 정보
+
+    // JSON 직렬화를 위한 userId getter 추가
     public Long getUserId() {
         return owner != null ? owner.getId() : null;
+    }
+
+    // 생년월일에서 나이 계산
+    public Integer getAge() {
+        if (birthdate == null) return null;
+        return java.time.Period.between(birthdate, java.time.LocalDate.now()).getYears();
+    }
+
+    // 펫 정보 업데이트 메서드
+    public void update(
+            Species species,
+            LocalDate birthdate,
+            BigDecimal weight,
+            String imageUrl,
+            String name,
+            Gender gender,
+            String speciesDetail,
+            String disease) {
+        this.species = species;
+        this.birthdate = birthdate;
+        this.weight = weight;
+        this.imageUrl = imageUrl;
+        this.name = name;
+        this.gender = gender;
+        this.speciesDetail = speciesDetail;
+        this.disease = disease;
+    }
+
+    // 의료 정보만 업데이트하는 메서드 (의사용)
+    public void updateMedicalInfo(BigDecimal weight, String disease) {
+        if (weight != null) {
+            this.weight = weight;
+        }
+        if (disease != null) {
+            this.disease = disease;
+        }
     }
 
 
@@ -92,11 +127,6 @@ public class Pet {
         DOG, CAT
     }
 
-    public enum AbitTypeCode {
-        ISTJ, ISFJ, INFJ, INTJ, ISTP, ISFP, INFP, INTP,
-        ESTP, ESFP, ENFP, ENTP, ESTJ, ESFJ, ENFJ, ENTJ
-    }
-    
     public enum Gender {
         MALE, FEMALE
     }

@@ -3,11 +3,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/pet_profile.dart';
-import '../services/pet_profile_manager.dart';
 import '../services/pet_service.dart';
 import '../services/auth_service.dart';
-import 'abti_test_screen.dart';
 
 /// 새로운 펫 프로필 추가 화면
 ///
@@ -15,7 +12,6 @@ import 'abti_test_screen.dart';
 /// - 프로필 이미지 선택
 /// - 이름, 생년월일, 품종, 알고 있는 질환 입력
 /// - 성별 선택
-/// - ABTI 테스트 진행
 class AddPetProfileScreen extends StatefulWidget {
   const AddPetProfileScreen({Key? key}) : super(key: key);
 
@@ -30,8 +26,6 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
   final TextEditingController _breedController = TextEditingController();
   final TextEditingController _diseaseController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
-
-  String? _selectedAbtiType;
 
   // 선택된 프로필 이미지 URL (임시)
   String? _selectedImageUrl;
@@ -184,40 +178,42 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 상단 앱바
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 254, 254, 254),
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: const Color.fromARGB(255, 0, 108, 82),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    return DefaultTabController(
+      length: 1,
+      child: Scaffold(
+        backgroundColor: const Color.fromARGB(255, 252, 255, 224),
+        appBar: AppBar(
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: const Color.fromARGB(255, 0, 108, 82),
+          elevation: 0,
         ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color.fromARGB(255, 207, 229, 218),
-              Colors.white,
-              const Color.fromARGB(255, 254, 254, 254),
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: Column(
+        body: Column(
           children: [
-            // 프로필 등록 컨텐츠
-            Expanded(child: SingleChildScrollView(child: _buildProfileTab())),
-            // 하단 등록 버튼
-            _buildRegisterButton(),
+            Container(
+              color: const Color.fromARGB(255, 255, 255, 255),
+              child: const TabBar(
+                labelColor: Color.fromARGB(255, 0, 108, 82),
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Color.fromARGB(255, 0, 108, 82),
+                tabs: [Tab(text: '반려동물 등록')],
+              ),
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Column(
+                    children: [
+                      // 프로필 등록 컨텐츠
+                      Expanded(
+                        child: SingleChildScrollView(child: _buildProfileTab()),
+                      ),
+                      // 하단 등록 버튼
+                      _buildRegisterButton(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -226,18 +222,45 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
 
   /// 펫 프로필 등록 탭
   Widget _buildProfileTab() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 신규 생성 섹션 헤더
-          _buildSectionHeader('신규 생성'),
-          SizedBox(height: 20),
-          // 펫 종류 선택 (강아지/고양이)
-          _buildSpeciesSelector(),
-          SizedBox(height: 20),
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 신규 생성 섹션 헤더 (화면 끝까지)
+        _buildSectionHeader('신규 생성'),
+        SizedBox(height: 20),
+        // 펫 종류 선택 박스
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: _buildSpeciesSelector(),
+        ),
+        SizedBox(height: 20),
+        // 등록펫 정보 섹션 헤더 (화면 끝까지)
+        _buildSectionHeader('등록펫 정보'),
+        SizedBox(height: 20),
+        // 입력 필드 박스
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 왼쪽: 입력 필드들
@@ -261,15 +284,15 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
                 ),
               ),
               SizedBox(width: 20),
-              // 오른쪽: 프로필 이미지 (펫 이름 라벨 높이에서 시작)
+              // 오른쪽: 프로필 이미지
               GestureDetector(
                 onTap: _showImageSourceDialog,
                 child: Container(
                   width: 100,
-                  height: 200,
+                  height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.8),
+                    color: const Color.fromARGB(255, 240, 240, 240),
                     border: Border.all(
                       color: _selectedImageFile != null
                           ? const Color(0xFF4FC59E)
@@ -294,26 +317,39 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               ),
             ],
           ),
-          SizedBox(height: 30),
-          // 펫 성별 섹션
-          _buildSectionHeader('펫 성별', isRequired: true),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildGenderButton('MALE', Icons.male, Colors.blue),
-              SizedBox(width: 40),
-              _buildGenderButton('FEMALE', Icons.female, Colors.red),
+        ),
+        SizedBox(height: 30),
+        // 펫 성별 섹션 헤더 (화면 끝까지)
+        _buildSectionHeader('펫 성별', isRequired: true),
+        SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
-          SizedBox(height: 30),
-          // ABTI 테스트 섹션
-          _buildSectionHeader('ABTI 테스트', isRequired: true),
-          SizedBox(height: 20),
-          _buildAbtiTestSection(),
-          SizedBox(height: 100),
-        ],
-      ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildGenderButton('MALE', Icons.male, Colors.blue),
+                  SizedBox(width: 40),
+                  _buildGenderButton('FEMALE', Icons.female, Colors.red),
+                ],
+              ),
+              SizedBox(height: 16),
+            ],
+          ),
+        ),
+        SizedBox(height: 100),
+      ],
     );
   }
 
@@ -327,9 +363,9 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
             Text(
               title,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 108, 82),
+                color: const Color.fromARGB(255, 141, 162, 157),
               ),
             ),
             if (isRequired) ...[
@@ -337,7 +373,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               Text(
                 '*',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
                 ),
@@ -349,7 +385,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
         Container(
           height: 2,
           width: double.infinity,
-          color: const Color.fromARGB(255, 0, 108, 82),
+          color: const Color.fromARGB(255, 141, 162, 157),
         ),
       ],
     );
@@ -391,7 +427,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
         Container(
           height: 45,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.grey.shade200,
             borderRadius: BorderRadius.circular(4),
           ),
           child: TextField(
@@ -436,7 +472,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
         Container(
           height: 45,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.grey.shade200,
             borderRadius: BorderRadius.circular(4),
           ),
           child: TextField(
@@ -580,9 +616,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
           child: Container(
             height: 45,
             decoration: BoxDecoration(
-              color: _selectedSpecies == null
-                  ? Colors.grey.shade200
-                  : Colors.white,
+              color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(4),
             ),
             padding: EdgeInsets.symmetric(horizontal: 12),
@@ -629,7 +663,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
           child: Container(
             height: 45,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color.fromARGB(255, 235, 235, 235),
               borderRadius: BorderRadius.circular(4),
             ),
             padding: EdgeInsets.symmetric(horizontal: 12),
@@ -738,7 +772,7 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
         children: [
           Container(
             width: 80,
-            height: 80,
+            height: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: color, width: isSelected ? 4 : 2),
@@ -755,122 +789,6 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
               color: color,
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// ABTI 테스트 섹션
-  Widget _buildAbtiTestSection() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _selectedAbtiType != null
-              ? const Color.fromARGB(255, 0, 108, 82)
-              : Colors.grey.shade300,
-          width: 2,
-        ),
-      ),
-      child: Column(
-        children: [
-          if (_selectedAbtiType != null) ...[
-            // ABTI 결과 표시
-            Icon(
-              Icons.check_circle,
-              size: 48,
-              color: const Color.fromARGB(255, 0, 108, 82),
-            ),
-            SizedBox(height: 12),
-            Text(
-              '테스트 완료',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 108, 82),
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'ABTI 유형: $_selectedAbtiType',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color.fromARGB(255, 0, 108, 82),
-              ),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AbtiTestScreen(
-                      petName: _nameController.text.trim(),
-                      currentAbtiType: _selectedAbtiType,
-                    ),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _selectedAbtiType = result;
-                  });
-                }
-              },
-              icon: Icon(Icons.refresh),
-              label: Text('다시 테스트하기'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ] else ...[
-            // 테스트 시작 안내
-            Icon(Icons.quiz_outlined, size: 48, color: Colors.grey.shade400),
-            SizedBox(height: 12),
-            Text(
-              'ABTI 테스트를 진행해주세요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '반려동물의 성향을 파악하여\n맞춤형 케어를 제공합니다',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AbtiTestScreen(petName: _nameController.text.trim()),
-                  ),
-                );
-                if (result != null) {
-                  setState(() {
-                    _selectedAbtiType = result;
-                  });
-                }
-              },
-              icon: Icon(Icons.play_arrow),
-              label: Text('테스트 시작하기'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 0, 108, 82),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -950,16 +868,6 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
             return;
           }
 
-          if (_selectedAbtiType == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('ABTI 테스트를 완료해주세요.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
-
           // ===== 2. 로딩 표시 =====
           showDialog(
             context: context,
@@ -1011,9 +919,9 @@ class _AddPetProfileScreenState extends State<AddPetProfileScreen> {
                   .toUpperCase(), // "dog" -> "DOG", "cat" -> "CAT"
               birthdate: _birthdayController.text.trim(), // "yyyy-MM-dd"
               weight: weight,
-              abitTypeCode: _selectedAbtiType!, // "ENFP" 등
               gender: _selectedGender!, // "MALE" 또는 "FEMALE"
               speciesDetail: _selectedBreed, // 품종 (선택사항)
+              disease: _selectedDisease, // 질병 정보 (선택사항)
               imageUrl: uploadedImageUrl, // 업로드된 이미지 URL
             );
 

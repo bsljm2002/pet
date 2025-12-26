@@ -13,7 +13,6 @@ class LLMService {
   ///
   /// [petName] 펫 이름
   /// [breed] 품종
-  /// [mbti] MBTI 타입
   /// [weight] 체중 (kg)
   /// [heartRate] 심박수 (bpm)
   /// [stressLevel] 스트레스 지수 (1-10)
@@ -25,7 +24,6 @@ class LLMService {
   Future<Map<String, dynamic>> generateDiary({
     required String petName,
     required String breed,
-    required String mbti,
     required double weight,
     required int heartRate,
     required int stressLevel,
@@ -43,7 +41,6 @@ class LLMService {
             body: jsonEncode({
               "petName": petName,
               "breed": breed,
-              "mbti": mbti,
               "weight": weight,
               "heartRate": heartRate,
               "stressLevel": stressLevel,
@@ -69,24 +66,23 @@ class LLMService {
         } else {
           // API 호출 실패 시 Fallback
           return _generateFallbackDiary(
-              petName, mbti, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
+              petName, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
         }
       } else {
         // 서버 오류 시 Fallback
         return _generateFallbackDiary(
-            petName, mbti, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
+            petName, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
       }
     } catch (e) {
       // 네트워크 오류 또는 타임아웃 시 Fallback
       return _generateFallbackDiary(
-          petName, mbti, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
+          petName, weight, heartRate, stressLevel, temperature, humidity, mood, activity, appetite);
     }
   }
 
-  /// Fallback: 템플릿 기반 일기 생성 (MBTI와 계절/날씨 반영)
+  /// Fallback: 템플릿 기반 일기 생성 (계절/날씨 반영)
   Map<String, dynamic> _generateFallbackDiary(
     String petName,
-    String mbti,
     double weight,
     int heartRate,
     int stressLevel,
@@ -193,9 +189,9 @@ class LLMService {
       diaryParts.add("식욕이 별로 없어서 조금만 먹었어... 😔");
     }
 
-    // 9. MBTI별 말투로 마무리
-    String mbtiEnding = _getMBTIEnding(mbti, emotionLevel);
-    diaryParts.add(mbtiEnding);
+    // 9. 마무리 멘트
+    String ending = _getEnding(emotionLevel);
+    diaryParts.add(ending);
 
     return {
       "success": true,
@@ -205,127 +201,17 @@ class LLMService {
     };
   }
 
-  /// MBTI별 마무리 멘트
-  String _getMBTIEnding(String mbti, String emotionLevel) {
-    // MBTI별 감정 상태에 따른 마무리 멘트
+  /// 감정 상태별 마무리 멘트
+  String _getEnding(String emotionLevel) {
     final endings = {
-      'ENFP': {
-        '매우 좋음': "내일도 이렇게 신나게 보낼 거야! 완전 최고! 🎉",
-        '좋음': "오늘 정말 좋았어! 내일도 기대돼!",
-        '보통': "뭐 나쁘지 않았어, 내일은 더 좋을지도?",
-        '나쁨': "힘들었지만... 내일은 괜찮아질 거야",
-        '매우 나쁨': "너무 힘들어... 빨리 나아지고 싶어..."
-      },
-      'INFP': {
-        '매우 좋음': "마음이 따뜻한 하루였어... 행복해 💕",
-        '좋음': "평화로운 하루였어",
-        '보통': "그냥 그런 하루... 생각이 많아지네",
-        '나쁨': "마음이 무거워... 혼자 있고 싶어",
-        '매우 나쁨': "너무 힘들어... 왜 이럴까..."
-      },
-      'ENTP': {
-        '매우 좋음': "완전 재밌었어! 내일은 뭘 해볼까? 😆",
-        '좋음': "오 이거 나쁘지 않네! 괜찮았어",
-        '보통': "근데 왜 그랬을까? 궁금하네",
-        '나쁨': "뭔가 잘못된 것 같은데... 분석해봐야겠어",
-        '매우 나쁨': "완전 엉망이야... 이유를 모르겠어"
-      },
-      'INTP': {
-        '매우 좋음': "완벽한 하루였어. 매우 만족스러워",
-        '좋음': "괜찮은 결과네. 나쁘지 않아",
-        '보통': "그런 것 같아... 흠",
-        '나쁨': "이상해... 뭔가 잘못됐어",
-        '매우 나쁨': "완전히 잘못됐어... 생각이 복잡해"
-      },
-      'ENFJ': {
-        '매우 좋음': "모두와 함께라서 너무 행복해! 최고야! 🌟",
-        '좋음': "함께해서 좋은 하루였어",
-        '보통': "모두 괜찮아 보이네, 다행이야",
-        '나쁨': "조금 걱정돼... 괜찮을까",
-        '매우 나쁨': "너무 마음이 아파... 어떡하지"
-      },
-      'INFJ': {
-        '매우 좋음': "정말 의미있는 하루... 깊은 깨달음을 얻었어",
-        '좋음': "감사한 마음이 들어",
-        '보통': "생각해보게 되네...",
-        '나쁨': "혼자 있고 싶어... 생각이 많아",
-        '매우 나쁨': "마음이 너무 무거워... 외로워"
-      },
-      'ENTJ': {
-        '매우 좋음': "완벽하게 해냈어! 대성공! 💪",
-        '좋음': "잘했어! 계획대로야!",
-        '보통': "진행 중이야. 할 일이 있어",
-        '나쁨': "계획이 틀어졌어... 재조정이 필요해",
-        '매우 나쁨': "완전히 실패했어... 전략을 다시 짜야 해"
-      },
-      'INTJ': {
-        '매우 좋음': "최적의 결과야. 매우 효율적이었어",
-        '좋음': "효과적이야. 좋은 결과네",
-        '보통': "계획이 필요해... 분석 중이야",
-        '나쁨': "비효율적이야... 개선이 필요해",
-        '매우 나쁨': "완전히 비논리적이야... 최악이야"
-      },
-      'ESFP': {
-        '매우 좋음': "야호! 오늘 완전 재밌었어! 최고! 🎊",
-        '좋음': "신나! 재밌는 하루였어!",
-        '보통': "나쁘지 않네, 그럭저럭",
-        '나쁨': "재미없어... 기운이 없네",
-        '매우 나쁨': "하나도 재미없어... 너무 힘들어"
-      },
-      'ISFP': {
-        '매우 좋음': "너무 좋아... 완벽한 하루야 🌸",
-        '좋음': "따뜻하고 기분 좋은 하루였어",
-        '보통': "편안한 하루였어",
-        '나쁨': "아파... 힘들어",
-        '매우 나쁨': "너무 아파... 견딜 수가 없어"
-      },
-      'ESTP': {
-        '매우 좋음': "완전 최고! 바로 이거야! 더 해보자! 🔥",
-        '좋음': "바로 이거야! 좋았어!",
-        '보통': "일단 해봤어. 해보면 알겠지",
-        '나쁨': "짜증나... 답답해",
-        '매우 나쁨': "완전 짜증나! 못 참겠어"
-      },
-      'ISTP': {
-        '매우 좋음': "완전 괜찮네. 이거 좋은데",
-        '좋음': "괜찮네. 나쁘지 않아",
-        '보통': "그냥... 뭐",
-        '나쁨': "힘드네... 별로야",
-        '매우 나쁨': "너무 힘들어... 쉴래"
-      },
-      'ESFJ': {
-        '매우 좋음': "너무 좋아! 모두와 함께라서 최고야! 💝",
-        '좋음': "같이 있어서 좋아! 고마워!",
-        '보통': "도와줄까? 괜찮아?",
-        '나쁨': "걱정돼... 슬퍼",
-        '매우 나쁨': "너무 슬퍼... 위로가 필요해"
-      },
-      'ISFJ': {
-        '매우 좋음': "정말 다행이야. 모두 잘 됐어 😊",
-        '좋음': "다행이야. 잘 됐어",
-        '보통': "천천히 해봐야지...",
-        '나쁨': "괜찮을까... 불안해",
-        '매우 나쁨': "너무 걱정돼... 정말 불안해"
-      },
-      'ESTJ': {
-        '매우 좋음': "100% 성공이야! 확실하게 잘됐어!",
-        '좋음': "확실히 잘됐어! 성공!",
-        '보통': "정확히 이거야. 분명해",
-        '나쁨': "분명히 문제야. 힘들어",
-        '매우 나쁨': "명백히 실패야. 이건 심각해"
-      },
-      'ISTJ': {
-        '매우 좋음': "역시 그렇군. 100% 예상대로야",
-        '좋음': "역시. 예상대로야",
-        '보통': "순서대로... 계획대로",
-        '나쁨': "문제가 있어. 잘못됐어",
-        '매우 나쁨': "명백한 문제야... 정말 힘드네"
-      },
+      '매우 좋음': "내일도 이렇게 신나게 보낼 거야! 완전 최고! 🎉",
+      '좋음': "오늘 정말 좋았어! 내일도 기대돼!",
+      '보통': "뭐 나쁘지 않았어, 내일은 더 좋을지도?",
+      '나쁨': "힘들었지만... 내일은 괜찮아질 거야",
+      '매우 나쁨': "너무 힘들어... 빨리 나아지고 싶어..."
     };
 
-    // MBTI가 정의되어 있으면 해당 멘트 사용, 없으면 ENFP 기본값
-    final mbtiEndings = endings[mbti] ?? endings['ENFP']!;
-    return mbtiEndings[emotionLevel] ?? mbtiEndings['보통']!;
+    return endings[emotionLevel] ?? endings['보통']!;
   }
 
   /// 건강 점수 계산

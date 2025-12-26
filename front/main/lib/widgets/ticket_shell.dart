@@ -8,6 +8,7 @@ class TicketShell extends StatelessWidget {
   final Color accentColor;
   final EdgeInsetsGeometry contentPadding;
   final double notchPosition;
+  final VoidCallback? onTap;
 
   const TicketShell({
     super.key,
@@ -17,11 +18,12 @@ class TicketShell extends StatelessWidget {
     required this.accentColor,
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
     this.notchPosition = 0.52,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final child = Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         boxShadow: [
@@ -61,6 +63,16 @@ class TicketShell extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: child,
+      );
+    }
+
+    return child;
   }
 }
 
